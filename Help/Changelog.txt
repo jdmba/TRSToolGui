@@ -1,0 +1,49 @@
+TRSToolGui — Changelog
+======================
+
+v1.1 — November 12, 2026
+  Needs trs80-tool 5.1.0 or later. An older trs80-tool is refused at startup with a message that
+    says where to get the current one.
+  Faster. One trs80-tool is kept running in the background and answers every disk question,
+    instead of the program being started for each one (Preferences: "Keep trs80-tool running in
+    the background"; if it ever misbehaves the GUI goes back to one start per action by itself).
+    Opening an image now takes three questions instead of six.
+  Everything about a disk is now read as data from trs80-tool ("disk --json", "help --json"); none
+    of its printed text is interpreted any more. What trs80-tool can do is asked of it at startup.
+  More disks can be changed: trs80-tool 5.1.0 writes TRSDOS 2.7 and 2.8, NEWDOS/80 and MultiDOS 1.x
+    and 2.00 disks, so Add, Delete, Rename and Properties work on them.
+  File > New hard disk image: makes an HDV hard disk, blank or with LDOS 5.3 or LS-DOS 6.3
+    partitions. View > Partition > Add a partition / Delete this partition.
+  Disk > Granule map is now a coloured grid of every granule (which file, free, directory, locked
+    out, damage), with the list of files beside it. trs80-tool's own text drawing is one button away.
+  Disk > Sector map: "Protection & artifacts" lists trs80-tool's signs of copy protection, with
+    the trs-80.com scheme numbers, and the bad sectors that the imaging likely caused. Bad sectors
+    that an imaging artifact explains say so.
+  Disk properties: a "Copy protection" line and an "Imaging artifacts" line; free space counts
+    apart the granules that new files can't use; "Damaged" comes from trs80-tool's check.
+  NEWDOS/80 PDRIVE now comes from trs80-tool, which reads TI, TSR and the I/J/K flags from the
+    disk's own drive table (and says so when a disk has no table and the line is worked out from
+    its layout). The GUI's own calculation is gone from Disk properties.
+  File list: the Attributes column shows C (created) and * (modified since backup) on LDOS,
+    TRSDOS 6 and LS-DOS 6 disks, as TRSTools did.
+  File properties: shows whether a file has an update and an access password (none, PASSWORD, or
+    set), and the Created and MOD bits. "Set access password" is disabled where trs80-tool says
+    the disk keeps a time stamp there (LDOS 5.3, LS-DOS 6.3).
+  Master passwords: PASSWORD and blank are recognized on every DOS, including TRSDOS 1.x, SuperDOS,
+    DOS500 and RAPIDOS, which hash them differently.
+  Adding files: "Convert CR/LF to CR" still looks at the file's contents, as TRSTools did, and now
+    has trs80-tool do the conversion ("add --text"). Files with the same options are added in one
+    step, which is much quicker on large disks.
+  Check & repair: new option "mark used the free granules the image doesn't fully hold"
+    (--mark-missing-used). The check also lists signs of copy protection and imaging artifacts;
+    trs80-tool refuses to repair or trim a disk that shows signs of copy protection.
+  File viewer: hi-res pictures (HR, HRG, HRX, CHR, SHR) are drawn by trs80-tool, in the right
+    proportions, and Save as writes its PNG. Tools > Convert file(s) makes PNGs of them too.
+  Error messages: trs80-tool now says why something failed (not found, read-only, write-protected,
+    damaged, disk full) and the GUI shows its sentence; when trs80-tool fails unexpectedly, only
+    its message is shown, not the stack trace.
+  Help > Engine capabilities lists the DOSes and image formats the installed trs80-tool handles and
+    the options of each command.
+
+v1.0 — November 10, 2026
+  Initial release. By Ira Goldklang and Claude AI. Released under the MIT License.

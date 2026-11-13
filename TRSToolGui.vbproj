@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
+    <RootNamespace>TRSToolGui</RootNamespace>
+    <AssemblyName>TRSToolGui</AssemblyName>
+    <StartupObject>TRSToolGui.Program</StartupObject>
+    <UseWindowsForms>true</UseWindowsForms>
+    <MyType>WindowsForms</MyType>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <Nullable>disable</Nullable>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+    <Version>1.1.0</Version>
+    <Product>TRSToolGui</Product>
+    <Authors>Ira Goldklang and Claude AI</Authors>
+    <Company>Ira Goldklang and Claude AI</Company>
+    <Copyright>© 2026 Ira Goldklang and Claude AI</Copyright>
+    <Description>Windows GUI over Lawrence Kesteloot's trs80-tool, in the spirit of Matthew Reed's TRSTools</Description>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Help\Manual.txt" LogicalName="TRSToolGui.Manual.txt" />
+    <EmbeddedResource Include="Help\Changelog.txt" LogicalName="TRSToolGui.Changelog.txt" />
+    <EmbeddedResource Include="Help\License.txt" LogicalName="TRSToolGui.License.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+</Project>

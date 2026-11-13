@@ -1,0 +1,361 @@
+TRSToolGui — Manual
+===================
+
+TRSToolGui is a Windows front end for Lawrence Kesteloot's trs80-tool, in the spirit of
+Matthew Reed's TRSTools. trs80-tool does all the disk work: listing, extracting, adding and every
+edit. At startup the GUI asks the trs80-tool it found what it can do and greys out any menu item
+that version can't do.
+
+TRSToolGui 1.1 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
+refused at startup with a message saying so.
+
+TRSToolGui is by Ira Goldklang and Claude AI. It is free software under the MIT License
+(Help > License).
+
+This manual goes through the menus in order: each menu item, what it does, and the options in the
+window it opens.
+
+
+MAIN WINDOW
+-----------
+  File list     Columns: Name, Type, Size, Date, Attributes, Kind. Click a column header to sort.
+                Damaged files are marked. Invisible and system files use TRSTools' row colours.
+                Attributes: I invisible, S system; on LDOS, TRSDOS 6 and LS-DOS 6 disks also
+                C created and * modified since the last backup; on CP/M disks R read-only and
+                * archive.
+  Keys          Enter = preview the file, Delete = delete the selected files,
+                Esc = exit (only if "Exit upon ESC" is on in Preferences).
+  Drag & drop   Drop Windows files (or a folder: its files) onto the list to add them to the
+                open image; drag files from the list out to Explorer to extract them.
+  Toolbar       New, Open, Disk properties | Copy, Paste | Add, Extract, View | Sectors | About.
+  Status bar    The DOS, the number of files, the free space and whether the image is
+                write-protected, read-only (and why), damaged or shows signs of copy protection;
+                the trs80-tool version on the right.
+  Command line  TRSToolGui.exe [image file]  opens that image at startup.
+
+
+FILE
+----
+  New...  (Ctrl+N)
+      Creates a new, empty floppy image.
+      Disk image type      JV1, JV3 or DMK.
+      File system (DOS)    TRSDOS 2.3 (Model I), TRSDOS 1.3 (Model III), LDOS 5.3 (Model I/III),
+                           TRSDOS 6.2 (Model 4), LS-DOS 6.3 (Model 4).
+      LDOS for Model       I, III or 4 (LDOS only).
+      System disk          "System (bootable) disk from trs80-tool's bundled DOS", optionally
+                           "only the DOS's own files (--minimal)".
+      Density              Single or Double.
+      Sides                1 or 2.
+      Tracks (cylinders)   35, 40, 80 or Other.
+      Volume information   Name (8 characters) and Date (YYYY-MM-DD).
+      You are then asked where to save the image.
+
+  New hard disk image...
+      Creates a new HDV hard disk image.
+      Shape                Cylinders (1-1023) and heads (1-8). The defaults, 840 and 6, are what
+                           FreHD makes.
+      Contents             LS-DOS 6.3 partitions, LDOS 5.3 partitions, or blank (no partitions;
+                           add them with View > Partition > Add a partition).
+      Number of equal      Otherwise as few as keep each partition at 203 cylinders or fewer.
+        partitions
+      LDOS boot sector     Model III or Model I (LDOS 5.3 only).
+      Disk name            Only when there is one partition; otherwise HARDA, HARDB, ...
+      An HDV file has no partition table, so trs80-tool prints the settings that the DOS's
+      hard disk driver must be given to find the partitions. They are shown in a window you can
+      copy or save.
+
+  Open...  (Ctrl+O)
+      Opens a disk or tape image: JV1, JV3, DMK, DSK, HDV (with partitions), SCP, HFE, IMD,
+      CAS, WAV.
+
+  Open Recent
+      The images you opened most recently. Pick one to open it again.
+
+  Close
+      Closes the open image.
+
+  Disk properties...
+      The "Virtual disk properties" window.
+      Volume information   Volume name, volume date (YYYY-MM-DD), master password
+                           ("Set master password:", blank = none), AUTO command.
+      Disk information     Location, format, file system, "From the bytes:" (DOS and version
+                           read from the FORMAT-written bytes), cylinders, sides/heads, density,
+                           capacity, free space (with the granules new files can't use counted
+                           apart), damaged, copy protection (how many signs trs80-tool found, and
+                           the scheme where a sign names one), imaging artifacts, writable (and
+                           why not).
+      PDRIVE               NEWDOS/80 disks: the PDRIVE line from trs80-tool, which reads TI, TSR
+                           and the I/J/K flags from the disk's own drive table. A disk with no
+                           table (a data disk) gets the line worked out from its layout, without
+                           TI's letter and TSR; the window says which it is.
+      Write protected      The image's own write-protect flag.
+      Check...             Opens Disk > Check & repair.
+      DMK analysis...      Opens Disk > DMK analysis.
+      Details from         The raw information trs80-tool reported.
+        trs80-tool
+
+  Save image as... (convert format)
+      Writes a copy of the open image in another format: DMK, JV3, JV1, HFE or IMD. The file
+      extension you choose picks the format (.dsk is not accepted, it doesn't name a format).
+
+  Exit
+      Closes TRSToolGui.
+
+
+EDIT
+----
+  Copy  (Ctrl+C)
+      Copies the selected files to the Windows clipboard, so you can paste them in Explorer or
+      into another image.
+
+  Paste  (Ctrl+V)
+      Adds the files on the clipboard to the open image.
+
+  Add files...
+      Adds Windows files to the open image. The GUI checks each name against the DOS's rules and
+      offers a rename; trs80-tool refuses the whole add if there is no room on the disk, and
+      nothing is written. If the disk already has a file with
+      that name, the "Confirm File Replace" window shows both files and asks:
+        Yes / No             Replace this file, or skip it.
+        Do this for all      Use the same answer for the rest of the files.
+          remaining files
+
+  Extract...
+      Copies files from the image to a Windows folder.
+      Files to extract     Selected files, or All files shown.
+      Directory            The folder to extract to.
+      Lower-case host file names.
+      Mark damaged files   Adds [DAMAGED] to the Windows name (--mark-damaged).
+      CP/M                 Keep whole 128-byte records instead of ending text at Ctrl-Z
+                           (--cpm-records).
+      UCSD Pascal          Keep text files exactly as on the disk (--ucsd-pascal-raw).
+
+  Select all  (Ctrl+A)
+      Selects every file in the list.
+
+  Invert selection
+      Selects the unselected files and unselects the selected ones.
+
+  Preferences...
+      trs80-tool location  Where trs80-tool.exe is. If it is blank or the file is
+                           missing at startup, the program asks where trs80-tool is.
+      Text from TRS-80     For extract, copy and drag out: No conversion, Convert CR to CR/LF,
+                           or Convert CR to LF.
+      Text to TRS-80       For add, paste and drop: No conversion, or Convert CR/LF to CR
+                           (only for files that look like text, whatever their extension).
+      Let trs80-tool tokenize BASIC text (.bas) and convert cassette programs (.cas/.3bn) when
+                           adding.
+      Record the Windows file's date on files added (where the DOS stores dates).
+      Exit upon ESC.
+      Confirm before deleting files.
+      Keep trs80-tool running in the background
+                           One trs80-tool stays running and answers every disk question, instead
+                           of the program being started for each one. Much faster. If it ever
+                           stops answering, the GUI goes back to one start per action for the
+                           rest of the session. Help > Engine capabilities says which is in use.
+      trs80-tool log file  Passes --log-file on every call. Blank = no log.
+      Disassembly options  The default words passed to "disasm" for the file viewer. "Default"
+                           puts back the standard set (the same listing TRSTools produced).
+      The window also shows where the settings file is: TRSToolGui.cfg, in the same folder as
+      TRSToolGui.exe.
+
+
+VIEW
+----
+  Invisible files
+      Shows or hides invisible files.
+
+  System files
+      Shows or hides system files.
+
+  Partition
+      On a hard-disk image (HDV): picks the partition to show.
+      Add a partition...   Formats an empty LS-DOS 6.3 or LDOS 5.3 data partition in the image's
+                           free space. Cylinders (35-203; otherwise the rest of the free block),
+                           disk name, and for LDOS the model of the boot sector. trs80-tool then
+                           prints the settings the DOS's hard disk driver must be given.
+      Delete this          Erases the partition being shown, with its files. The partitions after
+        partition...       it get numbers one lower. You are asked to confirm.
+
+  Refresh  (F5)
+      Reads the image again.
+
+
+DISK
+----
+  Sector map...  (Ctrl+M)
+      A grid of every track and sector. Legend: S single density, D double density, C CRC error,
+      X deleted-data mark, ? not found, - not on this track. Click a sector to see its header line
+      and a hex dump.
+      Bad sectors          The missing and CRC-error sectors and the files that use them. A bad
+                           sector that the imaging explains (the read began late, or stopped after
+                           one revolution, or a converter made up the CRC) says so: reimaging the
+                           disk may read it.
+      Text report...       The map as text.
+      Bad sectors (text)...
+      Save report...
+      Refresh
+      Protection &         trs80-tool's signs of copy protection on this floppy, each with its
+        artifacts...       verdict (protected, DOS protected, possible, or not protection) and the
+                           trs-80.com scheme numbers it has been seen with, and the imaging
+                           artifacts. No signs doesn't prove a disk is unprotected.
+
+  DMK analysis...  (Ctrl+D)
+      Read-only analysis of a DMK image by the GUI itself: DOS, model and version from the
+      FORMAT-written bytes, signs of copy protection, damage versus imaging artifacts, tail
+      tracks, and a table per track. Buttons: Copy report, Save report...
+
+  Granule map...
+      Every granule of a TRSDOS-family floppy as a grid: one row per lump (a cylinder, on most
+      DOSes), one column per granule. A number is a file (listed at the right, in the same
+      colour); · free, B boot, D directory, - another file, x locked out, ! shared by files,
+      ? claimed but free, u used but unclaimed, n not on the image, p past the disk's end.
+      Click a granule for who claims it and where its sectors are; click a file to jump to it.
+      Only these files     TRS-80 name patterns, e.g. *.BAS SYS?.SYS. Press Show or Enter to
+                           redraw. Blank = all files.
+      trs80-tool's text    The same map as trs80-tool draws it, to copy or save.
+        map...
+      Refresh
+
+  Check & repair...
+      Runs "disk check" when it opens and shows the result.
+      Also free granules the GAT marks used but no file claims (--free-unclaimed).
+      Also fix program sizes whose transfer record is past the directory size
+                           (--fix-program-sizes).
+      Also mark used the free granules the image doesn't fully hold, so the DOS won't use them
+                           either (--mark-missing-used).
+      The check also lists signs of copy protection and imaging artifacts. trs80-tool refuses to
+      repair a disk that shows signs of copy protection.
+      Re-check             Runs the check again.
+      Preview repair       Shows what a repair would change, without changing anything.
+        (dry run)
+      Repair               Repairs the image. Not allowed while the image is write-protected.
+
+  Format...
+      Erases every file on the open image and formats it as an empty data disk. DMK images
+      only. Use File > Save image as to make a DMK copy first. You are asked to confirm.
+      The options are the same as File > New (DOS, density, sides, tracks, volume name/date).
+
+  Trim...
+      Removes the part of the image the disk doesn't use.
+      Drop only the cylinders trs80-tool can prove are past the disk's end (default). It says
+                           why it kept the others, and trims nothing when the DOS's records
+                           don't prove where the disk ends.
+      Keep cylinders 0 to N-1, with N = ...
+      Drop side 1, keeping only side 0 (--side 0).
+      Force                Drop tracks whose data can't be proven unused, or trim a
+                           write-protected image (--force). Tracks with signs of copy protection
+                           are never dropped.
+
+  Boot in the emulator...
+      Starts trs80-tool's emulator with the open image in drive 0.
+      TRS-80 model         Model I, Model III or Model 4 (--model).
+      Writable             Let the emulated DOS write to the image (--writable). Otherwise every
+                           floppy is write-protected.
+      Also mount           More images for the next drives (--mount). Add... / Remove.
+      Printer output file  Where printer output goes (--printer, optional).
+
+  Open trs80-tool shell here
+      Opens trs80-tool's interactive disk shell on the image in a console window. The GUI is
+      locked while the shell is open and reads the image again when it closes.
+
+
+TOOLS
+-----
+  Convert file(s)...
+      Runs "trs80-tool convert" on Windows files.
+      Input file(s)        Add... / Remove. Several inputs are combined into one CAS/WAV file.
+      Output file          The extension picks the conversion: .bas .asc .cmd .3bn .cas .wav
+                           .dmk .jv1 .jv3 .hfe .imd, and .png for a hi-res screen dump
+                           (.hr .hrg .hrx .chr .shr).
+      Cassette baud        default, 250, 500 or 1500 (--baud, CAS/WAV only).
+      Start address        Hex or auto (--start; ROM/BIN to CMD/3BN).
+      Include system files when the input is a disk image (--system).
+      CP/M: keep whole 128-byte records (--cpm-records).
+      Floppy images: write even if the new format can't hold everything (--force).
+      trs80-tool output    What trs80-tool printed.
+
+  Assemble...
+      Runs "trs80-tool asm".
+      Z80 source file      The .asm file.
+      Output file          .cmd, .3bn, .cas or .wav.
+      Target               Model I, Model III (default) or Model 4 (--model; defines __MODEL__
+                           for the source).
+      Cassette baud        default (500), 250, 500 or 1500 (--baud).
+      Write a listing file next to the output (--listing OUT.lst).
+      trs80-tool output    What trs80-tool printed.
+      When an image is open, you are offered to add the result to it.
+
+  Hex dump of a file...
+      Pick any Windows file; its hex dump is shown in a report window.
+
+  Disassemble a file...
+      Pick a TRS-80 program (.cmd .sys .3bn .rom .bin .cas); the disassembly is shown in a report
+      window, using the disassembly options from Preferences.
+
+  Run the emulator without a disk...
+      Starts the emulator with no disk mounted: Model I (Level II BASIC), Model III or Model 4.
+
+
+HELP
+----
+  Manual...  (F1)
+      This manual.
+
+  Changelog...
+      What changed in each release.
+
+  License...
+      The MIT License TRSToolGui is released under, and notes on trs80-tool and TRSTools.
+
+  Engine capabilities...
+      The trs80-tool version that was found, where it is, how it is being called (background
+      server or one start per action), the commands and options it has, and the DOSes and image
+      formats it handles.
+      Re-check engine      Checks trs80-tool again (e.g. after you install a new version).
+      Copy to clipboard
+
+  trs80-tool manual (web)
+      Opens https://www.my-trs-80.com/tool/ in your browser.
+
+  About TRSToolGui...
+      The version, release date and build of TRSToolGui, and which trs80-tool it uses.
+
+
+FILE LIST RIGHT-CLICK MENU
+--------------------------
+  Preview              Opens the file viewer (also Enter or double-click).
+  Extract...           As Edit > Extract.
+  Delete               Deletes the selected files (asks first if Preferences says so).
+  Rename...            Gives the file a new TRS-80 name.
+  Convert to...        Extracts the file and runs Tools > Convert file(s) on it. You can then add
+                       the result back to the image.
+  Properties...        The "File Properties" window:
+                         Filename, Date (YYYY-MM-DD, or "No date"), Size, Kind, Damage, SHA-256,
+                         Protection (the DOS's own levels), Attributes (Invisible, System; on
+                         the LDOS line also whether the file is Created and MOD), the passwords
+                         it has now (none, PASSWORD, or set),
+                         Set update password / Set access password (blank = remove; the access
+                         password can't be set where the disk keeps a time stamp there).
+
+
+FILE VIEWER
+-----------
+  Opened by Preview, Enter, double-click or the View toolbar button. It picks the view itself;
+  the type list overrides it: Graphics, EDTASM, BASIC, Disassembly, Text or Hexadecimal.
+  Graphics             Hi-res screen dumps (HR, HRG, HRX, CHR, SHR), drawn by trs80-tool.
+                       Save as writes a PNG.
+  Font                 Monospaced or Proportional.
+  Save as...           Saves the current view.
+  Done                 Closes the viewer.
+  Options...           Depends on the view:
+    Disassembly        Listing (--listing), listing without the bytes (--no-binary), upper-case
+                       (--upper), no labels for jump targets (--no-labels), no labels for known
+                       ROM locations (--no-known), everything as instructions (--full), ASCII
+                       comment per instruction (--data-comment), hex number format (--hex-format:
+                       default, c 0x12, dollar $12, h 12h), load address (--org), extra entry
+                       points (--entry). "Make these the default" saves them to Preferences.
+    BASIC              The disk's DOS decides (default), Model I/III BASIC tokens (--basic 3), or
+                       Model 4 BASIC tokens (--basic 4).
+  For assembler source the viewer also names the layout, the line count and which assembler
+  most likely wrote it.
