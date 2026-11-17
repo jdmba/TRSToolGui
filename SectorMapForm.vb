@@ -44,7 +44,7 @@ Public Class SectorMapForm
     Private ReadOnly _btnClose As New Button()
     Private ReadOnly _panelButtons As New Panel()
 
-    Private Shared ReadOnly MonoFont As New Font("Consolas", 9.0F)
+    Private Shared ReadOnly MonoFont As New Font(HostPlatform.MonospaceFontName, 9.0F)
 
     Public Sub New(disk As DiskImage)
         _disk = disk

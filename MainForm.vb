@@ -37,12 +37,12 @@ Public Class MainForm
     Private _miClose, _miDiskProps, _miCopy, _miPaste, _miAdd, _miExtract, _miSelectAll, _miInvert As ToolStripMenuItem
     Private _miInvisible, _miSystem, _miPartition, _miRefresh As ToolStripMenuItem
     Private _miRecent, _miSaveAs, _miNewHardDisk As ToolStripMenuItem
-    Private _miSectorMap, _miGranuleMap, _miCheckRepair, _miFormat, _miTrim, _miBoot, _miShell, _miDmkInfo, _miRunEmpty As ToolStripMenuItem
+    Private _miSectorMap, _miGranuleMap, _miCheckRepair, _miFormat, _miTrim, _miBoot, _miShell, _miDmkInfo, _miRunEmpty, _miCpmFormat As ToolStripMenuItem
     Private _cxPreview, _cxExtract, _cxDelete, _cxRename, _cxProps, _cxConvert As ToolStripMenuItem
     Private _tbProps, _tbCopy, _tbPaste, _tbAdd, _tbExtract, _tbView, _tbSectors As ToolStripButton
 
     ''' <summary>A trs80-tool console (disk shell or emulator) that may be writing the open image; mutations wait for it.</summary>
-    Private _console As Process = Nothing
+    Private _console As ConsoleRun = Nothing
     Private _consoleWhat As String = ""
 
     Private _disk As DiskImage = Nothing
@@ -110,13 +110,14 @@ Public Class MainForm
         Dim mDisk As New ToolStripMenuItem("&Disk")
         _miSectorMap = MakeItem("&Sector map...", Keys.Control Or Keys.M, AddressOf OnSectorMap)
         _miDmkInfo = MakeItem("D&MK analysis...", Keys.Control Or Keys.D, AddressOf OnDmkInfo)
+        _miCpmFormat = MakeItem("CP/M &layout...", Keys.None, AddressOf OnCpmFormat)
         _miGranuleMap = MakeItem("&Granule map...", Keys.None, AddressOf OnGranuleMap)
         _miCheckRepair = MakeItem("&Check && repair...", Keys.None, AddressOf OnCheckRepair)
         _miFormat = MakeItem("&Format...", Keys.None, AddressOf OnFormat)
         _miTrim = MakeItem("&Trim...", Keys.None, AddressOf OnTrim)
         _miBoot = MakeItem("&Boot in the emulator...", Keys.None, AddressOf OnBoot)
         _miShell = MakeItem("&Open trs80-tool shell here", Keys.None, AddressOf OnShell)
-        mDisk.DropDownItems.AddRange(New ToolStripItem() {_miSectorMap, _miDmkInfo, _miGranuleMap, _miCheckRepair, New ToolStripSeparator(), _miFormat, _miTrim, New ToolStripSeparator(), _miBoot, _miShell})
+        mDisk.DropDownItems.AddRange(New ToolStripItem() {_miSectorMap, _miDmkInfo, _miGranuleMap, _miCheckRepair, _miCpmFormat, New ToolStripSeparator(), _miFormat, _miTrim, New ToolStripSeparator(), _miBoot, _miShell})
 
         Dim mTools As New ToolStripMenuItem("&Tools")
         mTools.DropDownItems.Add(MakeItem("&Convert file(s)...", Keys.None, Sub() OnConvertFiles(Nothing)))
@@ -349,6 +350,7 @@ Public Class MainForm
         If _disk.Damaged Then parts.Add("DAMAGED")
         If _disk.ProtectedSignCount > 0 Then parts.Add("signs of copy protection")
         If Not _disk.IsWritable Then parts.Add("read-only: " & If(_disk.ReadOnlyReason, ""))
+        If Program.Tool.CpmFormatOf(_disk.Path).Length > 0 Then parts.Add("read as CP/M layout " & Program.Tool.CpmFormatOf(_disk.Path))
         If ConsoleRunning() Then parts.Add(_consoleWhat & " is open on this image - changes here wait until it closes")
         _lblStatus.Text = String.Join("   |   ", parts)
     End Sub
@@ -396,7 +398,10 @@ Public Class MainForm
         _miSaveAs.Enabled = floppy AndAlso EngineHasTop("convert")
         _miSectorMap.Enabled = floppy AndAlso EngineHasTop("sectors") : _tbSectors.Enabled = _miSectorMap.Enabled
         _miDmkInfo.Enabled = floppy
-        _miGranuleMap.Enabled = floppy AndAlso EngineHasDisk("map")
+        ' "--cpm-format" is trs80-tool 5.2.0's.
+        _miCpmFormat.Enabled = floppy AndAlso Program.Tool.Has520 AndAlso Not ConsoleRunning()
+        ' trs80-tool 5.2.0 also maps the open partition of a hard disk.
+        _miGranuleMap.Enabled = (floppy OrElse (isOpen AndAlso _disk.IsHardDisk AndAlso Program.Tool.Has520)) AndAlso EngineHasDisk("map")
         _miCheckRepair.Enabled = isOpen AndAlso Not _disk.IsCassette AndAlso EngineHasDisk("check")
         _miFormat.Enabled = floppy AndAlso writable AndAlso EngineHasDisk("format")
         _miTrim.Enabled = floppy AndAlso Not ConsoleRunning() AndAlso EngineHasDisk("trim")
@@ -570,9 +575,13 @@ Public Class MainForm
         If Program.Tool.Capabilities Is Nothing OrElse Not Program.Tool.Capabilities.IsUsable Then
             If Not Await CheckEngineAsync(True) Then Return
         End If
+        If HostFiles.IsGzipName(imagePath) AndAlso Not Program.Tool.Has520 Then
+            MessageBox.Show(Me, Path.GetFileName(imagePath) & " is a gzipped image. Opening it needs trs80-tool 5.2.0 or later; this one is " & Program.Tool.Capabilities.Version.ToString() & "." & vbCrLf & vbCrLf & "Unzip the file, or get the current trs80-tool from https://www.my-trs-80.com/tool/.", "Error Opening Virtual Disk", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
         SetBusy(True, "Reading " & Path.GetFileName(imagePath) & "...")
         Try
-            Dim keepPart As Integer = If(_disk IsNot Nothing AndAlso String.Equals(_disk.Path, imagePath, StringComparison.OrdinalIgnoreCase) AndAlso _disk.ActivePartition IsNot Nothing, _disk.ActivePartition.Number, 0)
+            Dim keepPart As Integer = If(_disk IsNot Nothing AndAlso String.Equals(_disk.Path, imagePath, HostPlatform.PathComparison) AndAlso _disk.ActivePartition IsNot Nothing, _disk.ActivePartition.Number, 0)
             _disk = Await DiskImage.LoadAsync(Program.Tool, Path.GetFullPath(imagePath), keepPart)
             Program.Settings.AddMru(_disk.Path)
             RebuildRecentMenu()
@@ -752,8 +761,11 @@ Public Class MainForm
         If _busy Then Return
         Using dlg As New OpenFileDialog()
             dlg.Title = "Open virtual disk"
-            dlg.Filter = "Disk images (*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv)|*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv;*.hdv1;*.hdv2|" &
-                         "Cassettes (*.cas;*.wav)|*.cas;*.wav|DMK (*.dmk)|*.dmk|JV1 (*.jv1)|*.jv1|JV3 (*.jv3)|*.jv3|HDV hard disks (*.hdv)|*.hdv;*.hdv1;*.hdv2|All files (*.*)|*.*"
+            ' trs80-tool 5.2.0 opens gzipped images (game.dmk.gz, big.hdv.gz) like any other.
+            Const gzImages As String = "*.dsk.gz;*.dmk.gz;*.jv1.gz;*.jv3.gz;*.hfe.gz;*.imd.gz;*.scp.gz;*.hdv.gz"
+            dlg.Filter = "Disk images (*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv;*.gz)|*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv;*.hdv1;*.hdv2;" & gzImages & "|" &
+                         "Cassettes (*.cas;*.wav)|*.cas;*.wav;*.cas.gz;*.wav.gz|DMK (*.dmk)|*.dmk;*.dmk.gz|JV1 (*.jv1)|*.jv1;*.jv1.gz|JV3 (*.jv3)|*.jv3;*.jv3.gz|HDV hard disks (*.hdv)|*.hdv;*.hdv1;*.hdv2;*.hdv.gz|" &
+                         "Gzipped images (*.gz)|" & gzImages & ";*.cas.gz;*.wav.gz|All files (*.*)|*.*"
             dlg.CheckFileExists = True
             If dlg.ShowDialog(Me) = DialogResult.OK Then Await OpenImageAsync(dlg.FileName)
         End Using
@@ -788,7 +800,10 @@ Public Class MainForm
                 SetBusy(True, "Creating " & Path.GetFileName(target) & "...")
                 Try
                     If File.Exists(target) Then File.Delete(target)
-                    Dim targetIsDmkName As Boolean = String.Equals(Path.GetExtension(target), ".dmk", StringComparison.OrdinalIgnoreCase)
+                    Program.Tool.SetCpmFormat(target, Nothing)     ' a new disk under an old name: forget a layout named for the old one
+                    ' A name like new.dmk.gz is a DMK too, for a trs80-tool that writes gzipped files (5.2.0).
+                    Dim targetIsDmkName As Boolean = String.Equals(Path.GetExtension(target), ".dmk", StringComparison.OrdinalIgnoreCase) OrElse
+                        (Program.Tool.Has520 AndAlso HostFiles.IsGzipName(target) AndAlso HostFiles.ImageExtension(target) = ".dmk")
                     If dlg.ImageTypeExtension = "dmk" AndAlso targetIsDmkName Then
                         Await Program.Tool.DiskCreateAsync(target, dlg.DosName, dlg.CreateOptionWords())
                     Else
@@ -873,7 +888,7 @@ Public Class MainForm
                 MessageBox.Show(Me, "Choose .dmk, .jv3, .jv1, .hfe or .imd — trs80-tool needs the extension to know which format to write (.dsk doesn't say).", "Save image as", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
-            If String.Equals(Path.GetFullPath(target), _disk.Path, StringComparison.OrdinalIgnoreCase) Then
+            If String.Equals(Path.GetFullPath(target), _disk.Path, HostPlatform.PathComparison) Then
                 MessageBox.Show(Me, "That is the open image itself; choose another name.", "Save image as", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
@@ -950,7 +965,7 @@ Public Class MainForm
 
     Private Async Sub OnFormat()
         If _busy OrElse _disk Is Nothing OrElse Not _disk.IsWritable OrElse _disk.IsHardDisk Then Return
-        If Not String.Equals(Path.GetExtension(_disk.Path), ".dmk", StringComparison.OrdinalIgnoreCase) Then
+        If HostFiles.ImageExtension(_disk.Path) <> ".dmk" Then
             MessageBox.Show(Me, "trs80-tool's format makes a DMK image, so it only formats images named *.dmk. Use File → Save image as to make a DMK copy first, then format that.", "Format", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -960,12 +975,14 @@ Public Class MainForm
         Using dlg As New CreateFloppyForm(True, _disk.DosName, cyl, sides, density)
             If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
             Dim fileCount As Integer = _disk.VisibleFiles(True, True).Count
-            Dim msg As String = "Format erases " & If(fileCount = 1, "the 1 file", "all " & fileCount.ToString(CultureInfo.InvariantCulture) & " files") & " on " & Path.GetFileName(_disk.Path) & " and formats it as an empty " & dlg.DosName & " data disk." & vbCrLf & vbCrLf & "This cannot be undone. Go ahead?"
+            Dim msg As String = "Format erases " & If(fileCount = 1, "the 1 file", "all " & fileCount.ToString(CultureInfo.InvariantCulture) & " files") & " on " & Path.GetFileName(_disk.Path) & " and formats it as an empty " & If(dlg.IsCpm, "Montezuma Micro CP/M", dlg.DosName) & " data disk." & vbCrLf & vbCrLf & "This cannot be undone. Go ahead?"
             If MessageBox.Show(Me, msg, "Format Disk Image", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then Return
             SetBusy(True, "Formatting...")
             Dim r As ToolResult = Nothing
             Dim failure As String = Nothing
             Try
+                ' A layout named for the old contents doesn't describe the newly formatted disk.
+                Program.Tool.SetCpmFormat(_disk.Path, Nothing)
                 r = Await Program.Tool.DiskFormatAsync(_disk.Path, Nothing, dlg.DosName, dlg.CreateOptionWords(), True)
             Catch ex As Exception
                 failure = ex.Message
@@ -1031,12 +1048,54 @@ Public Class MainForm
 
     Private Sub OnShell()
         If _busy OrElse _disk Is Nothing OrElse ConsoleRunning() Then Return
-        Dim words As New List(Of String) From {"disk", _disk.Path}
-        If _disk.PartitionArg IsNot Nothing Then
-            words.Add("--partition")
-            words.Add(_disk.PartitionArg)
-        End If
+        ' "disk IMAGE [--partition P] [--cpm-format NAME]": the shell reads the image the way this window does.
+        Dim words As List(Of String) = Program.Tool.DiskWords(_disk.Path, _disk.PartitionArg)
         StartConsole(words, "The trs80-tool shell")
+    End Sub
+
+    ''' <summary>
+    ''' Disk → CP/M layout: name the layout a CP/M floppy is read and written with (trs80-tool's --cpm-format), or
+    ''' hand the choice back to trs80-tool. The choice lasts for this image until the program closes.
+    ''' </summary>
+    Private Async Sub OnCpmFormat()
+        If _busy OrElse _disk Is Nothing OrElse _disk.IsHardDisk OrElse _disk.IsCassette OrElse ConsoleRunning() Then Return
+        Dim imagePath As String = _disk.Path
+        Dim before As String = Program.Tool.CpmFormatOf(imagePath)
+        Dim layouts As String
+        SetBusy(True, "Asking trs80-tool for its CP/M layouts...")
+        Try
+            layouts = Await Program.Tool.CpmFormatHelpAsync(imagePath)
+        Catch ex As Exception
+            layouts = ex.Message
+        End Try
+        SetBusy(False, Nothing)
+        Dim chosen As String
+        Using dlg As New CpmFormatForm(layouts, before)
+            If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
+            chosen = dlg.Chosen
+        End Using
+        If String.Equals(chosen, before, StringComparison.OrdinalIgnoreCase) Then Return
+        Program.Tool.SetCpmFormat(imagePath, chosen)
+        If chosen.Length > 0 Then
+            ' Ask trs80-tool whether the disk can be read that way before the window is reloaded with it.
+            Dim problem As String = Nothing
+            SetBusy(True, "Reading " & Path.GetFileName(imagePath) & " as " & chosen & "...")
+            Try
+                Dim info As Trs80Tool.InfoJson = Await Program.Tool.InfoJsonAsync(imagePath)
+                problem = info.Error
+            Catch ex As Exception
+                problem = ex.Message
+            End Try
+            SetBusy(False, Nothing)
+            If problem IsNot Nothing Then
+                Program.Tool.SetCpmFormat(imagePath, before)
+                ' An unknown name is answered with the whole list again, which the window just showed: keep the first line.
+                If problem.Length > 600 AndAlso problem.IndexOf(ControlChars.Lf) > 0 Then problem = problem.Substring(0, problem.IndexOf(ControlChars.Lf)).Trim()
+                MessageBox.Show(Me, "trs80-tool can't read this disk as """ & chosen & """:" & vbCrLf & vbCrLf & problem & vbCrLf & vbCrLf & "The disk is still read as before.", "CP/M layout", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+        End If
+        Await OpenImageAsync(imagePath)
     End Sub
 
     ''' <summary>Start trs80-tool in its own console window and refresh the image when it exits (it may have written it).</summary>
@@ -1180,7 +1239,7 @@ Public Class MainForm
             If dlg.ShowDialog(Me) = DialogResult.OK Then
                 Program.Settings.Save()
                 Dim newPath As String = Trs80Tool.Locate(Program.Settings.ToolPath)
-                If newPath IsNot Nothing AndAlso Not String.Equals(newPath, Program.Tool.ToolPath, StringComparison.OrdinalIgnoreCase) Then
+                If newPath IsNot Nothing AndAlso Not String.Equals(newPath, Program.Tool.ToolPath, HostPlatform.PathComparison) Then
                     Program.Tool.ToolPath = newPath
                     Program.Tool.Capabilities = Nothing
                     Await CheckEngineAsync(False)
@@ -1200,12 +1259,12 @@ Public Class MainForm
                         "Build: " & Program.AppVersion & vbCrLf &
                         "By " & Program.AppAuthors & vbCrLf &
                         "Free software under the MIT License (Help > License)." & vbCrLf &
-                        "Download: https://www.trs-80.com/main-emulation-multi-utilities.htm#trstoolgui" & vbCrLf & vbCrLf &
+                        "Download: https://github.com/jdmba/TRSToolGui" & vbCrLf & vbCrLf &
                         "A Windows front end for Lawrence Kesteloot's trs80-tool, reproducing the workflow of Matthew Reed's TRSTools (1.14)." & vbCrLf & vbCrLf &
                         "Engine: " & If(Program.Tool.Capabilities IsNot Nothing AndAlso Program.Tool.Capabilities.Version IsNot Nothing, "trs80-tool " & Program.Tool.Capabilities.VersionText, "trs80-tool not found") & vbCrLf &
                         "Engine path: " & If(Program.Tool.ToolPath, "") & vbCrLf & vbCrLf &
                         "trs80-tool: https://www.my-trs-80.com/tool/  (MIT licence, © Lawrence Kesteloot)" & vbCrLf &
-                        "TRSTools was © 2009-2021 Matthew Reed; this program contains none of its code.",
+                        "TRSTools was © 2009-2021 Matthew Reed; TRSToolGui is modelled on it (Help > License has the details).",
                         "About " & Program.AppName, MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
 
@@ -1399,12 +1458,32 @@ Public Class MainForm
                 Continue For
             End If
 
+            ' 0. A file named *.gz. trs80-tool 5.2.0 unzips such a file by itself and stores what is inside.
+            '    The preference decides instead: stored as it is (TRSTool's way: a copy under a name the tool
+            '    doesn't unzip), or unzipped here first, so that the name, the text test and the conversion
+            '    all work on the file inside.
+            Dim sourcePath As String = fi.FullName       ' the file trs80-tool is given
+            Dim sourceName As String = fi.Name           ' the name the TRS-80 name is made from
+            If HostFiles.IsGzipName(fi.Name) Then
+                Try
+                    If s.UnzipGzOnAdd Then
+                        sourcePath = HostFiles.GunzipInto(fi.FullName, Program.NewTempDir())
+                        sourceName = Path.GetFileName(sourcePath)
+                    ElseIf Program.Tool.Has520 Then
+                        sourcePath = HostFiles.CopyUnderPlainName(fi.FullName, Program.NewTempDir())
+                    End If
+                Catch ex As Exception
+                    MessageBox.Show(Me, "Skipping " & fi.Name & ": " & If(s.UnzipGzOnAdd, "it could not be unzipped (", "it could not be copied (") & ex.Message & ").", Program.AppName, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    Continue For
+                End Try
+            End If
+
             ' 1. TRS-80 name
-            Dim trsName As String = TextUtil.TrsNameFromHost(fi.Name)
-            Dim hostUpper As String = fi.Name.ToUpperInvariant()
+            Dim trsName As String = TextUtil.TrsNameFromHost(sourceName)
+            Dim hostUpper As String = sourceName.ToUpperInvariant()
             Dim needsRename As Boolean = trsName.Length = 0 OrElse Not String.Equals(trsName, hostUpper, StringComparison.Ordinal)
             If needsRename Then
-                Using dlg As New RenameForm("Rename File", "New filename:", If(trsName.Length = 0, "", trsName.Replace(".", "/")), fi.Name & vbCrLf & "is not a valid TRS-80 filename.")
+                Using dlg As New RenameForm("Rename File", "New filename:", If(trsName.Length = 0, "", trsName.Replace(".", "/")), sourceName & vbCrLf & "is not a valid TRS-80 filename.")
                     If dlg.ShowDialog(Me) <> DialogResult.OK Then Continue For
                     trsName = TextUtil.NormalizeTrsName(dlg.ResultName)
                     If trsName Is Nothing Then
@@ -1436,12 +1515,12 @@ Public Class MainForm
             End If
 
             ' 3. conversion
-            Dim ext As String = fi.Extension.ToLowerInvariant()
-            Dim item As New Trs80Tool.AddItem With {.HostPath = fi.FullName, .Overwrite = overwrite, .Binary = True}
+            Dim ext As String = Path.GetExtension(sourceName).ToLowerInvariant()
+            Dim item As New Trs80Tool.AddItem With {.HostPath = sourcePath, .Overwrite = overwrite, .Binary = True}
             If (ext = ".bas" OrElse ext = ".cas" OrElse ext = ".3bn") AndAlso s.TokenizeBasicOnAdd Then
                 item.Binary = False       ' let trs80-tool tokenize / convert cassette programs
             ElseIf s.ConversionToTrs80 = TextConversionIn.CrLfToCr AndAlso Not _disk.IsCpm Then
-                Dim data As Byte() = File.ReadAllBytes(fi.FullName)
+                Dim data As Byte() = File.ReadAllBytes(sourcePath)
                 If TextUtil.LooksLikeText(ext.TrimStart("."c), data) AndAlso Array.IndexOf(data, CByte(10)) >= 0 Then
                     ' TRSTool converted by content, whatever the extension: "add --text" does exactly that
                     ' (line ends become CR and nothing else), so the test is ours and the conversion the tool's.

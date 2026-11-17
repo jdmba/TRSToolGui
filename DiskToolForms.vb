@@ -56,7 +56,7 @@ Public Class TextReportForm
             .ReadOnly = True
             .ScrollBars = ScrollBars.Both
             .WordWrap = False
-            .Font = New Font("Consolas", 9.5F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.5F)
             .Dock = DockStyle.Fill
             .BackColor = SystemColors.Window
         End With
@@ -161,7 +161,7 @@ Public Class CheckRepairForm
             .ReadOnly = True
             .ScrollBars = ScrollBars.Both
             .WordWrap = False
-            .Font = New Font("Consolas", 9.5F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.5F)
             .Dock = DockStyle.Fill
             .BackColor = SystemColors.Window
         End With

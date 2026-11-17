@@ -6,8 +6,12 @@ Matthew Reed's TRSTools. trs80-tool does all the disk work: listing, extracting,
 edit. At startup the GUI asks the trs80-tool it found what it can do and greys out any menu item
 that version can't do.
 
-TRSToolGui 1.1 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
-refused at startup with a message saying so.
+TRSToolGui 1.2 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
+refused at startup with a message saying so. With trs80-tool 5.2.0 or later, Montezuma Micro CP/M
+disks (and the other CP/M layouts trs80-tool knows) can be changed too: Add, Delete, Rename and
+the two CP/M attributes work on them, and File > New makes them. CP/M keeps no file dates, so
+files go on without one. 5.2.0 also opens gzipped images (GAME.DMK.GZ, BIG.HDV.GZ) and draws the
+granule map of a hard disk partition.
 
 TRSToolGui is by Ira Goldklang and Claude AI. It is free software under the MIT License
 (Help > License).
@@ -40,7 +44,10 @@ FILE
       Creates a new, empty floppy image.
       Disk image type      JV1, JV3 or DMK.
       File system (DOS)    TRSDOS 2.3 (Model I), TRSDOS 1.3 (Model III), LDOS 5.3 (Model I/III),
-                           TRSDOS 6.2 (Model 4), LS-DOS 6.3 (Model 4).
+                           TRSDOS 6.2 (Model 4), LS-DOS 6.3 (Model 4), and with trs80-tool 5.2.0
+                           Montezuma Micro CP/M 2.2 (Model 4). A CP/M disk is double density with
+                           40 or 80 tracks and 1 or 2 sides, and has no volume name or date. Its
+                           system disk is Montezuma CP/M 2.32, 40 tracks, one side.
       LDOS for Model       I, III or 4 (LDOS only).
       System disk          "System (bootable) disk from trs80-tool's bundled DOS", optionally
                            "only the DOS's own files (--minimal)".
@@ -66,7 +73,8 @@ FILE
 
   Open...  (Ctrl+O)
       Opens a disk or tape image: JV1, JV3, DMK, DSK, HDV (with partitions), SCP, HFE, IMD,
-      CAS, WAV.
+      CAS, WAV. With trs80-tool 5.2.0 any of them may be gzipped (GAME.DMK.GZ): the image is
+      read, changed and saved compressed, and every window works on it as on any other.
 
   Open Recent
       The images you opened most recently. Pick one to open it again.
@@ -81,9 +89,9 @@ FILE
       Disk information     Location, format, file system, "From the bytes:" (DOS and version
                            read from the FORMAT-written bytes), cylinders, sides/heads, density,
                            capacity, free space (with the granules new files can't use counted
-                           apart), damaged, copy protection (how many signs trs80-tool found, and
-                           the scheme where a sign names one), imaging artifacts, writable (and
-                           why not).
+                           apart; blocks on a CP/M disk), damaged, copy protection (how many
+                           signs trs80-tool found, and the scheme where a sign names one),
+                           imaging artifacts, writable (and why not).
       PDRIVE               NEWDOS/80 disks: the PDRIVE line from trs80-tool, which reads TI, TSR
                            and the I/J/K flags from the disk's own drive table. A disk with no
                            table (a data disk) gets the line worked out from its layout, without
@@ -146,6 +154,10 @@ EDIT
       Let trs80-tool tokenize BASIC text (.bas) and convert cassette programs (.cas/.3bn) when
                            adding.
       Record the Windows file's date on files added (where the DOS stores dates).
+      Unzip files named *.gz when adding them, and store the file inside. Off (the default): a
+                           .gz file goes onto the disk as it is, as TRSTools stored it. On: it is
+                           unzipped first, and the name, the text test and the conversions are
+                           those of the file inside.
       Exit upon ESC.
       Confirm before deleting files.
       Keep trs80-tool running in the background
@@ -207,7 +219,8 @@ DISK
 
   Granule map...
       Every granule of a TRSDOS-family floppy as a grid: one row per lump (a cylinder, on most
-      DOSes), one column per granule. A number is a file (listed at the right, in the same
+      DOSes), one column per granule. With trs80-tool 5.2.0 it also draws the open partition
+      of a hard disk. A number is a file (listed at the right, in the same
       colour); · free, B boot, D directory, - another file, x locked out, ! shared by files,
       ? claimed but free, u used but unclaimed, n not on the image, p past the disk's end.
       Click a granule for who claims it and where its sectors are; click a file to jump to it.
@@ -231,9 +244,18 @@ DISK
         (dry run)
       Repair               Repairs the image. Not allowed while the image is write-protected.
 
+  CP/M layout...
+      For CP/M floppies, with trs80-tool 5.2.0. A CP/M disk doesn't say how it is laid out, so
+      trs80-tool works it out. When it picks the wrong layout, this window shows trs80-tool's
+      list of the layouts it knows; type the name of the right one (for example mm-ds-data) and
+      press "Use this layout". The disk is then read and written that way in every window, and in
+      the trs80-tool shell, until TRSToolGui closes. The status bar says so. "Let trs80-tool
+      decide" goes back. A name the disk can't be read with is refused and nothing changes.
+
   Format...
       Erases every file on the open image and formats it as an empty data disk. DMK images
-      only. Use File > Save image as to make a DMK copy first. You are asked to confirm.
+      only (gzipped ones included). Use File > Save image as to make a DMK copy first. You are
+      asked to confirm.
       The options are the same as File > New (DOS, density, sides, tracks, volume name/date).
 
   Trim...
@@ -337,6 +359,9 @@ FILE LIST RIGHT-CLICK MENU
                          it has now (none, PASSWORD, or set),
                          Set update password / Set access password (blank = remove; the access
                          password can't be set where the disk keeps a time stamp there).
+                       On a CP/M disk (trs80-tool 5.2.0): Filename, Size, Kind, and the two
+                         CP/M attributes, Read-only (R/O) and System (SYS, which keeps the file
+                         out of DIR). CP/M 2.2 has no dates, passwords or protection levels.
 
 
 FILE VIEWER

@@ -30,6 +30,10 @@ Public Class FilePropertiesForm
     Private ReadOnly _chkSetPassword As New CheckBox()
     Private ReadOnly _txtAccess As New TextBox()
     Private ReadOnly _chkSetAccess As New CheckBox()
+    ''' <summary>CP/M's two attributes, which trs80-tool 5.2.0 changes ("attrib --read-only", "--system").</summary>
+    Private ReadOnly _chkCpmReadOnly As New CheckBox()
+    Private ReadOnly _chkCpmSys As New CheckBox()
+    Private _cpmEditable As Boolean
 
     ''' <summary>
     ''' Protection levels 0–7 exactly as trs80-tool names them in dir --json ("protection") and accepts them for
@@ -61,6 +65,7 @@ Public Class FilePropertiesForm
     ''' <summary>Option words for "disk attrib" for whatever changed; empty if nothing.</summary>
     Public Function AttribOptionWords() As List(Of String)
         Dim w As New List(Of String)
+        If _cpmEditable Then Return _file.CpmAttribWords(_chkCpmReadOnly.Checked, _chkCpmSys.Checked)
         If Not _chkInvisible.Enabled Then Return w
         If _chkInvisible.Checked <> _file.Hidden Then w.Add(If(_chkInvisible.Checked, "--invisible", "--visible"))
         If _chkSystem.Checked <> _file.IsSystem Then w.Add(If(_chkSystem.Checked, "--system", "--no-system"))
@@ -144,11 +149,14 @@ Public Class FilePropertiesForm
         ShowInTaskbar = False
 
         Dim editable As Boolean = _disk.IsWritable AndAlso _disk.IsTrsdosFamily
+        ' A CP/M file can be renamed and given R/O and SYS, by a trs80-tool that has "attrib --read-only" (5.2.0).
+        Dim caps As EngineCapabilities = Program.Tool.Capabilities
+        _cpmEditable = _disk.IsWritable AndAlso _disk.IsCpm AndAlso Not _disk.IsHardDisk AndAlso caps IsNot Nothing AndAlso caps.HasDiskOption("attrib", "--read-only")
         Dim y As Integer = 12
         AddLabel(12, y + 3, "Filename:")
         _txtName.Bounds = New Rectangle(110, y, 160, 23)
         _txtName.Text = _file.SlashName
-        _txtName.Enabled = editable
+        _txtName.Enabled = editable OrElse _cpmEditable
         Controls.Add(_txtName)
         y += 30
         AddLabel(12, y + 3, "Date:")
@@ -222,13 +230,25 @@ Public Class FilePropertiesForm
             Dim attrs As String = _file.AttributeLetters
             If _file.CpmUser.HasValue Then attrs &= "  user " & _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)
             If _file.CpmAttributes.Length > 0 Then attrs &= "  " & _file.CpmAttributes
-            AddStatic(y, "Attributes:", If(attrs.Trim().Length > 0, attrs, "(none)")) : y += 24
-            AddLabel(12, y, "trs80-tool only changes files on TRSDOS-family disks.") : y += 24
+            If _cpmEditable Then
+                AddLabel(12, y + 3, "Attributes:")
+                _chkCpmReadOnly.Text = "Read-only (R/O)" : _chkCpmReadOnly.AutoSize = True : _chkCpmReadOnly.Checked = _file.CpmReadOnly
+                _chkCpmSys.Text = "System (SYS: not listed by DIR)" : _chkCpmSys.AutoSize = True : _chkCpmSys.Checked = _file.CpmSys
+                _chkCpmReadOnly.Location = New Point(110, y + 2)
+                _chkCpmSys.Location = New Point(240, y + 2)
+                Controls.Add(_chkCpmReadOnly) : Controls.Add(_chkCpmSys)
+                y += 28
+                If _file.CpmUser.HasValue AndAlso _file.CpmUser.Value <> 0 Then AddStatic(y, "User area:", _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)) : y += 24
+                AddLabel(12, y, "CP/M 2.2 keeps no dates, passwords or protection levels.") : y += 24
+            Else
+                AddStatic(y, "Attributes:", If(attrs.Trim().Length > 0, attrs, "(none)")) : y += 24
+                AddLabel(12, y, If(_disk.IsCpm, "Changing files on CP/M disks needs trs80-tool 5.2.0 or later, and a disk it can write.", "trs80-tool doesn't change files on this kind of disk.")) : y += 24
+            End If
         End If
 
         Dim btnOk As New Button() With {.Text = "OK", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(300, y + 6, 80, 26)}
         Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(390, y + 6, 80, 26)}
-        btnOk.Enabled = editable
+        btnOk.Enabled = editable OrElse _cpmEditable
         Controls.Add(btnOk) : Controls.Add(btnCancel)
         AcceptButton = btnOk
         CancelButton = btnCancel

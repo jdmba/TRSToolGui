@@ -10,7 +10,7 @@
 '  results. When Lawrence Kesteloot changes trs80-tool, this is the file to
 '  update.
 '
-'  Rules followed here (trs80-tool v5.1.x):
+'  Rules followed here (trs80-tool v5.1.x and v5.2.x):
 '    * JSON everywhere it exists: dir --json, info --json --verbose,
 '      sectors --json, help --json, and "disk IMAGE --json ..." for every
 '      disk command. No text of a disk command is parsed; the text a command
@@ -31,6 +31,9 @@
 '    * hexdump, disasm, asm, convert and the text reports of sectors are plain
 '      launches whose text is shown as printed; console programs (the disk
 '      shell, the emulator) are started with StartInConsole and never parsed
+'    * nothing here is about Windows: the tool's file name, where it is looked
+'      for and how a console run is started come from HostPlatform and
+'      ConsoleRun
 ' ============================================================================
 Option Strict On
 Option Explicit On
@@ -181,6 +184,10 @@ Public Class EngineCapabilities
     Public Function CanCreate(formatName As String) As Boolean
         Return DiskCreateFormats.Contains(formatName, StringComparer.OrdinalIgnoreCase)
     End Function
+    ''' <summary>True when the probed trs80-tool is this version or later.</summary>
+    Public Function AtLeast(minimum As Version) As Boolean
+        Return Version IsNot Nothing AndAlso Version >= minimum
+    End Function
     Public ReadOnly Property IsUsable As Boolean
         Get
             Return Version IsNot Nothing AndAlso Version >= Trs80Tool.MinimumVersion
@@ -192,8 +199,26 @@ Public Class Trs80Tool
 
     ' ---- version policy (update when a new trs80-tool is tested) ----
     Public Shared ReadOnly MinimumVersion As New Version(5, 1, 0)
-    Public Shared ReadOnly MaxTestedVersion As New Version(5, 1, 0)
-    Public Const DefaultExeName As String = "trs80-tool.exe"
+    Public Shared ReadOnly MaxTestedVersion As New Version(5, 2, 0)
+    ''' <summary>
+    ''' The first trs80-tool that writes CP/M disks (and makes them with "create cpm"), reads and writes gzipped
+    ''' files, and maps hard disk partitions. "help --json" doesn't list any of the three, so the GUI goes by this.
+    ''' </summary>
+    Public Shared ReadOnly Version520 As New Version(5, 2, 0)
+
+    ''' <summary>The name trs80-tool is released under on this system: trs80-tool.exe on Windows, trs80-tool elsewhere.</summary>
+    Public Shared ReadOnly Property DefaultExeName As String
+        Get
+            Return HostPlatform.ToolFileName
+        End Get
+    End Property
+
+    ''' <summary>True when the probed trs80-tool is 5.2.0 or later (False before the probe has run).</summary>
+    Public ReadOnly Property Has520 As Boolean
+        Get
+            Return Capabilities IsNot Nothing AndAlso Capabilities.AtLeast(Version520)
+        End Get
+    End Property
 
     ' Top-level commands and disk sub-commands this GUI relies on (for the capability probe).
     Public Shared ReadOnly ExpectedTopLevel As String() = {"dir", "info", "convert", "extract", "disk", "sectors", "hexdump", "disasm", "asm", "run", "mcp", "help"}
@@ -209,7 +234,7 @@ Public Class Trs80Tool
             Return _toolPath
         End Get
         Set(value As String)
-            If Not String.Equals(_toolPath, value, StringComparison.OrdinalIgnoreCase) Then StopServer()
+            If Not String.Equals(_toolPath, value, HostPlatform.PathComparison) Then StopServer()
             _toolPath = If(value, "")
         End Set
     End Property
@@ -223,7 +248,7 @@ Public Class Trs80Tool
             Return _logFile
         End Get
         Set(value As String)
-            If Not String.Equals(_logFile, If(value, ""), StringComparison.OrdinalIgnoreCase) Then StopServer()
+            If Not String.Equals(_logFile, If(value, ""), HostPlatform.PathComparison) Then StopServer()
             _logFile = If(value, "")
         End Set
     End Property
@@ -243,6 +268,40 @@ Public Class Trs80Tool
         End Set
     End Property
 
+    ''' <summary>
+    ''' Linux and macOS: the terminal program for the disk shell and the emulator, with the words that go before
+    ''' the script (for example "xterm -e"). Blank = find one. Not used on Windows.
+    ''' </summary>
+    Public Property TerminalCommand As String = ""
+
+    ' ---- CP/M layout chosen by the user, per image (trs80-tool 5.2.0: --cpm-format NAME) ----
+    ' A CP/M disk doesn't say how it is laid out, so trs80-tool works it out, and can be told instead. The name
+    ' given here goes on every call that reads or changes that image, for as long as the program runs.
+    Private ReadOnly _cpmFormats As New Dictionary(Of String, String)(If(HostPlatform.IsLinux, StringComparer.Ordinal, StringComparer.OrdinalIgnoreCase))
+
+    ''' <summary>Read this image as the named CP/M layout from now on; Nothing or "" goes back to trs80-tool's own choice.</summary>
+    Public Sub SetCpmFormat(imagePath As String, formatName As String)
+        Dim key As String = Path.GetFullPath(imagePath)
+        If String.IsNullOrWhiteSpace(formatName) Then
+            _cpmFormats.Remove(key)
+        Else
+            _cpmFormats(key) = formatName.Trim()
+        End If
+    End Sub
+
+    ''' <summary>The CP/M layout the user chose for this image, or "" when trs80-tool decides.</summary>
+    Public Function CpmFormatOf(imagePath As String) As String
+        Dim name As String = Nothing
+        If Not String.IsNullOrEmpty(imagePath) AndAlso _cpmFormats.TryGetValue(Path.GetFullPath(imagePath), name) Then Return name
+        Return ""
+    End Function
+
+    ''' <summary>"disk IMAGE help cpm-format": trs80-tool's own table of the CP/M layouts and their names, as it prints it.</summary>
+    Public Async Function CpmFormatHelpAsync(imagePath As String) As Task(Of String)
+        Dim r As ToolResult = Await RunAsync(New String() {"disk", imagePath, "help", "cpm-format"})
+        Return If(r.Succeeded, r.StdOut, r.ErrorText)
+    End Function
+
     ''' <summary>Log of every call (for the Engine Info dialog).</summary>
     Public ReadOnly Property CallLog As New List(Of String)
 
@@ -259,13 +318,16 @@ Public Class Trs80Tool
     Public Const DefaultInstallPath As String = "C:\DOS\TRS\castool.exe"
 
     ''' <summary>
-    ''' Find trs80-tool: the configured path (TRSToolGui.cfg), then DefaultInstallPath.
-    ''' Returns Nothing if neither exists; Program.Main then asks the user where it is.
+    ''' Find trs80-tool: the configured path (TRSToolGui.cfg), then a trs80-tool in this program's own folder,
+    ''' then (Windows) DefaultInstallPath, then the PATH. Returns Nothing if none exists; the program then asks
+    ''' the user where it is.
     ''' </summary>
     Public Shared Function Locate(configuredPath As String) As String
         If Not String.IsNullOrWhiteSpace(configuredPath) AndAlso File.Exists(configuredPath) Then Return Path.GetFullPath(configuredPath)
-        If File.Exists(DefaultInstallPath) Then Return DefaultInstallPath
-        Return Nothing
+        Dim beside As String = Path.Combine(AppContext.BaseDirectory, DefaultExeName)
+        If File.Exists(beside) Then Return beside
+        If HostPlatform.IsWindows AndAlso File.Exists(DefaultInstallPath) Then Return DefaultInstallPath
+        Return HostPlatform.FindOnPath(DefaultExeName)
     End Function
 
     ' ------------------------------------------------------------------ running (one launch per call)
@@ -1102,8 +1164,12 @@ Public Class Trs80Tool
         End Function
     End Class
 
-    ''' <summary>The free space on a disk ("free", and inside "info").</summary>
+    ''' <summary>
+    ''' The free space on a disk ("free", and inside "info"). trs80-tool 5.2.0 counts a TRSDOS-family disk in granules
+    ''' and a CP/M disk in blocks; Unit says which ("granule" or "block"; Nothing from 5.1.0, which only had granules).
+    ''' </summary>
     Public Class FreeResultJson
+        Public Property Unit As String
         ''' <summary>Granules new files could be given.</summary>
         Public Property FreeGranules As Integer
         Public Property GranuleBytes As Integer
@@ -1112,6 +1178,17 @@ Public Class Trs80Tool
         Public Property MissingGranules As Integer
         ''' <summary>Granules the GAT calls free past the disk's proven size.</summary>
         Public Property PastEndGranules As Integer
+        ''' <summary>CP/M: blocks new files could be given (no directory entry claims them).</summary>
+        Public Property FreeBlocks As Integer
+        Public Property BlockBytes As Integer
+        ''' <summary>CP/M: unclaimed blocks with a sector the image lacks or a CRC error; new files skip them.</summary>
+        Public Property MissingBlocks As Integer
+
+        Public ReadOnly Property IsBlocks As Boolean
+            Get
+                Return String.Equals(Unit, "block", StringComparison.OrdinalIgnoreCase)
+            End Get
+        End Property
     End Class
 
     Public Class PartitionLocationJson
@@ -1272,6 +1349,12 @@ Public Class Trs80Tool
         Public Property AllocationSides As Integer
         Public Property ImageSideCount As Integer
         Public Property LastCylinder As Integer
+        ' From trs80-tool 5.2.0: "sectors" (a floppy) or "granules" (a hard disk partition), the lumps, and the DOS's
+        ' word for a lump ("cylinder" where lumps are cylinders, otherwise "lump"). Nothing / 0 from 5.1.0.
+        Public Property Grid As String
+        Public Property GranulesPerLump As Integer
+        Public Property LumpCount As Integer
+        Public Property LumpTerm As String
     End Class
 
     ''' <summary>The result of "disk map": where everything is on a TRSDOS-family floppy.</summary>
@@ -1302,8 +1385,13 @@ Public Class Trs80Tool
         Dim full As String = Path.GetFullPath(imagePath)
         Dim cli As New List(Of String) From {"dir", "--json"}
         If includeSystem Then cli.Add("--system")
-        cli.Add(full)
         Dim sargs As New Dictionary(Of String, Object) From {{"images", New String() {full}}, {"system", includeSystem}}
+        Dim cpmFormat As String = CpmFormatOf(full)
+        If cpmFormat.Length > 0 Then
+            cli.Add("--cpm-format") : cli.Add(cpmFormat)
+            sargs("cpmFormat") = cpmFormat
+        End If
+        cli.Add(full)
         Dim r As ToolResult = Await JsonCallAsync("dir", sargs, cli, False)
         Dim parsed As InfilesJson(Of FilesInfileJson) = ParseJson(Of InfilesJson(Of FilesInfileJson))(r)
         If parsed Is Nothing OrElse parsed.Infiles Is Nothing OrElse parsed.Infiles.Count = 0 Then Throw New ToolException(r)
@@ -1315,8 +1403,14 @@ Public Class Trs80Tool
     ''' <summary>info --json --verbose IMAGE → the one infile entry.</summary>
     Public Async Function InfoJsonAsync(imagePath As String) As Task(Of InfoJson)
         Dim full As String = Path.GetFullPath(imagePath)
-        Dim cli As New List(Of String) From {"info", "--json", "--verbose", full}
+        Dim cli As New List(Of String) From {"info", "--json", "--verbose"}
         Dim sargs As New Dictionary(Of String, Object) From {{"images", New String() {full}}, {"verbose", True}}
+        Dim cpmFormat As String = CpmFormatOf(full)
+        If cpmFormat.Length > 0 Then
+            cli.Add("--cpm-format") : cli.Add(cpmFormat)
+            sargs("cpmFormat") = cpmFormat
+        End If
+        cli.Add(full)
         Dim r As ToolResult = Await JsonCallAsync("info", sargs, cli, False)
         Dim parsed As InfilesJson(Of InfoJson) = ParseJson(Of InfilesJson(Of InfoJson))(r)
         If parsed Is Nothing OrElse parsed.Infiles Is Nothing OrElse parsed.Infiles.Count = 0 Then Throw New ToolException(r)
@@ -1352,6 +1446,11 @@ Public Class Trs80Tool
         If Not String.IsNullOrEmpty(partition) Then
             globals.Add("--partition")
             globals.Add(partition)
+        End If
+        Dim cpmFormat As String = CpmFormatOf(full)
+        If cpmFormat.Length > 0 Then
+            globals.Add("--cpm-format")
+            globals.Add(cpmFormat)
         End If
         If dryRun Then globals.Add("--dry-run")
         If force Then globals.Add("--force")
@@ -1415,9 +1514,11 @@ Public Class Trs80Tool
         Return New List(Of IEnumerable(Of String)) From {words}
     End Function
 
-    ''' <summary>Everything the main window needs to know about an open disk, from one "info : check" run.</summary>
+    ''' <summary>Everything the main window needs to know about an open disk, from one "info : check" run ("info : free" on CP/M).</summary>
     Public Class DiskStatus
         Public Property Info As InfoResultJson
+        ''' <summary>The "free" result on a CP/M disk, whose "info" has no free space; Nothing otherwise.</summary>
+        Public Property Free As FreeResultJson
         ''' <summary>The lines "info" prints (description first, then indented details).</summary>
         Public Property InfoLines As New List(Of String)
         ''' <summary>Nothing when "check" doesn't apply to the disk (no TRSDOS-family file system).</summary>
@@ -1432,12 +1533,14 @@ Public Class Trs80Tool
     ''' disk IMAGE [--partition P] --json info : check → free space, write-protect flag, whether and why the disk
     ''' is read-only, the partitions of a hard disk, the check findings, signs of copy protection and imaging
     ''' artifacts. "check" is last, so a disk it doesn't apply to still gives the "info" result. Never throws.
+    ''' On a CP/M disk (cpm = True) the run is "info : free" instead: trs80-tool 5.2.0 writes CP/M disks and counts
+    ''' their free blocks with "free", but its "info" has no free space for them and "check" doesn't cover them.
     ''' </summary>
-    Public Async Function DiskStatusAsync(imagePath As String, partition As String) As Task(Of DiskStatus)
+    Public Async Function DiskStatusAsync(imagePath As String, partition As String, Optional cpm As Boolean = False) As Task(Of DiskStatus)
         Dim st As New DiskStatus
         Dim r As ToolResult
         Try
-            r = Await DiskRunAsync(imagePath, partition, New List(Of IEnumerable(Of String)) From {New String() {"info"}, New String() {"check"}}, False)
+            r = Await DiskRunAsync(imagePath, partition, New List(Of IEnumerable(Of String)) From {New String() {"info"}, New String() {If(cpm, "free", "check")}}, False)
         Catch ex As Exception
             st.Error = ex.Message
             Return st
@@ -1459,6 +1562,8 @@ Public Class Trs80Tool
             st.Check = checkCmd.GetResult(Of CheckResultJson)()
             If checkCmd.Messages IsNot Nothing Then st.CheckLines.AddRange(checkCmd.Messages)
         End If
+        Dim freeCmd As DiskCommandJson = r.Disk.Find("free")
+        If freeCmd IsNot Nothing AndAlso freeCmd.Error Is Nothing Then st.Free = freeCmd.GetResult(Of FreeResultJson)()
         Return st
     End Function
 
@@ -1482,7 +1587,7 @@ Public Class Trs80Tool
             End If
         End If
         ThrowIfNoTool()
-        Dim r As ToolResult = Await RunAsync(DiskArgs(imagePath, partition, "list", trsName, "--raw"), Nothing, True)
+        Dim r As ToolResult = Await RunAsync(DiskWords(imagePath, partition, "list", trsName, "--raw"), Nothing, True)
         If Not r.Succeeded Then
             ' The error text went to stdout as bytes; surface it.
             r.StdOut = If(r.StdOutBytes Is Nothing, "", Encoding.UTF8.GetString(r.StdOutBytes))
@@ -1629,7 +1734,7 @@ Public Class Trs80Tool
     ''' without redirecting anything; the caller may wait for Exited. Program options are added as usual.
     ''' Throws ToolException when the tool isn't found.
     ''' </summary>
-    Public Function StartInConsole(args As IEnumerable(Of String), Optional keepColor As Boolean = True) As Process
+    Public Function StartInConsole(args As IEnumerable(Of String), Optional keepColor As Boolean = True) As ConsoleRun
         ThrowIfNoTool()
         Dim psi As New ProcessStartInfo(ToolPath) With {
             .UseShellExecute = True,
@@ -1642,10 +1747,10 @@ Public Class Trs80Tool
             psi.ArgumentList.Add(a)
         Next
         LogCall("[console] " & DescribeCommandLine(args))
-        Dim p As Process = Process.Start(psi)
-        If p Is Nothing Then Throw New ToolException("Windows did not start trs80-tool.")
-        p.EnableRaisingEvents = True
-        Return p
+        ' Windows gives the program a console window of its own. Linux and macOS don't, so there it runs in a
+        ' terminal program (ConsoleRun).
+        If HostPlatform.IsWindows Then Return ConsoleRun.StartWithOwnWindow(psi)
+        Return ConsoleRun.StartInTerminal(ToolPath, psi.ArgumentList.ToList(), TerminalCommand)
     End Function
 
     ' ------------------------------------------------------------------ raw sectors (sectors --json)
@@ -1803,6 +1908,25 @@ Public Class Trs80Tool
 
     ' ------------------------------------------------------------------ changes
 
+    ''' <summary>
+    ''' "disk IMAGE [--partition P] [--cpm-format NAME] cmd args...", with the CP/M layout the user chose for the
+    ''' image: for launches without --json, and for the disk shell.
+    ''' </summary>
+    Public Function DiskWords(imagePath As String, partition As String, ParamArray words As String()) As List(Of String)
+        Dim args As New List(Of String) From {"disk", imagePath}
+        If Not String.IsNullOrEmpty(partition) Then
+            args.Add("--partition")
+            args.Add(partition)
+        End If
+        Dim cpmFormat As String = CpmFormatOf(imagePath)
+        If cpmFormat.Length > 0 Then
+            args.Add("--cpm-format")
+            args.Add(cpmFormat)
+        End If
+        args.AddRange(words)
+        Return args
+    End Function
+
     ''' <summary>Build "disk IMAGE [--partition P] cmd args..." argument lists (for launches without --json).</summary>
     Public Shared Function DiskArgs(imagePath As String, partition As String, ParamArray words As String()) As List(Of String)
         Dim args As New List(Of String) From {"disk", imagePath}
@@ -1887,6 +2011,10 @@ Public Class Trs80Tool
         args.Add("--out-dir")
         args.Add(outDir)
         args.Add("--system")
+        Dim cpmFormat As String = CpmFormatOf(imagePath)
+        If cpmFormat.Length > 0 Then
+            args.Add("--cpm-format") : args.Add(cpmFormat)
+        End If
         If lowercase Then args.Add("--lowercase")
         If markDamaged Then args.Add("--mark-damaged")
         If cpmRecords Then args.Add("--cpm-records")

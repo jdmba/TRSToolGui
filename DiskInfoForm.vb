@@ -67,7 +67,7 @@ Public Class DiskInfoForm
             .FullRowSelect = True
             .HeaderStyle = ColumnHeaderStyle.Nonclickable
             .ShowGroups = True
-            .Font = New Font("Segoe UI", 9.0F)
+            .Font = New Font(HostPlatform.UiFontName, 9.0F)
             .Columns.Add("Item", 190)
             .Columns.Add("Value", 720)
         End With
@@ -83,7 +83,7 @@ Public Class DiskInfoForm
             .RowHeadersVisible = False
             .SelectionMode = DataGridViewSelectionMode.FullRowSelect
             .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
-            .Font = New Font("Consolas", 9.0F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
             .Columns.Add("cyl", "Cyl") : .Columns(0).Width = 40
             .Columns.Add("side", "Side") : .Columns(1).Width = 40
             .Columns.Add("ids", "IDs") : .Columns(2).Width = 40
@@ -100,7 +100,7 @@ Public Class DiskInfoForm
             .ReadOnly = True
             .ScrollBars = ScrollBars.Both
             .WordWrap = False
-            .Font = New Font("Consolas", 9.0F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
         End With
         tpReport.Controls.Add(_txtReport)
         _tabs.TabPages.AddRange(New TabPage() {tpSummary, tpTracks, tpReport})

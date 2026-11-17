@@ -206,7 +206,8 @@ Public Class DmkImage
 
     Public Shared Function Load(path As String) As DmkImage
         Dim img As New DmkImage With {.Path = path}
-        Dim bytes As Byte() = File.ReadAllBytes(path)
+        ' A ".gz" name is a compressed image (trs80-tool 5.2.0 reads those): analyse what is inside.
+        Dim bytes As Byte() = HostFiles.ReadAllBytesUncompressed(path)
         img.FileSize = bytes.LongLength
         If bytes.Length < 16 + 128 Then
             img.Kind = "unknown"

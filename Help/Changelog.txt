@@ -1,6 +1,40 @@
 TRSToolGui — Changelog
 ======================
 
+v1.2 — November 16, 2026
+  Tested with trs80-tool 5.2.0. Still needs 5.1.0 or later; what 5.2.0 adds is offered when the
+    installed trs80-tool is 5.2.0.
+  CP/M disks (trs80-tool 5.2.0 writes Montezuma Micro CP/M and the other CP/M layouts it knows):
+    Add, Delete and Rename work on them. The status bar and Disk properties show their free
+    space in CP/M blocks. File properties sets Read-only (R/O) and System (SYS). File > New and
+    Disk > Format make Montezuma CP/M data disks (40 or 80 tracks, 1 or 2 sides), and File > New
+    makes the CP/M 2.32 system disk.
+  Disk > CP/M layout (trs80-tool 5.2.0): when trs80-tool picks the wrong layout for a CP/M
+    floppy, name the right one from its list. The disk is then read and written that way.
+  Gzipped images: File > Open lists and opens GAME.DMK.GZ, BIG.HDV.GZ and the like, and every
+    window works on them, the DMK analysis included. A new image saved under a .dmk.gz name is
+    written compressed.
+  Adding a file named *.gz: trs80-tool 5.2.0 unzips such a file and stores what is inside.
+    TRSToolGui keeps storing the .gz file as it is, as TRSTools did. A new Preferences box,
+    "Unzip files named *.gz when adding them", turns the unzipping on; the name, the text test
+    and the conversions are then those of the file inside.
+  Disk > Granule map also draws the open partition of a hard disk (trs80-tool 5.2.0). The row
+    header says Cylinder where the DOS's lumps are cylinders.
+  Disk > DMK analysis and Disk properties ("From the bytes"), MultiDOS: brought in line with what
+    Vernon Hester, the author of MultiDOS, has said about his formats. A bare disk formatted by
+    MultiDOS 4.01 or later is recognized whatever date was set when it was formatted (DIR/SYS
+    holds that date; only an undated format has A8 00 00 00), and the date is shown. Boot byte FA,
+    which seemed to split 4.01/5.00 from 5.10 and later, is the cylinder the drive's head was on,
+    so that split is now given as unverified. From 2.1 on the four DIR/SYS bytes are read and
+    shown as a date stamp (the release date on a system disk), no longer called a password.
+  trs80-tool is also looked for in TRSToolGui's own folder and on the PATH before the program
+    asks where it is.
+  Help > About gives the download as https://github.com/jdmba/TRSToolGui.
+  Source: everything that is not a window (the trs80-tool adapter, the disk model, the DMK and
+    assembler-source analysis, the settings) is now a library of its own, TRSToolGui.Core, in
+    the Core folder. It uses no Windows-only code and builds on Windows, Linux and macOS. The
+    Windows program is built from the same code and works as before.
+
 v1.1 — November 12, 2026
   Needs trs80-tool 5.1.0 or later. An older trs80-tool is refused at startup with a message that
     says where to get the current one.

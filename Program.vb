@@ -15,9 +15,9 @@ Imports System.Windows.Forms
 Public Module Program
 
     Public Const AppName As String = "TRSToolGui"
-    Public Const AppVersion As String = "v261112"   ' build stamp, date-based, like Ira's other tools (v26MMDD)
-    Public Const ReleaseVersion As String = "v1.1"   ' the release number shown in Help > About
-    Public Const ReleaseDate As String = "November 12, 2026"   ' with a matching entry in Help\Changelog.txt
+    Public Const AppVersion As String = "v261116"   ' build stamp, date-based, like Ira's other tools (v26MMDD)
+    Public Const ReleaseVersion As String = "v1.2"   ' the release number shown in Help > About
+    Public Const ReleaseDate As String = "November 16, 2026"   ' with a matching entry in Help\Changelog.txt
     Public Const AppAuthors As String = "Ira Goldklang and Claude AI"
 
     Public Settings As Settings
@@ -38,6 +38,7 @@ Public Module Program
         Tool = New Trs80Tool(If(toolPath, ""))
         Tool.LogFile = If(Settings.EngineLogFile, "")
         Tool.UseServer = Settings.KeepEngineRunning
+        Tool.TerminalCommand = If(Settings.TerminalCommand, "")
 
         Dim startFile As String = Nothing
         For Each a In args

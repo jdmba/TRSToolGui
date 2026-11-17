@@ -789,7 +789,13 @@ Public Module DosIdentifier
 
     Private Function MultiDosVersion(r As DosIdentification, b As Byte(), cb As Integer, dirE As DosDirEntry, bootE As DosDirEntry, ev As List(Of String)) As String
         Dim pw As String = If(dirE IsNot Nothing, dirE.PwText, "")
-        ev.Add("MultiDOS: GAT CB " & cb.ToString("X2", CultureInfo.InvariantCulture) & ", F4-F5 """ & Ascii(r.Gat, &HF4, 2) & """, DIR/SYS pw " & If(pw.Length > 0, pw, "—") & ", DIR/SYS bytes 1-2 " & If(dirE IsNot Nothing, dirE.Byte1.ToString("X2", CultureInfo.InvariantCulture) & " " & dirE.Byte2.ToString("X2", CultureInfo.InvariantCulture), "—") & ", boot byte FA " & b(&HFA).ToString("X2", CultureInfo.InvariantCulture) & ".")
+        ' Up to 2.0, DIR/SYS bytes 16-19 are password hashes; from 2.1 on they are the file's date stamp (the author,
+        ' Vernon Hester, 16 November 2026): the release date on a system disk, the date set at boot on a bare disk.
+        ' Read as a date only where GAT CB is FF (2.1 on): 1.7-2.0's 52 44 96 42 would also decode to a date.
+        Dim stamp As String = If(dirE IsNot Nothing AndAlso cb = &HFF, MultiDosDateStamp(dirE.Password), "")
+        ev.Add("MultiDOS: GAT CB " & cb.ToString("X2", CultureInfo.InvariantCulture) & ", F4-F5 """ & Ascii(r.Gat, &HF4, 2) & """, DIR/SYS bytes 16-19 " & If(pw.Length > 0, pw, "—") &
+               If(stamp.Length > 0, " (as a 2.1-or-later date stamp: " & stamp & ")", "") &
+               ", DIR/SYS bytes 1-2 " & If(dirE IsNot Nothing, dirE.Byte1.ToString("X2", CultureInfo.InvariantCulture) & " " & dirE.Byte2.ToString("X2", CultureInfo.InvariantCulture), "—") & ", boot byte FA " & b(&HFA).ToString("X2", CultureInfo.InvariantCulture) & ".")
         If r.BootKind = "stub" Then
             If Matches(b, "?? FE 11 CD 0B 00 11 0E 00 19 CD 67 44") Then
                 If cb = &H50 Then Return "MultiDOS 1.0 (Model I)"
@@ -814,28 +820,27 @@ Public Module DosIdentifier
                 If yr = "85" Then Return "MultiDOS 1.7.1 or 1.71"
                 Return "MultiDOS 1.7.x or 2.0"
             End If
-            If Matches(b, "?? FE 11 CD 0B 00 11 10 00 19 7E 23 CD 33 00 B7 20 F8") AndAlso pw = "A8 00 00 00" Then
-                If b(&HFA) = 0 Then Return "MultiDOS 4.01 or 5.00"
-                Return "MultiDOS 5.10, 5.11, 6.00, 6.20 or Esoteric 2.11-3.20 — not separable on a bare disk"
+            If Matches(b, "?? FE 11 CD 0B 00 11 10 00 19 7E 23 CD 33 00 B7 20 F8") Then
+                ' Stub D. Some 5.11 / 6.x system disks carry this boot too, and their DIR/SYS date stamp names the release.
+                Dim release As String = MultiDosReleaseByDirSys(pw)
+                If release IsNot Nothing AndAlso pw <> "A8 00 00 00" Then Return release
+                ' A bare disk. A8 00 00 00 is the date 00/00/00 that FORMAT writes when no date was set at boot; with a
+                ' date set, DIR/SYS carries that date instead, so the stub alone decides. Boot F8-FF are a copy of the
+                ' drive's DCT and FA is the cylinder its head was on, so the FA split may follow the drive, not the
+                ' release (the author, 16 November 2026): it is reported, but as unverified.
+                If pw = "A8 00 00 00" Then
+                    ev.Add("DIR/SYS date stamp 00/00/00: the disk was formatted with no date set.")
+                ElseIf stamp.Length > 0 AndAlso stamp <> "no date" Then
+                    ev.Add("DIR/SYS date stamp " & stamp & ": the date that was set when the disk was formatted (an undated format has A8 00 00 00).")
+                End If
+                Dim fa As String = b(&HFA).ToString("X2", CultureInfo.InvariantCulture)
+                If b(&HFA) = 0 Then Return "MultiDOS 4.01 or later (4.01 or 5.00 if boot byte FA " & fa & " marks the version, which is unverified)"
+                Return "MultiDOS 4.01 or later (5.10, 5.11, 6.00, 6.20 or Esoteric 2.11-3.20 if boot byte FA " & fa & " marks the version, which is unverified) — not separable on a bare disk"
             End If
         End If
-        ' system disks: DIR/SYS password table (D7), banner would win but is not read here
-        Select Case pw
-            Case "FF FF FF FF" : Return "MultiDOS 1.0-1.3 or 1.6 (Model III)"
-            Case "89 AB CD EF" : Return "MultiDOS 1.4-1.6"
-            Case "9A BC DE F0" : Return "MultiDOS 1.0 or 1.2D (Model I)"
-            Case "52 44 96 42" : Return "MultiDOS 1.7-2.0"
-            Case "52 44 00 07", "FF FF 00 07", "FF FF 00 14" : Return "MultiDOS 2.10"
-            Case "B2 21 00 00" : Return "MultiDOS 4.01, 5.11 or Esoteric 2.11"
-            Case "C4 B6 00 00" : Return "MultiDOS 5.00"
-            Case "D4 3E 90 00" : Return "MultiDOS 5.10"
-            Case "B1 01 00 00" : Return "MultiDOS 5.11 or Esoteric 2.12"
-            Case "D2 44 00 00" : Return "MultiDOS 6.00 or Esoteric 3.00"
-            Case "D6 63 7B C0" : Return "MultiDOS 6.20 or Esoteric 3.20"
-            Case "A8 00 00 00" : Return "MultiDOS 4.01 on, or Esoteric (bare passwords)"
-        End Select
-        If pw.StartsWith("BE EB", StringComparison.Ordinal) Then Return "Esoteric 2.12"
-        If pw.StartsWith("BD 18", StringComparison.Ordinal) Then Return "Esoteric 2.11"
+        ' System disks: the DIR/SYS table (passwords up to 2.0, the release's date stamp from 2.1); a banner would win but is not read here.
+        Dim byDirSys As String = MultiDosReleaseByDirSys(pw)
+        If byDirSys IsNot Nothing Then Return byDirSys
         ' Model I system boots by prefix
         If Matches(b, "01 ?? 11 4D 32 20 40") Then Return "MultiDOS 1.0-1.2 (Model I)"
         If Matches(b, "01 ?? 11 4D 3A 00 42 3D 20") Then Return "MultiDOS 1.3 (Model I)"
@@ -853,7 +858,47 @@ Public Module DosIdentifier
             Case &H17 : Return "MultiDOS 1.7.0-2.00"
             Case &HFF : Return "MultiDOS 2.10 or later / Esoteric"
         End Select
-        Return "MultiDOS (version not readable; banners and GAT CB disagree on system disks — D7)"
+        Return "MultiDOS (version not readable; banners and GAT CB disagree on system disks)"
+    End Function
+
+    ''' <summary>
+    ''' The MultiDOS / Esoteric release that DIR/SYS bytes 16-19 name on a system disk, or Nothing. Up to 2.0 the
+    ''' bytes are password hashes; from 2.1 on they are the file's date stamp, which on a system disk is the
+    ''' release date (confirmed by the author, 16 November 2026). A8 00 00 00 is no date at all.
+    ''' </summary>
+    Private Function MultiDosReleaseByDirSys(pw As String) As String
+        Select Case pw
+            Case "FF FF FF FF" : Return "MultiDOS 1.0-1.3 or 1.6 (Model III)"
+            Case "89 AB CD EF" : Return "MultiDOS 1.4-1.6"
+            Case "9A BC DE F0" : Return "MultiDOS 1.0 or 1.2D (Model I)"
+            Case "52 44 96 42" : Return "MultiDOS 1.7-2.0"
+            Case "52 44 00 07", "FF FF 00 07", "FF FF 00 14" : Return "MultiDOS 2.10"
+            Case "B2 21 00 00" : Return "MultiDOS 4.01, 5.11 or Esoteric 2.11"
+            Case "C4 B6 00 00" : Return "MultiDOS 5.00"
+            Case "D4 3E 90 00" : Return "MultiDOS 5.10"
+            Case "B1 01 00 00" : Return "MultiDOS 5.11 or Esoteric 2.12"
+            Case "D2 44 00 00" : Return "MultiDOS 6.00 or Esoteric 3.00"
+            Case "D6 63 7B C0" : Return "MultiDOS 6.20 or Esoteric 3.20"
+            Case "A8 00 00 00" : Return "MultiDOS 4.01 or later, or Esoteric (DIR/SYS undated: formatted with no date set)"
+        End Select
+        If pw.StartsWith("BE EB", StringComparison.Ordinal) Then Return "Esoteric 2.12"
+        If pw.StartsWith("BD 18", StringComparison.Ordinal) Then Return "Esoteric 2.11"
+        Return Nothing
+    End Function
+
+    ''' <summary>
+    ''' DIR/SYS bytes 16-17 read as a MultiDOS 2.1-and-later date stamp (the author's layout: xYYYYYYM MMMDDDDD,
+    ''' the year less 1980, x set on system files): "MM/DD/YYYY", "no date" for 00/00/00 (A8 00), or "" when the
+    ''' bytes are not a date (the password hashes of 1.x and 2.0 mostly aren't).
+    ''' </summary>
+    Friend Function MultiDosDateStamp(bytes As Byte()) As String
+        If bytes Is Nothing OrElse bytes.Length < 2 Then Return ""
+        Dim year As Integer = 1980 + ((bytes(0) >> 1) And &H3F)
+        Dim month As Integer = ((bytes(0) And 1) << 3) Or (bytes(1) >> 5)
+        Dim day As Integer = bytes(1) And &H1F
+        If month = 0 AndAlso day = 0 Then Return "no date"
+        If month < 1 OrElse month > 12 OrElse day < 1 OrElse day > 31 Then Return ""
+        Return month.ToString("00", CultureInfo.InvariantCulture) & "/" & day.ToString("00", CultureInfo.InvariantCulture) & "/" & year.ToString(CultureInfo.InvariantCulture)
     End Function
 
     ' ------------------------------------------------------------------ cylinders the DOS records (media block)

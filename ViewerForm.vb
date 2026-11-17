@@ -59,8 +59,8 @@ Public Class ViewerForm
     Private _loading As Boolean = False
     Private ReadOnly _cache As New Dictionary(Of ViewerKind, String)
 
-    Private Shared ReadOnly MonoFont As New Font("Consolas", 10.0F)
-    Private Shared ReadOnly PropFont As New Font("Times New Roman", 11.0F)
+    Private Shared ReadOnly MonoFont As New Font(HostPlatform.MonospaceFontName, 10.0F)
+    Private Shared ReadOnly PropFont As New Font(HostPlatform.SerifFontName, 11.0F)
 
     Public Sub New(disk As DiskImage, file As DiskFile)
         _disk = disk

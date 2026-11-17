@@ -41,7 +41,7 @@ Public Class GranuleMapForm
     Private ReadOnly _btnRefresh As New Button() With {.Text = "Refresh", .Width = 80, .Height = 26}
     Private ReadOnly _btnClose As New Button() With {.Text = "Close", .Width = 80, .Height = 26}
 
-    Private Shared ReadOnly MonoFont As New Font("Consolas", 9.0F)
+    Private Shared ReadOnly MonoFont As New Font(HostPlatform.MonospaceFontName, 9.0F)
 
     ''' <summary>Colours for the files, by the tool's colorIndex (it repeats past the end).</summary>
     Private Shared ReadOnly FileColors As Color() = {
@@ -51,7 +51,7 @@ Public Class GranuleMapForm
 
     Public Sub New(disk As DiskImage)
         _disk = disk
-        Text = "Granule map - " & Path.GetFileName(disk.Path)
+        Text = "Granule map - " & Path.GetFileName(disk.Path) & If(disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing, " - partition " & disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture), "")
         StartPosition = FormStartPosition.CenterParent
         Size = New Size(980, 640)
         MinimumSize = New Size(640, 400)
@@ -247,7 +247,9 @@ Public Class GranuleMapForm
             End If
             list.Add(c)
         Next
-        Dim colLump As New DataGridViewTextBoxColumn() With {.HeaderText = "Lump", .Width = 52, .SortMode = DataGridViewColumnSortMode.NotSortable}
+        ' trs80-tool 5.2.0 says what a row is on this disk: a cylinder where lumps are cylinders, otherwise a lump.
+        Dim rowsAreCylinders As Boolean = _map.Layout IsNot Nothing AndAlso String.Equals(_map.Layout.LumpTerm, "cylinder", StringComparison.OrdinalIgnoreCase)
+        Dim colLump As New DataGridViewTextBoxColumn() With {.HeaderText = If(rowsAreCylinders, "Cylinder", "Lump"), .Width = If(rowsAreCylinders, 72, 52), .SortMode = DataGridViewColumnSortMode.NotSortable}
         colLump.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
         colLump.DefaultCellStyle.BackColor = SystemColors.Control
         _grid.Columns.Add(colLump)

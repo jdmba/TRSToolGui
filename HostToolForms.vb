@@ -98,7 +98,7 @@ Public Class ConvertFileForm
             .ReadOnly = True
             .ScrollBars = ScrollBars.Both
             .WordWrap = False
-            .Font = New Font("Consolas", 9.0F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
             .Bounds = New Rectangle(12, y, 672, 110)
             .Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right Or AnchorStyles.Bottom
             .BackColor = SystemColors.Window
@@ -282,7 +282,7 @@ Public Class AssembleForm
             .ReadOnly = True
             .ScrollBars = ScrollBars.Both
             .WordWrap = False
-            .Font = New Font("Consolas", 9.0F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
             .Bounds = New Rectangle(12, y, 672, 150)
             .Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right Or AnchorStyles.Bottom
             .BackColor = SystemColors.Window

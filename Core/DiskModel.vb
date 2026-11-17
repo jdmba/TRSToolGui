@@ -4,7 +4,8 @@
 '  SPDX-License-Identifier: MIT   (full text: Help\License.txt)
 '
 '  DiskModel.vb — what the GUI knows about the open image, built from the
-'  engine's JSON answers (info, dir, and one "disk info : check" run).
+'  engine's JSON answers (info, dir, and one "disk info : check" run; on a
+'  CP/M disk "disk info : free").
 '  Nothing here parses trs80-tool output; everything comes through
 '  Trs80Tool's typed wrappers.
 ' ============================================================================
@@ -83,6 +84,31 @@ Public Class DiskFile
             Return s
         End Get
     End Property
+
+    ''' <summary>CP/M: the file is read-only (R/O).</summary>
+    Public ReadOnly Property CpmReadOnly As Boolean
+        Get
+            Return CpmAttributes.Contains("R/O")
+        End Get
+    End Property
+
+    ''' <summary>CP/M: the file has the SYS attribute, which hides it from DIR. trs80-tool reports it as both hidden and system.</summary>
+    Public ReadOnly Property CpmSys As Boolean
+        Get
+            Return CpmAttributes.Contains("SYS") OrElse (CpmUser.HasValue AndAlso (Hidden OrElse IsSystem))
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' The option words of "disk attrib" that give a CP/M file these two attributes; empty when it has them already.
+    ''' (--read-only and --no-read-only are trs80-tool 5.2.0's; SYS is its --system.)
+    ''' </summary>
+    Public Function CpmAttribWords(wantReadOnly As Boolean, wantSys As Boolean) As List(Of String)
+        Dim w As New List(Of String)
+        If wantReadOnly <> CpmReadOnly Then w.Add(If(wantReadOnly, "--read-only", "--no-read-only"))
+        If wantSys <> CpmSys Then w.Add(If(wantSys, "--system", "--no-system"))
+        Return w
+    End Function
 
     ''' <summary>"none", "PASSWORD" or "set (hash 0x....)" for a password of this file; "" when not known.</summary>
     Public Shared Function PasswordText(known As String, hash As Integer?) As String
@@ -388,7 +414,7 @@ Public Class DiskImage
             End If
         Else
             img.IsCassette = True
-            img.ImageFormat = If(imagePath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase), "WAV", "CAS")
+            img.ImageFormat = If(HostFiles.ImageExtension(imagePath) = ".wav", "WAV", "CAS")
             img.ReadOnlyReason = "Cassette images are read-only in this program."
         End If
 
@@ -474,9 +500,16 @@ Public Class DiskImage
         End If
     End Sub
 
-    ''' <summary>Free space in words, with the granules new files can't use counted apart.</summary>
+    ''' <summary>Free space in words, with the granules (CP/M: blocks) new files can't use counted apart.</summary>
     Private Shared Function FreeSpaceText(f As Trs80Tool.FreeResultJson) As String
         Dim kb As Long = f.FreeBytes \ 1024
+        If f.IsBlocks Then
+            Dim blockText As String = kb.ToString("N0", CultureInfo.InvariantCulture) & " KB free (" &
+                f.FreeBlocks.ToString("N0", CultureInfo.InvariantCulture) & If(f.FreeBlocks = 1, " block of ", " blocks of ") &
+                f.BlockBytes.ToString("N0", CultureInfo.InvariantCulture) & " bytes each)"
+            If f.MissingBlocks > 0 Then blockText &= "; not usable: " & f.MissingBlocks.ToString("N0", CultureInfo.InvariantCulture) & " more that the image doesn't fully hold"
+            Return blockText
+        End If
         Dim text As String = kb.ToString("N0", CultureInfo.InvariantCulture) & " KB free (" &
             f.FreeGranules.ToString("N0", CultureInfo.InvariantCulture) & If(f.FreeGranules = 1, " granule of ", " granules of ") &
             f.GranuleBytes.ToString("N0", CultureInfo.InvariantCulture) & " bytes each)"
@@ -492,7 +525,7 @@ Public Class DiskImage
     ''' disk is read-only, the partitions, and what "check" finds (damage, signs of copy protection, imaging artifacts).
     ''' </summary>
     Public Async Function RefreshStatusAsync(tool As Trs80Tool) As Task
-        Dim st As Trs80Tool.DiskStatus = Await tool.DiskStatusAsync(Path, PartitionArg)
+        Dim st As Trs80Tool.DiskStatus = Await tool.DiskStatusAsync(Path, PartitionArg, IsCpm AndAlso Not IsHardDisk)
         FreeText = ""
         FreeBytes = -1
         FreeGranules = 0
@@ -524,11 +557,13 @@ Public Class DiskImage
         Else
             ReadOnlyReason = If(String.IsNullOrWhiteSpace(info.ReadOnlyReason), "trs80-tool can't write to this disk.", info.ReadOnlyReason)
         End If
-        If info.Free IsNot Nothing Then
-            FreeBytes = info.Free.FreeBytes
-            FreeGranules = info.Free.FreeGranules
-            GranuleBytes = info.Free.GranuleBytes
-            FreeText = FreeSpaceText(info.Free)
+        ' A CP/M disk's free space comes from "free" (in blocks); "info" gives it only for TRSDOS-family disks.
+        Dim free As Trs80Tool.FreeResultJson = If(info.Free, st.Free)
+        If free IsNot Nothing Then
+            FreeBytes = free.FreeBytes
+            FreeGranules = free.FreeGranules
+            GranuleBytes = free.GranuleBytes
+            FreeText = FreeSpaceText(free)
         End If
         If info.Os IsNot Nothing Then
             If Not String.IsNullOrEmpty(info.Os.Name) Then DosName = info.Os.Name

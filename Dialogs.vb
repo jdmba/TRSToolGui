@@ -135,6 +135,7 @@ Public Class PreferencesForm
     Private ReadOnly _rbToCr As New RadioButton() With {.Text = "Convert CR/LF to CR", .AutoSize = True}
     Private ReadOnly _chkTokenize As New CheckBox() With {.Text = "Let trs80-tool tokenize BASIC text (.bas) and convert cassette programs (.cas/.3bn) when adding", .AutoSize = True}
     Private ReadOnly _chkHostDate As New CheckBox() With {.Text = "Record the Windows file's date on files added (where the DOS stores dates)", .AutoSize = True}
+    Private ReadOnly _chkUnzipGz As New CheckBox() With {.Text = "Unzip files named *.gz when adding them, and store the file inside (off = store the .gz file as it is)", .AutoSize = True}
     Private ReadOnly _chkEsc As New CheckBox() With {.Text = "Exit upon ESC", .AutoSize = True}
     Private ReadOnly _chkConfirmDelete As New CheckBox() With {.Text = "Confirm before deleting files", .AutoSize = True}
     Private ReadOnly _chkServer As New CheckBox() With {.Text = "Keep trs80-tool running in the background (faster: one program start instead of one per action)", .AutoSize = True}
@@ -147,11 +148,11 @@ Public Class PreferencesForm
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
         ShowInTaskbar = False
-        ClientSize = New Size(560, 506)
+        ClientSize = New Size(560, 532)
         Dim s As Settings = Program.Settings
 
         Dim g0 As New GroupBox() With {.Text = "trs80-tool (the engine)", .Bounds = New Rectangle(12, 10, 536, 86)}
-        g0.Controls.Add(New Label() With {.Text = "Location of trs80-tool.exe (blank = ask at startup if not found):", .AutoSize = True, .Location = New Point(12, 20)})
+        g0.Controls.Add(New Label() With {.Text = "Location of " & Trs80Tool.DefaultExeName & " (blank = ask at startup if not found):", .AutoSize = True, .Location = New Point(12, 20)})
         _txtTool.Bounds = New Rectangle(12, 40, 400, 23)
         _txtTool.Text = s.ToolPath
         Dim btnBrowse As New Button() With {.Text = "Browse...", .Bounds = New Rectangle(420, 39, 80, 25)}
@@ -177,14 +178,15 @@ Public Class PreferencesForm
 
         _chkTokenize.Location = New Point(12, 216) : _chkTokenize.Checked = s.TokenizeBasicOnAdd
         _chkHostDate.Location = New Point(12, 242) : _chkHostDate.Checked = s.UseHostDateOnAdd
-        _chkEsc.Location = New Point(12, 268) : _chkEsc.Checked = s.ExitOnEscape
-        _chkConfirmDelete.Location = New Point(12, 294) : _chkConfirmDelete.Checked = s.ConfirmDelete
-        _chkServer.Location = New Point(12, 320) : _chkServer.Checked = s.KeepEngineRunning
+        _chkUnzipGz.Location = New Point(12, 268) : _chkUnzipGz.Checked = s.UnzipGzOnAdd
+        _chkEsc.Location = New Point(12, 294) : _chkEsc.Checked = s.ExitOnEscape
+        _chkConfirmDelete.Location = New Point(12, 320) : _chkConfirmDelete.Checked = s.ConfirmDelete
+        _chkServer.Location = New Point(12, 346) : _chkServer.Checked = s.KeepEngineRunning
 
-        Dim lblLog As New Label() With {.Text = "trs80-tool log file (--log-file on every call; blank = none):", .AutoSize = True, .Location = New Point(12, 349)}
-        _txtLog.Location = New Point(12, 369)
+        Dim lblLog As New Label() With {.Text = "trs80-tool log file (--log-file on every call; blank = none):", .AutoSize = True, .Location = New Point(12, 375)}
+        _txtLog.Location = New Point(12, 395)
         _txtLog.Text = s.EngineLogFile
-        Dim btnLog As New Button() With {.Text = "Browse...", .Bounds = New Rectangle(350, 368, 80, 25)}
+        Dim btnLog As New Button() With {.Text = "Browse...", .Bounds = New Rectangle(350, 394, 80, 25)}
         AddHandler btnLog.Click, Sub()
                                      Using sfd As New SaveFileDialog()
                                          sfd.Title = "trs80-tool log file"
@@ -193,17 +195,17 @@ Public Class PreferencesForm
                                          If sfd.ShowDialog(Me) = DialogResult.OK Then _txtLog.Text = sfd.FileName
                                      End Using
                                  End Sub
-        Dim lblDisasm As New Label() With {.Text = "Disassembly options (words after ""disasm""; blank = the default):", .AutoSize = True, .Location = New Point(12, 399)}
-        _txtDisasm.Location = New Point(12, 419)
+        Dim lblDisasm As New Label() With {.Text = "Disassembly options (words after ""disasm""; blank = the default):", .AutoSize = True, .Location = New Point(12, 425)}
+        _txtDisasm.Location = New Point(12, 445)
         _txtDisasm.Text = s.DisasmOptions
-        Dim btnDisasmDefault As New Button() With {.Text = "Default", .Bounds = New Rectangle(466, 418, 80, 25)}
+        Dim btnDisasmDefault As New Button() With {.Text = "Default", .Bounds = New Rectangle(466, 444, 80, 25)}
         AddHandler btnDisasmDefault.Click, Sub() _txtDisasm.Text = Settings.DefaultDisasmOptions
-        Dim lblSettings As New Label() With {.Text = "Settings file: " & Settings.FilePath, .AutoSize = True, .Location = New Point(12, 448), .ForeColor = SystemColors.GrayText}
+        Dim lblSettings As New Label() With {.Text = "Settings file: " & Settings.FilePath, .AutoSize = True, .Location = New Point(12, 474), .ForeColor = SystemColors.GrayText}
 
-        Dim btnOk As New Button() With {.Text = "OK", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(378, 468, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(468, 468, 80, 26)}
+        Dim btnOk As New Button() With {.Text = "OK", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(378, 494, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(468, 494, 80, 26)}
         AddHandler btnOk.Click, Sub() Apply()
-        Controls.AddRange(New Control() {g0, g1, g2, _chkTokenize, _chkHostDate, _chkEsc, _chkConfirmDelete, _chkServer, lblLog, _txtLog, btnLog, lblDisasm, _txtDisasm, btnDisasmDefault, lblSettings, btnOk, btnCancel})
+        Controls.AddRange(New Control() {g0, g1, g2, _chkTokenize, _chkHostDate, _chkUnzipGz, _chkEsc, _chkConfirmDelete, _chkServer, lblLog, _txtLog, btnLog, lblDisasm, _txtDisasm, btnDisasmDefault, lblSettings, btnOk, btnCancel})
         AcceptButton = btnOk : CancelButton = btnCancel
     End Sub
 
@@ -230,6 +232,7 @@ Public Class PreferencesForm
         s.ConversionToTrs80 = If(_rbToCr.Checked, TextConversionIn.CrLfToCr, TextConversionIn.None)
         s.TokenizeBasicOnAdd = _chkTokenize.Checked
         s.UseHostDateOnAdd = _chkHostDate.Checked
+        s.UnzipGzOnAdd = _chkUnzipGz.Checked
         s.ExitOnEscape = _chkEsc.Checked
         s.ConfirmDelete = _chkConfirmDelete.Checked
         s.EngineLogFile = _txtLog.Text.Trim()
@@ -349,7 +352,7 @@ Public Class EngineInfoForm
             .ReadOnly = True
             .ScrollBars = ScrollBars.Both
             .WordWrap = False
-            .Font = New Font("Consolas", 9.0F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
             .Dock = DockStyle.Fill
         End With
         Dim panel As New Panel() With {.Dock = DockStyle.Bottom, .Height = 40}

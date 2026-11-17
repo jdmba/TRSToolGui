@@ -31,6 +31,9 @@ Public Class CreateFloppyForm
     Private ReadOnly _rbLdos As New RadioButton() With {.Text = "LDOS 5.3 (Model I/III)", .AutoSize = True, .Checked = True}
     Private ReadOnly _rbT62 As New RadioButton() With {.Text = "TRSDOS 6.2 (Model 4)", .AutoSize = True}
     Private ReadOnly _rbLs63 As New RadioButton() With {.Text = "LS-DOS 6.3 (Model 4)", .AutoSize = True}
+    ''' <summary>"create cpm" / "format cpm" of trs80-tool 5.2.0; left out of the dialog with an older trs80-tool.</summary>
+    Private ReadOnly _rbCpm As New RadioButton() With {.Text = "Montezuma Micro CP/M 2.2 (Model 4)", .AutoSize = True}
+    Private ReadOnly _cpmAvailable As Boolean = Program.Tool IsNot Nothing AndAlso Program.Tool.Has520
     Private ReadOnly _chkSystem As New CheckBox() With {.Text = "System (bootable) disk from trs80-tool's bundled DOS", .AutoSize = True}
     Private ReadOnly _chkMinimal As New CheckBox() With {.Text = "only the DOS's own files (--minimal)", .AutoSize = True, .Enabled = False}
 
@@ -74,6 +77,8 @@ Public Class CreateFloppyForm
                 _rbT62.Checked = True
             ElseIf Regex.IsMatch(d, "^LS-DOS 6\.") Then
                 _rbLs63.Checked = True
+            ElseIf _cpmAvailable AndAlso d.IndexOf("CP/M", StringComparison.OrdinalIgnoreCase) >= 0 Then
+                _rbCpm.Checked = True
             Else
                 _rbLdos.Checked = True
             End If
@@ -115,9 +120,17 @@ Public Class CreateFloppyForm
         End Get
     End Property
 
-    ''' <summary>The DOS argument of "create": trsdos-2.3, trsdos-1.3, ldos-5.3, trsdos-6.2, lsdos-6.3.</summary>
+    ''' <summary>True when the disk to make is a CP/M disk, which has no name, no date and its own shapes.</summary>
+    Public ReadOnly Property IsCpm As Boolean
+        Get
+            Return _rbCpm.Checked
+        End Get
+    End Property
+
+    ''' <summary>The DOS argument of "create": trsdos-2.3, trsdos-1.3, ldos-5.3, trsdos-6.2, lsdos-6.3, cpm.</summary>
     Public ReadOnly Property DosName As String
         Get
+            If _rbCpm.Checked Then Return "cpm"
             If _rbT23.Checked Then Return "trsdos-2.3"
             If _rbT13.Checked Then Return "trsdos-1.3"
             If _rbT62.Checked Then Return "trsdos-6.2"
@@ -128,6 +141,17 @@ Public Class CreateFloppyForm
 
     Public Function CreateOptionWords() As List(Of String)
         Dim w As New List(Of String)
+        If _rbCpm.Checked Then
+            ' Montezuma's formats: double density, 40 or 80 cylinders, one or two sides. The system disk (CP/M 2.32)
+            ' has one shape, and a CP/M disk has no name or date, so none of those words are sent.
+            If _chkSystem.Checked Then
+                w.Add("--system")
+            Else
+                w.Add("--cylinders") : w.Add(If(_rb80.Checked, "80", "40"))
+                w.Add("--sides") : w.Add(If(_rbDs.Checked, "2", "1"))
+            End If
+            Return w
+        End If
         If _chkSystem.Checked Then
             w.Add("--system")
             If _chkMinimal.Checked Then w.Add("--minimal")
@@ -168,44 +192,50 @@ Public Class CreateFloppyForm
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
         ShowInTaskbar = False
-        ClientSize = New Size(470, 420)
+        ' The CP/M line makes the DOS box, and everything under it, one row (22 pixels) taller.
+        Dim extra As Integer = If(_cpmAvailable, 22, 0)
+        ClientSize = New Size(470, 420 + extra)
 
         Dim g1 As New GroupBox() With {.Text = "Disk image type", .Bounds = New Rectangle(10, 10, 140, 100)}
         _rbJv1.Location = New Point(14, 24) : _rbJv3.Location = New Point(14, 48) : _rbDmk.Location = New Point(14, 72)
         g1.Controls.AddRange(New Control() {_rbJv1, _rbJv3, _rbDmk})
 
-        Dim g2 As New GroupBox() With {.Text = "File system (DOS)", .Bounds = New Rectangle(160, 10, 300, 150)}
+        Dim g2 As New GroupBox() With {.Text = "File system (DOS)", .Bounds = New Rectangle(160, 10, 300, 150 + extra)}
         _rbT23.Location = New Point(14, 22) : _rbT13.Location = New Point(14, 44) : _rbLdos.Location = New Point(14, 66)
         _rbT62.Location = New Point(14, 88) : _rbLs63.Location = New Point(14, 110)
         Dim lblModel As New Label() With {.Text = "LDOS for Model:", .AutoSize = True, .Location = New Point(180, 68)}
         _rbModel1.Location = New Point(180, 88) : _rbModel3.Location = New Point(220, 88)
         g2.Controls.AddRange(New Control() {_rbT23, _rbT13, _rbLdos, _rbT62, _rbLs63, lblModel, _rbModel1, _rbModel3})
+        If _cpmAvailable Then
+            _rbCpm.Location = New Point(14, 132)
+            g2.Controls.Add(_rbCpm)
+        End If
 
-        _chkSystem.Location = New Point(14, 170)
-        _chkMinimal.Location = New Point(300, 170)
+        _chkSystem.Location = New Point(14, 170 + extra)
+        _chkMinimal.Location = New Point(300, 170 + extra)
 
-        Dim g3 As New GroupBox() With {.Text = "Density", .Bounds = New Rectangle(10, 200, 140, 76)}
+        Dim g3 As New GroupBox() With {.Text = "Density", .Bounds = New Rectangle(10, 200 + extra, 140, 76)}
         _rbSd.Location = New Point(14, 22) : _rbDd.Location = New Point(14, 46)
         g3.Controls.AddRange(New Control() {_rbSd, _rbDd})
 
-        Dim g4 As New GroupBox() With {.Text = "Sides", .Bounds = New Rectangle(160, 200, 100, 76)}
+        Dim g4 As New GroupBox() With {.Text = "Sides", .Bounds = New Rectangle(160, 200 + extra, 100, 76)}
         _rbSs.Location = New Point(14, 22) : _rbDs.Location = New Point(14, 46)
         g4.Controls.AddRange(New Control() {_rbSs, _rbDs})
 
-        Dim g5 As New GroupBox() With {.Text = "Number of tracks (cylinders)", .Bounds = New Rectangle(270, 200, 190, 100)}
+        Dim g5 As New GroupBox() With {.Text = "Number of tracks (cylinders)", .Bounds = New Rectangle(270, 200 + extra, 190, 100)}
         _rb35.Location = New Point(14, 22) : _rb40.Location = New Point(70, 22) : _rb80.Location = New Point(126, 22)
         _rbOther.Location = New Point(14, 52) : _txtTracks.Location = New Point(80, 50)
         g5.Controls.AddRange(New Control() {_rb35, _rb40, _rb80, _rbOther, _txtTracks})
 
-        Dim g6 As New GroupBox() With {.Text = "Volume information", .Bounds = New Rectangle(10, 285, 250, 90)}
+        Dim g6 As New GroupBox() With {.Text = "Volume information", .Bounds = New Rectangle(10, 285 + extra, 250, 90)}
         g6.Controls.Add(New Label() With {.Text = "Name (8 chars):", .AutoSize = True, .Location = New Point(12, 26)})
         _txtName.Location = New Point(120, 22)
         g6.Controls.Add(New Label() With {.Text = "Date (YYYY-MM-DD):", .AutoSize = True, .Location = New Point(12, 56)})
         _txtDate.Location = New Point(120, 52)
         g6.Controls.AddRange(New Control() {_txtName, _txtDate})
 
-        Dim btnOk As New Button() With {.Text = If(_formatMode, "Format", "OK"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(290, 385, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(380, 385, 80, 26)}
+        Dim btnOk As New Button() With {.Text = If(_formatMode, "Format", "OK"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(290, 385 + extra, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(380, 385 + extra, 80, 26)}
         AddHandler btnOk.Click, AddressOf OnOk
 
         Controls.AddRange(New Control() {g1, g2, _chkSystem, _chkMinimal, g3, g4, g5, g6, btnOk, btnCancel})
@@ -221,7 +251,7 @@ Public Class CreateFloppyForm
         AcceptButton = btnOk
         CancelButton = btnCancel
 
-        For Each rb In New RadioButton() {_rbJv1, _rbJv3, _rbDmk, _rbT23, _rbT13, _rbLdos, _rbT62, _rbLs63, _rbModel1, _rbModel3, _rbSd, _rbDd, _rbSs, _rbDs, _rb35, _rb40, _rb80, _rbOther}
+        For Each rb In New RadioButton() {_rbJv1, _rbJv3, _rbDmk, _rbT23, _rbT13, _rbLdos, _rbT62, _rbLs63, _rbCpm, _rbModel1, _rbModel3, _rbSd, _rbDd, _rbSs, _rbDs, _rb35, _rb40, _rb80, _rbOther}
             AddHandler rb.CheckedChanged, Sub() ApplyInterlocks()
         Next
         AddHandler _chkSystem.CheckedChanged, Sub() ApplyInterlocks()
@@ -237,10 +267,19 @@ Public Class CreateFloppyForm
             Dim ldos As Boolean = _rbLdos.Checked
             Dim m4 As Boolean = _rbT62.Checked OrElse _rbLs63.Checked
             Dim sys As Boolean = _chkSystem.Checked
+            Dim cpm As Boolean = _rbCpm.Checked
 
-            ' JV1 holds single-density, single-sided disks only (TRSDOS 1.3 is double density).
+            ' JV1 holds single-density, single-sided disks only (TRSDOS 1.3 and CP/M are double density).
             _rbT13.Enabled = Not jv1
+            _rbCpm.Enabled = Not jv1
             If jv1 AndAlso t13 Then _rbLdos.Checked = True : t13 = False : ldos = True
+            If jv1 AndAlso cpm Then _rbLdos.Checked = True : cpm = False : ldos = True
+            ' Montezuma CP/M: double density, 40 or 80 cylinders; its system disk is 40 cylinders, one side.
+            If cpm Then
+                _rbDd.Checked = True
+                If Not _rb80.Checked Then _rb40.Checked = True
+                If sys Then _rb40.Checked = True : _rbSs.Checked = True
+            End If
             If jv1 Then _rbSd.Checked = True : _rbSs.Checked = True
             If t23 Then _rbSd.Checked = True : _rbSs.Checked = True : _rb35.Checked = True
             If t13 Then _rbDd.Checked = True : _rbSs.Checked = True : _rb40.Checked = True
@@ -249,19 +288,22 @@ Public Class CreateFloppyForm
                 If _rbModel1.Checked Then _rbSd.Checked = True Else _rbDd.Checked = True
             End If
 
-            _rbSd.Enabled = Not sys AndAlso Not t13 AndAlso Not m4 AndAlso Not ldos
+            _rbSd.Enabled = Not sys AndAlso Not t13 AndAlso Not m4 AndAlso Not ldos AndAlso Not cpm
             _rbDd.Enabled = Not sys AndAlso Not jv1 AndAlso Not t23 AndAlso Not ldos
             _rbSs.Enabled = Not sys
             _rbDs.Enabled = Not sys AndAlso Not jv1 AndAlso Not t23 AndAlso Not t13
-            _rb35.Enabled = Not sys AndAlso Not t13
+            _rb35.Enabled = Not sys AndAlso Not t13 AndAlso Not cpm
             _rb40.Enabled = Not sys AndAlso Not t23
             _rb80.Enabled = Not sys AndAlso Not t23 AndAlso Not t13
-            _rbOther.Enabled = Not sys AndAlso Not t23 AndAlso Not t13
+            _rbOther.Enabled = Not sys AndAlso Not t23 AndAlso Not t13 AndAlso Not cpm
             _txtTracks.Enabled = _rbOther.Enabled AndAlso _rbOther.Checked
             _rbModel1.Enabled = ldos : _rbModel3.Enabled = ldos
             _rbDmk.Enabled = True
-            _chkMinimal.Enabled = sys
-            If Not sys Then _chkMinimal.Checked = False
+            ' trs80-tool has no --minimal for CP/M (its system disk is copied whole), and CP/M disks have no name or date.
+            _chkMinimal.Enabled = sys AndAlso Not cpm
+            If Not sys OrElse cpm Then _chkMinimal.Checked = False
+            _txtName.Enabled = Not cpm
+            _txtDate.Enabled = Not cpm
         Finally
             _updating = False
         End Try
@@ -275,6 +317,7 @@ Public Class CreateFloppyForm
     End Property
 
     Private Sub OnOk(sender As Object, e As EventArgs)
+        If _rbCpm.Checked Then Return     ' nothing to check: no name, no date, and the track count is 40 or 80
         Dim nm As String = _txtName.Text.Trim()
         If nm.Length = 0 OrElse _txtDate.Text.Trim().Length = 0 Then
             MessageBox.Show(Me, "Volume name and date are required!", "Error creating floppy image", MessageBoxButtons.OK, MessageBoxIcon.Error)

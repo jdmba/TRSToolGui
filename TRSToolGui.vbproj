@@ -14,7 +14,7 @@
     <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
     <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
     <ApplicationVisualStyles>true</ApplicationVisualStyles>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Product>TRSToolGui</Product>
     <Authors>Ira Goldklang and Claude AI</Authors>
     <Company>Ira Goldklang and Claude AI</Company>
@@ -25,6 +25,11 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Core\ is its own project (TRSToolGui.Core): nothing in it knows about windows. -->
+    <Compile Remove="Core\**" />
+    <ProjectReference Include="Core\TRSToolGui.Core.vbproj" />
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Help\Manual.txt" LogicalName="TRSToolGui.Manual.txt" />
     <EmbeddedResource Include="Help\Changelog.txt" LogicalName="TRSToolGui.Changelog.txt" />

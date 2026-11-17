@@ -25,17 +25,22 @@ Public Enum TextConversionIn
 End Enum
 
 Public Class Settings
-    ''' <summary>Full path of trs80-tool.exe (may be renamed). Empty = Trs80Tool.DefaultInstallPath, else ask at startup.</summary>
+    ''' <summary>Full path of trs80-tool (may be renamed). Empty = look for it (Trs80Tool.Locate), else ask at startup.</summary>
     Public Property ToolPath As String = ""
     Public Property ShowInvisible As Boolean = False
     Public Property ShowSystem As Boolean = False
     Public Property ExtractDirectory As String = ""
-    Public Property ConversionFromTrs80 As TextConversionOut = TextConversionOut.CrToCrLf
+    Public Property ConversionFromTrs80 As TextConversionOut = HostPlatform.DefaultConversionFromTrs80
     Public Property ConversionToTrs80 As TextConversionIn = TextConversionIn.CrLfToCr
     ''' <summary>Let trs80-tool tokenize BASIC text (.bas) when adding. Off = store bytes exactly, as TRSTool did.</summary>
     Public Property TokenizeBasicOnAdd As Boolean = True
     ''' <summary>Record the host file's modification date on files added (TRSTool did).</summary>
     Public Property UseHostDateOnAdd As Boolean = True
+    ''' <summary>
+    ''' A host file named *.gz that is added to a disk: False = stored as it is (what TRSTools did), True = unzipped
+    ''' first and the file inside stored (what trs80-tool 5.2.0 does by itself).
+    ''' </summary>
+    Public Property UnzipGzOnAdd As Boolean = False
     Public Property ExitOnEscape As Boolean = False
     Public Property ConfirmDelete As Boolean = True
     Public Property ViewerMonospaced As Boolean = True
@@ -53,6 +58,11 @@ Public Class Settings
     Public Property EngineLogFile As String = ""
     ''' <summary>Keep one trs80-tool running in the background ("trs80-tool mcp") instead of starting it for every action.</summary>
     Public Property KeepEngineRunning As Boolean = True
+    ''' <summary>
+    ''' Linux and macOS: the terminal program for the disk shell and the emulator, with the words that go before
+    ''' the script, for example "xterm -e". Blank = find one. Not used on Windows.
+    ''' </summary>
+    Public Property TerminalCommand As String = ""
     ''' <summary>Option words for every "disasm" call (viewer and Tools → Disassemble). Blank = DefaultDisasmOptions.</summary>
     Public Property DisasmOptions As String = DefaultDisasmOptions
 
@@ -71,10 +81,13 @@ Public Class Settings
         Return line.Split(New Char() {" "c, ControlChars.Tab}, StringSplitOptions.RemoveEmptyEntries).ToList()
     End Function
 
-    ''' <summary>TRSToolGui.cfg beside TRSToolGui.exe, so the program and its settings travel together.</summary>
+    ''' <summary>
+    ''' TRSToolGui.cfg. On Windows it is beside TRSToolGui.exe, so the program and its settings travel together;
+    ''' on Linux and macOS it is in the user's configuration folder (HostPlatform.SettingsDirectory).
+    ''' </summary>
     Public Shared ReadOnly Property FilePath As String
         Get
-            Return Path.Combine(AppContext.BaseDirectory, "TRSToolGui.cfg")
+            Return Path.Combine(HostPlatform.SettingsDirectory, "TRSToolGui.cfg")
         End Get
     End Property
 
@@ -105,6 +118,8 @@ Public Class Settings
     ''' <summary>Write TRSToolGui.cfg. Returns False if it could not be written (e.g. a read-only program folder).</summary>
     Public Function Save() As Boolean
         Try
+            ' The program's own folder exists; a per-user configuration folder may not yet.
+            If Not HostPlatform.IsWindows Then Directory.CreateDirectory(HostPlatform.SettingsDirectory)
             File.WriteAllText(FilePath, JsonSerializer.Serialize(Me, New JsonSerializerOptions With {.WriteIndented = True}))
             Return True
         Catch
@@ -115,7 +130,7 @@ Public Class Settings
 
     Public Sub AddMru(path As String)
         If String.IsNullOrWhiteSpace(path) Then Return
-        Mru.RemoveAll(Function(x) String.Equals(x, path, StringComparison.OrdinalIgnoreCase))
+        Mru.RemoveAll(Function(x) String.Equals(x, path, HostPlatform.PathComparison))
         Mru.Insert(0, path)
         While Mru.Count > MaxMru
             Mru.RemoveAt(Mru.Count - 1)
@@ -123,6 +138,6 @@ Public Class Settings
     End Sub
 
     Public Sub RemoveMru(path As String)
-        Mru.RemoveAll(Function(x) String.Equals(x, path, StringComparison.OrdinalIgnoreCase))
+        Mru.RemoveAll(Function(x) String.Equals(x, path, HostPlatform.PathComparison))
     End Sub
 End Class

@@ -187,7 +187,7 @@ Public Class DiskPropertiesForm
             .Multiline = True
             .ReadOnly = True
             .ScrollBars = ScrollBars.Vertical
-            .Font = New Font("Consolas", 9.0F)
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
             .Location = New Point(12, gy)
             .Size = New Size(476, 110)
             .Text = String.Join(vbCrLf, _disk.DetailLines)

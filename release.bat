@@ -4,12 +4,12 @@ rem The zip, left in this folder, holds:
 rem   With .NET 10 installed\TRSToolGui.exe  small; needs the .NET 10 Desktop Runtime
 rem   No .NET needed\TRSToolGui.exe          self-contained (win-x64); runs on Windows 10+
 rem   License.txt
-rem   Source\                                 this project's source
+rem   Source\                                 this project's source (the windows, and Core\ for everything else)
 rem trs80-tool is NOT bundled: on first start the GUI asks where it is and saves the
 rem answer in TRSToolGui.cfg next to TRSToolGui.exe.
 setlocal
 cd /d "%~dp0"
-set ZIPNAME=TRSToolGui-v1.1.zip
+set ZIPNAME=TRSToolGui-v1.2.zip
 set STAGE=%TEMP%\TRSToolGui-release
 set WITHNET=%STAGE%\With .NET 10 installed
 set NONET=%STAGE%\No .NET needed
@@ -18,6 +18,7 @@ if exist "%STAGE%" rd /s /q "%STAGE%"
 mkdir "%WITHNET%" || exit /b 1
 mkdir "%NONET%" || exit /b 1
 mkdir "%STAGE%\Source\Help" || exit /b 1
+mkdir "%STAGE%\Source\Core" || exit /b 1
 
 dotnet clean -c Release
 
@@ -33,10 +34,14 @@ rd /s /q "%STAGE%\pub-fd"
 rd /s /q "%STAGE%\pub-sc"
 rd /s /q "bin"
 rd /s /q "obj"
+if exist "Core\bin" rd /s /q "Core\bin"
+if exist "Core\obj" rd /s /q "Core\obj"
 
 copy /y Help\License.txt "%STAGE%\" >nul || exit /b 1
 copy /y *.vb "%STAGE%\Source\" >nul || exit /b 1
 copy /y TRSToolGui.vbproj "%STAGE%\Source\" >nul || exit /b 1
+copy /y Core\*.vb "%STAGE%\Source\Core\" >nul || exit /b 1
+copy /y Core\TRSToolGui.Core.vbproj "%STAGE%\Source\Core\" >nul || exit /b 1
 copy /y release.bat "%STAGE%\Source\" >nul || exit /b 1
 copy /y Help\*.txt "%STAGE%\Source\Help\" >nul || exit /b 1
 
