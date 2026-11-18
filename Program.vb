@@ -14,11 +14,12 @@ Imports System.Windows.Forms
 
 Public Module Program
 
-    Public Const AppName As String = "TRSToolGui"
-    Public Const AppVersion As String = "v261116"   ' build stamp, date-based, like Ira's other tools (v26MMDD)
-    Public Const ReleaseVersion As String = "v1.2"   ' the release number shown in Help > About
-    Public Const ReleaseDate As String = "November 16, 2026"   ' with a matching entry in Help\Changelog.txt
-    Public Const AppAuthors As String = "Ira Goldklang and Claude AI"
+    ' The name and the version stamps live in the Core library (AppInfo.vb), shared with the Linux program.
+    Public Const AppName As String = AppInfo.AppName
+    Public Const AppVersion As String = AppInfo.AppVersion
+    Public Const ReleaseVersion As String = AppInfo.ReleaseVersion
+    Public Const ReleaseDate As String = AppInfo.ReleaseDate
+    Public Const AppAuthors As String = AppInfo.AppAuthors
 
     Public Settings As Settings
     Public Tool As Trs80Tool

@@ -1,6 +1,23 @@
 TRSToolGui — Changelog
 ======================
 
+v1.3 — November 18, 2026
+  TRSToolGui for Linux (x64). This is the first Linux release: the same program, with its
+    windows rebuilt on Eto.Forms (GTK 3 underneath). All of it is there: the main window, the
+    viewer, Disk properties, File properties, the sector map, the granule map, the DMK analysis,
+    Check & repair, Format, Trim, the hard disk dialogs, the CP/M layout, Convert, Assemble,
+    Preferences and the report windows.
+  It is a download of its own, TRSToolGui-v1.3-linux-x64.zip. Unzip it, make the file runnable
+    once with "chmod +x TRSToolGui", and run it. It needs GTK 3, which desktop Linux has, and
+    the Linux trs80-tool, which it finds beside itself, on the PATH, or where Preferences says.
+  On Linux the settings are in ~/.config/TRSToolGui/TRSToolGui.cfg, text is extracted with LF
+    line ends unless Preferences says otherwise, and the trs80-tool shell and the emulator open
+    in a terminal window (Preferences can name the terminal).
+  Not in the Linux program: dragging files out of the list to a file manager. Copy and Extract
+    do that job. Dropping files onto the list, and Paste, are there.
+  The manual has a new section, ON LINUX, with everything that differs.
+  The Windows program is unchanged apart from its version number.
+
 v1.2 — November 16, 2026
   Tested with trs80-tool 5.2.0. Still needs 5.1.0 or later; what 5.2.0 adds is offered when the
     installed trs80-tool is 5.2.0.

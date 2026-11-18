@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- TRSToolGui for Linux: the same Core library as the Windows program, with windows built on Eto.Forms
+       (GTK 3 underneath). Publish with:  dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TRSToolGui</RootNamespace>
+    <AssemblyName>TRSToolGui</AssemblyName>
+    <StartupObject>TRSToolGui.Program</StartupObject>
+    <MyType>Empty</MyType>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <Nullable>disable</Nullable>
+    <Version>1.3.0</Version>
+    <Product>TRSToolGui</Product>
+    <Authors>Ira Goldklang and Claude AI</Authors>
+    <Company>Ira Goldklang and Claude AI</Company>
+    <Copyright>© 2026 Ira Goldklang and Claude AI</Copyright>
+    <Description>GUI over Lawrence Kesteloot's trs80-tool, in the spirit of Matthew Reed's TRSTools (Eto.Forms build for Linux)</Description>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!-- The GtkSharp package would otherwise download a GTK runtime for Windows onto a Windows build machine.
+         This project is built for Linux, which has GTK 3 of its own. -->
+    <SkipGtkInstall>True</SkipGtkInstall>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\TRSToolGui.Core.vbproj" />
+    <PackageReference Include="Eto.Forms" Version="2.11.0" />
+    <PackageReference Include="Eto.Platform.Gtk" Version="2.11.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Help\Manual.txt" LogicalName="TRSToolGui.Manual.txt" />
+    <EmbeddedResource Include="..\Help\Changelog.txt" LogicalName="TRSToolGui.Changelog.txt" />
+    <EmbeddedResource Include="..\Help\License.txt" LogicalName="TRSToolGui.License.txt" />
+  </ItemGroup>
+</Project>
