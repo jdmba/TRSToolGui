@@ -1,6 +1,26 @@
 TRSToolGui — Changelog
 ======================
 
+v1.4 — November 18, 2026
+  TRSToolGui for the Mac. This is the first Mac build, and when it was made it had not been run
+    on a Mac: it is the Linux program's source, built on Windows for macOS. Please report what
+    works and what doesn't at https://github.com/jdmba/TRSToolGui/issues.
+  Two downloads, each holding TRSToolGui.app: TRSToolGui-v1.4-macos-arm64.zip for a Mac with
+    Apple Silicon (M1 and later) and TRSToolGui-v1.4-macos-x64.zip for a Mac with an Intel
+    processor. It needs macOS 14 or later and the Mac trs80-tool.
+  The app is not signed with an Apple developer certificate, so macOS has to be told once to
+    open it. The manual's new section ON THE MAC has the steps and everything that differs.
+  On a Mac the menus are where Mac programs have them. About, Preferences and Quit are in the
+    TRSToolGui menu. Edit has the Mac's own Cut, Copy, Paste, Delete and Select All, which work
+    on text in a text box and on the file list when the list has the focus. There is a Window
+    menu, and shortcuts use Cmd.
+  On a Mac trs80-tool is looked for where Preferences says, in the folder TRSToolGui.app is in,
+    on the PATH, and in /opt/homebrew/bin, /usr/local/bin, ~/bin and ~/.local/bin. The settings
+    are in ~/Library/Application Support/TRSToolGui/TRSToolGui.cfg.
+  Linux: File > Open Recent and View > Partition showed every underscore of a name twice
+    (my__disk.dmk for my_disk.dmk). Fixed. A name with an ampersand in it is shown whole.
+  Apart from that the Windows and Linux programs are unchanged but for the version number.
+
 v1.3 — November 18, 2026
   TRSToolGui for Linux (x64). This is the first Linux release: the same program, with its
     windows rebuilt on Eto.Forms (GTK 3 underneath). All of it is there: the main window, the

@@ -318,16 +318,28 @@ Public Class Trs80Tool
     Public Const DefaultInstallPath As String = "C:\DOS\TRS\castool.exe"
 
     ''' <summary>
-    ''' Find trs80-tool: the configured path (TRSToolGui.cfg), then a trs80-tool in this program's own folder,
-    ''' then (Windows) DefaultInstallPath, then the PATH. Returns Nothing if none exists; the program then asks
-    ''' the user where it is.
+    ''' Find trs80-tool: the configured path (TRSToolGui.cfg), then a trs80-tool in this program's own folder
+    ''' (on a Mac also the folder that holds TRSToolGui.app), then (Windows) DefaultInstallPath, then the PATH,
+    ''' then (Mac) the usual folders for command-line tools. Returns Nothing if none exists; the program then
+    ''' asks the user where it is.
     ''' </summary>
     Public Shared Function Locate(configuredPath As String) As String
         If Not String.IsNullOrWhiteSpace(configuredPath) AndAlso File.Exists(configuredPath) Then Return Path.GetFullPath(configuredPath)
         Dim beside As String = Path.Combine(AppContext.BaseDirectory, DefaultExeName)
         If File.Exists(beside) Then Return beside
+        Dim outerFolder As String = HostPlatform.ProgramFolder
+        If Not HostPlatform.SamePath(outerFolder, AppContext.BaseDirectory) Then
+            beside = Path.Combine(outerFolder, DefaultExeName)
+            If File.Exists(beside) Then Return beside
+        End If
         If HostPlatform.IsWindows AndAlso File.Exists(DefaultInstallPath) Then Return DefaultInstallPath
-        Return HostPlatform.FindOnPath(DefaultExeName)
+        Dim onPath As String = HostPlatform.FindOnPath(DefaultExeName)
+        If onPath IsNot Nothing Then Return onPath
+        For Each folder In HostPlatform.ExtraToolFolders
+            Dim candidate As String = Path.Combine(folder, DefaultExeName)
+            If File.Exists(candidate) Then Return candidate
+        Next
+        Return Nothing
     End Function
 
     ' ------------------------------------------------------------------ running (one launch per call)

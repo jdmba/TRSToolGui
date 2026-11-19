@@ -9,7 +9,8 @@
 '  default line ending for extracted text, and the names of the fonts.
 '
 '  On Windows every answer here is what TRSToolGui 1.1 did, so the Windows
-'  program behaves as before. The Linux and macOS answers are for the port.
+'  program behaves as before. The Linux and macOS answers are for the
+'  Eto.Forms program.
 ' ============================================================================
 Option Strict On
 Option Explicit On
@@ -70,6 +71,84 @@ Public Module HostPlatform
             Dim xdg As String = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME")
             If Not String.IsNullOrWhiteSpace(xdg) AndAlso Path.IsPathRooted(xdg) Then Return Path.Combine(xdg, "TRSToolGui")
             Return Path.Combine(home, ".config", "TRSToolGui")
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' On a Mac the program file is inside an application bundle (TRSToolGui.app/Contents/MacOS/TRSToolGui).
+    ''' This is the full path of that TRSToolGui.app, or Nothing when the program is not run from a bundle
+    ''' (and always Nothing on Windows and Linux).
+    ''' </summary>
+    Public ReadOnly Property MacBundlePath As String
+        Get
+            If Not IsMacOS Then Return Nothing
+            Return BundleContaining(AppContext.BaseDirectory)
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' The application bundle a program folder belongs to: for ".../Name.app/Contents/MacOS" the path of
+    ''' Name.app, and Nothing for any other folder.
+    ''' </summary>
+    Public Function BundleContaining(programDirectory As String) As String
+        Try
+            If String.IsNullOrEmpty(programDirectory) Then Return Nothing
+            Dim macOsDir As String = Path.TrimEndingDirectorySeparator(programDirectory)
+            If Not String.Equals(Path.GetFileName(macOsDir), "MacOS", StringComparison.Ordinal) Then Return Nothing
+            Dim contents As String = Path.GetDirectoryName(macOsDir)
+            If contents Is Nothing OrElse Not String.Equals(Path.GetFileName(contents), "Contents", StringComparison.Ordinal) Then Return Nothing
+            Dim bundle As String = Path.GetDirectoryName(contents)
+            If bundle Is Nothing OrElse Not bundle.EndsWith(".app", StringComparison.OrdinalIgnoreCase) Then Return Nothing
+            Return bundle
+        Catch
+            Return Nothing
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The folder the user sees the program in: the folder of the program file, or on a Mac the folder that
+    ''' holds TRSToolGui.app. A trs80-tool put "beside the program" is looked for here.
+    ''' </summary>
+    Public ReadOnly Property ProgramFolder As String
+        Get
+            Dim bundle As String = MacBundlePath
+            If bundle IsNot Nothing Then
+                Dim outer As String = Path.GetDirectoryName(bundle)
+                If Not String.IsNullOrEmpty(outer) Then Return outer
+            End If
+            Return AppContext.BaseDirectory
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' True when macOS runs a downloaded TRSToolGui.app from a temporary, read-only copy of its folder because
+    ''' the app has not been moved since it was unzipped ("app translocation"). Nothing beside the app is
+    ''' visible from there, so a trs80-tool put next to it can't be found until the app has been moved.
+    ''' </summary>
+    Public ReadOnly Property IsMacTranslocated As Boolean
+        Get
+            Return IsMacOS AndAlso AppContext.BaseDirectory.Contains("/AppTranslocation/", StringComparison.Ordinal)
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Folders searched for trs80-tool after the PATH. A Mac program started from Finder gets the system's
+    ''' short PATH and not the one the user's shell sets up, so the usual places for command-line tools are
+    ''' named here. Empty on Windows and Linux.
+    ''' </summary>
+    Public ReadOnly Property ExtraToolFolders As IReadOnlyList(Of String)
+        Get
+            Dim folders As New List(Of String)
+            If IsMacOS Then
+                Dim home As String = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+                folders.Add("/opt/homebrew/bin")
+                folders.Add("/usr/local/bin")
+                If Not String.IsNullOrEmpty(home) Then
+                    folders.Add(Path.Combine(home, "bin"))
+                    folders.Add(Path.Combine(home, ".local", "bin"))
+                End If
+            End If
+            Return folders
         End Get
     End Property
 

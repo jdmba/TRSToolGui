@@ -7,7 +7,8 @@
 '  menu, toolbar, file list, status line, context menu, drop target, clipboard.
 '  Every disk operation is delegated to Trs80Tool (the engine adapter); this
 '  form only decides *what* to ask for and shows the result. It follows the
-'  Windows Forms MainForm command for command.
+'  Windows Forms MainForm command for command. On a Mac the menu is laid out
+'  the way Mac programs have it (BuildMacMenuBar).
 ' ============================================================================
 Option Strict On
 Option Explicit On
@@ -37,6 +38,8 @@ Public Class MainForm
     Private _miSectorMap, _miGranuleMap, _miCheckRepair, _miFormat, _miTrim, _miBoot, _miShell, _miDmkInfo, _miRunEmpty, _miCpmFormat As ButtonMenuItem
     Private _cxPreview, _cxExtract, _cxDelete, _cxRename, _cxProps, _cxConvert As ButtonMenuItem
     Private _tbProps, _tbCopy, _tbPaste, _tbAdd, _tbExtract, _tbView, _tbSectors As ButtonToolItem
+    ' Mac only: the system's own Edit > Copy, Paste and Delete act on the file list through these.
+    Private _cmdCopy, _cmdPaste, _cmdDelete As Command
     Private _settingChecks As Boolean = False
 
     ''' <summary>A trs80-tool console (disk shell or emulator) that may be writing the open image; mutations wait for it.</summary>
@@ -81,15 +84,18 @@ Public Class MainForm
         mFile.Items.Add(MakeItem("&Open...", ctrl Or Keys.O, AddressOf OnFileOpen))
         _miRecent = New ButtonMenuItem With {.Text = "Open Recent"}
         mFile.Items.Add(_miRecent)
-        _miClose = MakeItem("&Close", Keys.None, AddressOf OnFileClose)
+        ' A Mac's File menu gets the system's own Close (the window), so this one says what it closes.
+        _miClose = MakeItem(If(HostPlatform.IsMacOS, "&Close image", "&Close"), Keys.None, AddressOf OnFileClose)
         mFile.Items.Add(_miClose)
         mFile.Items.Add(New SeparatorMenuItem())
         _miDiskProps = MakeItem("Disk &properties...", Keys.None, AddressOf OnDiskProperties)
         mFile.Items.Add(_miDiskProps)
         _miSaveAs = MakeItem("Save &image as... (convert format)", Keys.None, AddressOf OnSaveImageAs)
         mFile.Items.Add(_miSaveAs)
-        mFile.Items.Add(New SeparatorMenuItem())
-        mFile.Items.Add(MakeItem("E&xit", ctrl Or Keys.Q, Sub() Close()))
+        If Not HostPlatform.IsMacOS Then
+            mFile.Items.Add(New SeparatorMenuItem())
+            mFile.Items.Add(MakeItem("E&xit", ctrl Or Keys.Q, Sub() Program.ExitProgram(Me)))
+        End If
 
         Dim mEdit As New ButtonMenuItem With {.Text = "&Edit"}
         _miCopy = MakeItem("&Copy", ctrl Or Keys.C, AddressOf OnEditCopy)
@@ -98,7 +104,16 @@ Public Class MainForm
         _miExtract = MakeItem("&Extract...", Keys.None, AddressOf OnEditExtract)
         _miSelectAll = MakeItem("Select &all", ctrl Or Keys.A, Sub() SelectAllRows())
         _miInvert = MakeItem("&Invert selection", Keys.None, Sub() InvertSelection())
-        mEdit.Items.AddRange(New MenuItem() {_miCopy, _miPaste, New SeparatorMenuItem(), _miAdd, _miExtract, New SeparatorMenuItem(), _miSelectAll, _miInvert, New SeparatorMenuItem(), MakeItem("P&references...", Keys.None, AddressOf OnPreferences)})
+        If HostPlatform.IsMacOS Then
+            ' The system puts Undo, Cut, Copy, Paste, Delete and Select All into this menu (BuildMacMenuBar), and
+            ' Preferences is in the application menu. What is left goes below them.
+            For Each mi As MenuItem In New MenuItem() {New SeparatorMenuItem(), _miAdd, _miExtract, New SeparatorMenuItem(), _miInvert}
+                mi.Order = 500
+                mEdit.Items.Add(mi)
+            Next
+        Else
+            mEdit.Items.AddRange(New MenuItem() {_miCopy, _miPaste, New SeparatorMenuItem(), _miAdd, _miExtract, New SeparatorMenuItem(), _miSelectAll, _miInvert, New SeparatorMenuItem(), MakeItem("P&references...", Keys.None, AddressOf OnPreferences)})
+        End If
 
         Dim mView As New ButtonMenuItem With {.Text = "&View"}
         _miInvisible = New CheckMenuItem With {.Text = "&Invisible files"}
@@ -139,10 +154,17 @@ Public Class MainForm
         mHelp.Items.Add(New SeparatorMenuItem())
         mHelp.Items.Add(MakeItem("&Engine capabilities...", Keys.None, AddressOf OnEngineInfo))
         mHelp.Items.Add(MakeItem("trs80-tool manual (&web)", Keys.None, Sub() OpenUrl(AppInfo.ToolUrl)))
-        mHelp.Items.Add(New SeparatorMenuItem())
-        mHelp.Items.Add(MakeItem("&About " & Program.AppName & "...", Keys.None, AddressOf OnAbout))
+        If Not HostPlatform.IsMacOS Then
+            mHelp.Items.Add(New SeparatorMenuItem())
+            mHelp.Items.Add(MakeItem("&About " & Program.AppName & "...", Keys.None, AddressOf OnAbout))
+        End If
 
-        Dim bar As New MenuBar With {.IncludeSystemItems = MenuBarSystemItems.None}
+        Dim bar As MenuBar
+        If HostPlatform.IsMacOS Then
+            bar = BuildMacMenuBar(ctrl, mHelp)
+        Else
+            bar = New MenuBar With {.IncludeSystemItems = MenuBarSystemItems.None}
+        End If
         bar.Items.AddRange(New MenuItem() {mFile, mEdit, mView, mDisk, mTools, mHelp})
         Menu = bar
 
@@ -195,6 +217,7 @@ Public Class MainForm
         AddHandler _grid.DragEnter, AddressOf OnDragOverList
         AddHandler _grid.DragOver, AddressOf OnDragOverList
         AddHandler _grid.DragDrop, AddressOf OnDragDropList
+        If HostPlatform.IsMacOS Then MapMacEditCommands()
 
         ' ---- context menu
         _cxPreview = MakeItem("&Preview", Keys.None, AddressOf OnPreview)
@@ -222,6 +245,48 @@ Public Class MainForm
         RebuildRecentMenu()
         UpdateEnabled()
     End Sub
+
+    ''' <summary>
+    ''' The menu bar of the Mac program. A Mac has one menu bar for the whole program, and it is expected to
+    ''' hold: an application menu with About, Preferences and Quit; the system's own Edit items, which are what
+    ''' make Cmd+C, Cmd+V and Cmd+A work in every text box; and a Window menu. Eto adds the system items; the
+    ''' three of our own go where a Mac user looks for them.
+    ''' </summary>
+    Private Function BuildMacMenuBar(cmd As Keys, helpMenu As ButtonMenuItem) As MenuBar
+        Dim bar As New MenuBar With {.IncludeSystemItems = MenuBarSystemItems.All}
+        bar.AboutItem = MakeItem("About " & Program.AppName, Keys.None, AddressOf OnAbout)
+        bar.ApplicationItems.Add(MakeItem("Preferences...", cmd Or Keys.Comma, AddressOf OnPreferences))
+        bar.QuitItem = MakeItem("Quit " & Program.AppName, cmd Or Keys.Q, Sub() Program.ExitProgram(Me))
+        ' Help is the last menu on a Mac, after the Window menu the system adds.
+        helpMenu.Order = 1000
+        Return bar
+    End Function
+
+    ''' <summary>
+    ''' Mac only. Edit > Copy, Paste and Delete are the system's items there and go to whatever has the focus.
+    ''' When that is the file list they run the same commands the Copy and Paste buttons run.
+    ''' </summary>
+    Private Sub MapMacEditCommands()
+        _cmdCopy = New Command(Sub(sender, e) OnEditCopy())
+        _cmdPaste = New Command(Sub(sender, e) OnEditPaste())
+        _cmdDelete = New Command(Sub(sender, e) OnDelete())
+        Try
+            _grid.MapPlatformCommand("copy", _cmdCopy)
+            _grid.MapPlatformCommand("paste", _cmdPaste)
+            _grid.MapPlatformCommand("delete", _cmdDelete)
+        Catch
+            ' Without the mapping the toolbar buttons and the context menu still do all three.
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Text that goes into a menu item as it is (a file path, a partition name). An ampersand marks the
+    ''' shortcut letter in menu text, so one that belongs to the name is doubled. Nothing else needs care:
+    ''' Eto itself looks after the underscore, which is GTK's mark.
+    ''' </summary>
+    Private Shared Function MenuLiteral(text As String) As String
+        Return text.Replace("&", "&&")
+    End Function
 
     Private Sub AddColumn(header As String, width As Integer, getter As Func(Of DiskFile, String), rightAligned As Boolean)
         Dim cell As New TextBoxCell With {.Binding = Binding.Delegate(Of DiskFile, String)(getter)}
@@ -286,7 +351,7 @@ Public Class MainForm
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
         If e.Key = Keys.Escape AndAlso e.Modifiers = Keys.None AndAlso Program.Settings.ExitOnEscape AndAlso Not _busy Then
             e.Handled = True
-            Close()
+            Program.ExitProgram(Me)
             Return
         End If
         MyBase.OnKeyDown(e)
@@ -298,8 +363,10 @@ Public Class MainForm
         If String.IsNullOrEmpty(tool.ToolPath) OrElse Not File.Exists(tool.ToolPath) Then
             _lblEngine.Text = "trs80-tool: not found"
             If askIfMissing Then
-                If Ui.Ask(Me, "trs80-tool was not found at the configured location." & vbLf & vbLf &
-                    Program.ToolDownloadHint & ", then tell this program where it is." & vbLf & vbLf &
+                ' On a Mac this is also the first question of a first start (Program.Main can't ask there).
+                Dim macWhere As String = If(HostPlatform.IsMacOS, Program.ToolFoundWhereHint, "")
+                If Ui.Ask(Me, If(HostPlatform.IsMacOS, "trs80-tool was not found.", "trs80-tool was not found at the configured location.") & vbLf & vbLf &
+                    Program.ToolDownloadHint & ", then tell this program where it is." & macWhere & vbLf & vbLf &
                     "Open Preferences now to set its location?", Program.AppName, MessageBoxType.Warning) Then OnPreferences()
             End If
             Return False
@@ -313,7 +380,9 @@ Public Class MainForm
         End Try
         If caps.Version Is Nothing Then
             _lblEngine.Text = "trs80-tool: unusable"
-            Ui.Fail(Me, "trs80-tool could not be run or its version could not be read:" & vbLf & vbLf & String.Join(vbLf, caps.Problems) & vbLf & vbLf & "Path: " & tool.ToolPath, Program.AppName)
+            Dim macHint As String = Program.MacToolHint(tool.ToolPath)
+            Ui.Fail(Me, "trs80-tool could not be run or its version could not be read:" & vbLf & vbLf & String.Join(vbLf, caps.Problems) & vbLf & vbLf & "Path: " & tool.ToolPath &
+                    If(macHint.Length > 0, vbLf & vbLf & macHint, ""), Program.AppName)
             Return False
         End If
         _lblEngine.Text = "trs80-tool " & caps.Version.ToString()
@@ -425,6 +494,11 @@ Public Class MainForm
         _miBoot.Enabled = floppy AndAlso Not ConsoleRunning() AndAlso EngineHasTop("run")
         _miShell.Enabled = isOpen AndAlso Not _disk.IsCassette AndAlso Not ConsoleRunning()
         _miRunEmpty.Enabled = Not ConsoleRunning() AndAlso EngineHasTop("run")
+        If _cmdCopy IsNot Nothing Then
+            _cmdCopy.Enabled = _miCopy.Enabled
+            _cmdPaste.Enabled = _miPaste.Enabled
+            _cmdDelete.Enabled = _cxDelete.Enabled
+        End If
     End Sub
 
     ''' <summary>True unless the engine probe ran and its disk --help lacks the sub-command.</summary>
@@ -462,7 +536,7 @@ Public Class MainForm
         Dim n As Integer = 1
         For Each p In Program.Settings.Mru
             Dim pathCopy As String = p
-            Dim mi As New ButtonMenuItem With {.Text = "&" & n.ToString(CultureInfo.InvariantCulture) & " " & p.Replace("_", "__")}
+            Dim mi As New ButtonMenuItem With {.Text = "&" & n.ToString(CultureInfo.InvariantCulture) & " " & MenuLiteral(p)}
             AddHandler mi.Click, Async Sub()
                                      If _busy Then Return
                                      Await OpenImageAsync(pathCopy)
@@ -477,7 +551,7 @@ Public Class MainForm
         If _disk Is Nothing OrElse Not _disk.IsHardDisk Then Return
         For Each p In _disk.Partitions
             Dim part As DiskPartition = p
-            Dim mi As New ButtonMenuItem With {.Text = If(part Is _disk.ActivePartition, "● ", "    ") & part.Display.Replace("_", "__")}
+            Dim mi As New ButtonMenuItem With {.Text = If(part Is _disk.ActivePartition, "● ", "    ") & MenuLiteral(part.Display)}
             AddHandler mi.Click, Async Sub()
                                      If _busy Then Return
                                      Await SelectPartitionAsync(part)
@@ -765,7 +839,8 @@ Public Class MainForm
         If e.Key = Keys.Enter AndAlso e.Modifiers = Keys.None AndAlso SelectedCount() >= 1 Then
             e.Handled = True
             OnPreview()
-        ElseIf e.Key = Keys.Delete AndAlso e.Modifiers = Keys.None AndAlso SelectedCount() > 0 Then
+        ElseIf (e.Key = Keys.Delete OrElse (HostPlatform.IsMacOS AndAlso e.Key = Keys.Backspace)) AndAlso e.Modifiers = Keys.None AndAlso SelectedCount() > 0 Then
+            ' The key marked "delete" on a Mac keyboard is Backspace.
             e.Handled = True
             OnDelete()
         End If

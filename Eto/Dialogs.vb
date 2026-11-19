@@ -104,7 +104,7 @@ Public Class ExtractOptions
     End Property
 End Class
 
-''' <summary>Edit → Preferences.</summary>
+''' <summary>Edit → Preferences (on a Mac: the application menu).</summary>
 Public Class PreferencesForm
     Inherits OkCancelDialog
 
@@ -164,7 +164,10 @@ Public Class PreferencesForm
             Ui.Across(_txtLog, Ui.Btn("Browse...", AddressOf BrowseLog)),
             Ui.Lbl("Disassembly options (words after ""disasm""; blank = the default):"),
             Ui.Across(_txtDisasm, Ui.Btn("Default", Sub() _txtDisasm.Text = Settings.DefaultDisasmOptions))}
-        If Not HostPlatform.IsWindows Then
+        If HostPlatform.IsMacOS Then
+            rows.Add(Ui.Lbl("Terminal for the trs80-tool shell and the emulator (blank = Terminal; the script to run is added after it):"))
+            rows.Add(Ui.Across(_txtTerminal, Ui.Lbl("e.g.  open -a iTerm", True)))
+        ElseIf Not HostPlatform.IsWindows Then
             rows.Add(Ui.Lbl("Terminal for the trs80-tool shell and the emulator (blank = find one; the command line is added after it):"))
             rows.Add(Ui.Across(_txtTerminal, Ui.Lbl("e.g.  xterm -e", True)))
         End If

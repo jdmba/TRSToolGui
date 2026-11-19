@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- TRSToolGui for Linux: the same Core library as the Windows program, with windows built on Eto.Forms
-       (GTK 3 underneath). Publish with:  dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release -->
+  <!-- TRSToolGui for Linux and macOS: the same Core library as the Windows program, with windows built on
+       Eto.Forms (GTK 3 underneath on Linux, Cocoa on a Mac). Publish with:
+         dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release                 Linux x64, one file
+         dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release -r osx-arm64    Mac with Apple Silicon: TRSToolGui.app
+         dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release -r osx-x64      Mac with an Intel processor: TRSToolGui.app
+       All three build on Windows. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -12,28 +16,77 @@
     <OptionExplicit>On</OptionExplicit>
     <OptionInfer>On</OptionInfer>
     <Nullable>disable</Nullable>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
     <Product>TRSToolGui</Product>
     <Authors>Ira Goldklang and Claude AI</Authors>
     <Company>Ira Goldklang and Claude AI</Company>
     <Copyright>© 2026 Ira Goldklang and Claude AI</Copyright>
-    <Description>GUI over Lawrence Kesteloot's trs80-tool, in the spirit of Matthew Reed's TRSTools (Eto.Forms build for Linux)</Description>
+    <Description>GUI over Lawrence Kesteloot's trs80-tool, in the spirit of Matthew Reed's TRSTools (Eto.Forms build for Linux and macOS)</Description>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <!-- Linux unless the command line names another system with -r. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">linux-x64</RuntimeIdentifier>
+    <TrsMac Condition="$(RuntimeIdentifier.StartsWith('osx'))">true</TrsMac>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <!-- The GtkSharp package would otherwise download a GTK runtime for Windows onto a Windows build machine.
-         This project is built for Linux, which has GTK 3 of its own. -->
+         The Linux build uses the GTK 3 that Linux has. -->
     <SkipGtkInstall>True</SkipGtkInstall>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\TRSToolGui.Core.vbproj" />
     <PackageReference Include="Eto.Forms" Version="2.11.0" />
+  </ItemGroup>
+  <!-- One window toolkit per system. -->
+  <ItemGroup Condition="'$(TrsMac)' != 'true'">
     <PackageReference Include="Eto.Platform.Gtk" Version="2.11.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TrsMac)' == 'true'">
+    <PackageReference Include="Eto.Platform.Mac64" Version="2.11.0" />
+    <!-- The icon of TRSToolGui.app. -->
+    <BundleResource Include="Icon.icns" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\Help\Manual.txt" LogicalName="TRSToolGui.Manual.txt" />
     <EmbeddedResource Include="..\Help\Changelog.txt" LogicalName="TRSToolGui.Changelog.txt" />
     <EmbeddedResource Include="..\Help\License.txt" LogicalName="TRSToolGui.License.txt" />
   </ItemGroup>
+
+  <!-- macOS: the Eto.Platform.Mac64 package wraps the published program in TRSToolGui.app. It is told the
+       bundle's name here and is handed an Info.plist written from this project's own version number, so the
+       version is kept in one place. -->
+  <PropertyGroup Condition="'$(TrsMac)' == 'true'">
+    <MacBundleName>TRSToolGui</MacBundleName>
+    <TrsInfoPlist><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>TRSToolGui</string>
+	<key>CFBundleDisplayName</key>
+	<string>TRSToolGui</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.trs-80.TRSToolGui</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(Version)</string>
+	<key>CFBundleVersion</key>
+	<string>$(Version)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Ira Goldklang</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleIconFile</key>
+	<string>Icon.icns</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+</dict>
+</plist>]]></TrsInfoPlist>
+  </PropertyGroup>
+  <Target Name="TrsWriteInfoPlist" BeforeTargets="MacInitializeBundle" Condition="'$(TrsMac)' == 'true'">
+    <PropertyGroup>
+      <InputPListFile>$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'TRSToolGui.Info.plist'))</InputPListFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(InputPListFile)" Lines="$(TrsInfoPlist)" Overwrite="true" />
+  </Target>
 </Project>

@@ -67,7 +67,8 @@ Public Module Ui
     ''' <summary>
     ''' Fill a file dialog's filter list from the "Description|*.a;*.b|Description|*.c" form. On a system whose
     ''' file names are case-sensitive each pattern is offered in lower and upper case, so IMAGE.DMK is listed
-    ''' under "*.dmk".
+    ''' under "*.dmk". A Mac's file dialog goes by the last part of a name only, so for a two-part pattern
+    ''' such as "*.dmk.gz" the last part (".gz") is offered as well, or GAME.DMK.GZ could not be chosen.
     ''' </summary>
     Public Sub SetFilters(dlg As FileDialog, filter As String)
         dlg.Filters.Clear()
@@ -85,6 +86,10 @@ Public Module Ui
                         If Not exts.Contains(ext.ToUpperInvariant()) Then exts.Add(ext.ToUpperInvariant())
                     ElseIf Not exts.Contains(ext) Then
                         exts.Add(ext)
+                    End If
+                    If HostPlatform.IsMacOS AndAlso ext.LastIndexOf("."c) > 0 Then
+                        Dim lastPart As String = ext.Substring(ext.LastIndexOf("."c))
+                        If Not exts.Contains(lastPart) Then exts.Add(lastPart)
                     End If
                 End If
             Next

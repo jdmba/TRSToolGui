@@ -14,7 +14,7 @@
     <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
     <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
     <ApplicationVisualStyles>true</ApplicationVisualStyles>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
     <Product>TRSToolGui</Product>
     <Authors>Ira Goldklang and Claude AI</Authors>
     <Company>Ira Goldklang and Claude AI</Company>
@@ -28,7 +28,7 @@
   <ItemGroup>
     <!-- Core\ is its own project (TRSToolGui.Core): nothing in it knows about windows. -->
     <Compile Remove="Core\**" />
-    <!-- Eto\ is the Linux program (TRSToolGui.Eto): the same Core with windows built on Eto.Forms. -->
+    <!-- Eto\ is the Linux and Mac program (TRSToolGui.Eto): the same Core with windows built on Eto.Forms. -->
     <Compile Remove="Eto\**" />
     <ProjectReference Include="Core\TRSToolGui.Core.vbproj" />
   </ItemGroup>

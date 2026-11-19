@@ -6,15 +6,15 @@ Open a TRS-80 disk image (DMK, JV1, JV3, DSK, HFE, IMD, SCP, HDV, gzipped or not
 
 It also exposes trs80-tool features TRSTools never had: a sector map, a granule map, signs of copy protection, imaging artifacts, check and repair, trim, format, hard disk partitions, boot in the emulator, disassembly and assembly. It adds its own read-only analysis of DMK images: the DOS, model and version from the disk's own bytes, copy-protection signs, damage versus imaging artifacts, and tail tracks.
 
-**TRSToolGui 1.3 needs trs80-tool 5.1.0 or later.** With trs80-tool 5.2.0 it also changes and creates Montezuma Micro CP/M disks, lets you name the layout of a CP/M disk, opens gzipped images, and maps hard disk partitions.
+**TRSToolGui 1.4 needs trs80-tool 5.1.0 or later.** With trs80-tool 5.2.0 it also changes and creates Montezuma Micro CP/M disks, lets you name the layout of a CP/M disk, opens gzipped images, and maps hard disk partitions.
 
-TRSToolGui runs on Windows and, from version 1.3, on Linux (x64). A Mac version is being looked into.
+TRSToolGui runs on Windows, on Linux (x64) from version 1.3, and on the Mac from version 1.4. The Mac version is new: it was built on Windows without a Mac to try it on, so reports from Mac users are wanted.
 
 ## Download
 
 Get the zip for your system from [Releases](../../releases).
 
-**Windows:** `TRSToolGui-v1.3.zip` holds:
+**Windows:** `TRSToolGui-v1.4.zip` holds:
 
 | Folder | What |
 |---|---|
@@ -22,24 +22,32 @@ Get the zip for your system from [Releases](../../releases).
 | `No .NET needed\TRSToolGui.exe` | Self-contained, runs on Windows 10 and later. |
 | `Source\` | This repository's source. |
 
-**Linux (x64):** `TRSToolGui-v1.3-linux-x64.zip` holds one self-contained file, `TRSToolGui`, with the license and the manual. Make it runnable once with `chmod +x TRSToolGui`, then run `./TRSToolGui`. It needs GTK 3, which desktop Linux has.
+**Linux (x64):** `TRSToolGui-v1.4-linux-x64.zip` holds one self-contained file, `TRSToolGui`, with the license and the manual. Make it runnable once with `chmod +x TRSToolGui`, then run `./TRSToolGui`. It needs GTK 3, which desktop Linux has.
 
-**trs80-tool is not included.** Download the one for your system from <https://www.my-trs-80.com/tool/>. On Windows, TRSToolGui asks on first start where it is and remembers the answer in `TRSToolGui.cfg` next to `TRSToolGui.exe`. On Linux it looks beside itself and on the PATH first, and keeps its settings in `~/.config/TRSToolGui/TRSToolGui.cfg`.
+**Mac:** `TRSToolGui-v1.4-macos-arm64.zip` is for a Mac with Apple Silicon (M1 and later), `TRSToolGui-v1.4-macos-x64.zip` for a Mac with an Intel processor. Each holds `TRSToolGui.app`, the license and the manual. It needs macOS 14 or later. Unzip it and drag `TRSToolGui.app` to Applications before you start it. The app is not signed with an Apple developer certificate, so the first start is refused: open System Settings > Privacy & Security and click Open Anyway, or run `xattr -dr com.apple.quarantine /Applications/TRSToolGui.app` in Terminal. A trs80-tool downloaded with a browser needs `chmod +x trs80-tool` and `xattr -d com.apple.quarantine trs80-tool` once.
 
-See `Help\Manual.txt` for every menu and window (its last section says what differs on Linux), and `Help\Changelog.txt` for what changed.
+**trs80-tool is not included.** Download the one for your system from <https://www.my-trs-80.com/tool/>. On Windows, TRSToolGui asks on first start where it is and remembers the answer in `TRSToolGui.cfg` next to `TRSToolGui.exe`. On Linux it looks beside itself and on the PATH first, and keeps its settings in `~/.config/TRSToolGui/TRSToolGui.cfg`. On a Mac it looks in the folder `TRSToolGui.app` is in, on the PATH, and in `/opt/homebrew/bin` and `/usr/local/bin`, and keeps its settings in `~/Library/Application Support/TRSToolGui/TRSToolGui.cfg`.
+
+See `Help\Manual.txt` for every menu and window (its last two sections say what differs on Linux and on the Mac), and `Help\Changelog.txt` for what changed.
+
+## Reporting problems
+
+Report anything that fails, gives a wrong result or looks wrong as an issue at <https://github.com/jdmba/TRSToolGui/issues>, one problem per issue. The form there asks for the two versions (Help > About shows them), your system, the steps, and the text of any error. Every report is read, and fixes are listed in `Help\Changelog.txt` with the number of the issue. If you can't tell whether the fault is in TRSToolGui or in trs80-tool, report it here.
 
 ## Building
 
-Needs the .NET 10 SDK. Both programs build on Windows.
+Needs the .NET 10 SDK. Everything builds on Windows.
 
 ```
 dotnet build TRSToolGui.vbproj -c Release
 dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release
+dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release -r osx-arm64
+dotnet publish Eto\TRSToolGui.Eto.vbproj -c Release -r osx-x64
 ```
 
-`release.bat` builds the two Windows executables, the Linux one, and both download zips.
+The second line makes the Linux program; the last two make `TRSToolGui.app` for the two kinds of Mac. `release.bat` builds the two Windows executables, the Linux one, the two Mac apps, and the four download zips. The Mac zips are written by `unixzip.ps1`, which keeps the Unix permission that lets the program inside `TRSToolGui.app` run; a zip made the Windows way loses it.
 
-The source is in three projects. `Core\TRSToolGui.Core.vbproj` is everything that is not a window: the trs80-tool adapter, the disk model, the DMK and assembler-source analysis, the settings, and the few things that differ between operating systems. It targets plain `net10.0`, references no window toolkit, and builds and runs on Windows, Linux and macOS. `TRSToolGui.vbproj` is the Windows Forms program. `Eto\TRSToolGui.Eto.vbproj` is the Linux program: the same windows written for [Eto.Forms](https://github.com/picoe/Eto) with its GTK platform, which NuGet supplies. Both reference Core.
+The source is in three projects. `Core\TRSToolGui.Core.vbproj` is everything that is not a window: the trs80-tool adapter, the disk model, the DMK and assembler-source analysis, the settings, and the few things that differ between operating systems. It targets plain `net10.0`, references no window toolkit, and builds and runs on Windows, Linux and macOS. `TRSToolGui.vbproj` is the Windows Forms program. `Eto\TRSToolGui.Eto.vbproj` is the Linux and Mac program: the same windows written for [Eto.Forms](https://github.com/picoe/Eto), built with its GTK platform for Linux and its Mac platform for macOS. NuGet supplies both. Both programs reference Core.
 
 ## License
 
