@@ -73,6 +73,7 @@ Public Class DosIdentification
     Public Property HitSummary As String = ""
     Public Property EntriesSummary As String = ""
     Public Property PdriveLine As String = ""
+    Public Property PdriveMedia As PdriveMediaResult = Nothing   ' PDRIVE worked out from the media (NEWDOS/80 only)
     Public Property FillText As String = ""
     Public Property Sector2Byte0 As Integer = -1
     Public Property DosCylinders As Integer
@@ -299,6 +300,22 @@ Public Module DosIdentifier
                 If tc > 0 Then
                     r.DosCylinders = tc + If((pd(14) And 4) <> 0, 1, 0)
                     r.DosCylinderSource = "NEWDOS/80 PDRIVE TC" & If((pd(14) And 4) <> 0, " + 1 for the K flag (track 0 in the other density)", "")
+                End If
+            End If
+            r.PdriveMedia = PdriveFromMedia.Analyze(img)
+            Dim pm As PdriveMediaResult = r.PdriveMedia
+            If pm.Failure.Length > 0 Then
+                r.Evidence.Add("PDRIVE from the media: not worked out (" & pm.Failure & ").")
+            Else
+                For Each n In pm.Notes
+                    r.Evidence.Add("PDRIVE from the media: " & n)
+                Next
+                For Each w In pm.Warnings
+                    r.Evidence.Add("PDRIVE from the media, warning: " & w)
+                Next
+                If r.DosCylinders = 0 AndAlso pm.TC > 0 Then
+                    r.DosCylinders = pm.TC + If(pm.FlagK, 1, 0)
+                    r.DosCylinderSource = "NEWDOS/80 TC worked out from the media and the GAT" & If(pm.FlagK, " + 1 for the K flag (track 0 in the other density)", "")
                 End If
             End If
         End If

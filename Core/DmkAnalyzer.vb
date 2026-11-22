@@ -486,6 +486,13 @@ Public Class DmkAnalysis
         If Dos.HitSummary.Length > 0 Then AddFact("HIT 00-01", Dos.HitSummary)
         If Dos.EntriesSummary.Length > 0 Then AddFact("System entries", Dos.EntriesSummary)
         If Dos.PdriveLine.Length > 0 Then AddFact("PDRIVE (NEWDOS/80)", Dos.PdriveLine)
+        If Dos.PdriveMedia IsNot Nothing Then
+            Dim lines = PdriveFromMedia.MachineLines(Dos.PdriveMedia)
+            For i As Integer = 0 To lines.Count - 1
+                AddFact(If(i = 0, "PDRIVE from the media", ""), lines(i).Machine & " (" & lines(i).InterfaceName & "): " & lines(i).Params)
+            Next
+            If lines.Count > 0 Then AddFact("", "TSR is the drive's step rate, not part of the disk: 3 = 40 ms, the Model I standard; 0 = 5 ms, the Model III's.")
+        End If
         If Dos.FillText.Length > 0 Then AddFact("Formatter fill", Dos.FillText)
         For Each e In Dos.Evidence
             Note("DOS identification", "info", e)

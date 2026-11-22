@@ -1,6 +1,17 @@
 TRSToolGui — Changelog
 ======================
 
+v1.5 — November 22, 2026
+  DMK analysis: on a NEWDOS/80 disk the Summary now has "PDRIVE from the media", the PDRIVE
+    settings worked out from the disk itself (density, sides, sectors, directory and GAT)
+    rather than from the drive table FORMAT left on it, so a disk without a table gets them too.
+    There is one line for each machine and interface that can read the disk, and the
+    identification notes compare them with the boot sector's bytes and the drive table.
+  Mac: the manual and the README no longer say to run "chmod +x" on trs80-tool. Its download
+    is a zip now, and the program comes out of the zip ready to run. Only its quarantine has to
+    be removed, with "xattr -d com.apple.quarantine trs80-tool".
+  Nothing else is changed in the Windows, Linux and Mac programs.
+
 v1.4 — November 18, 2026
   TRSToolGui for the Mac. This is the first Mac build, and when it was made it had not been run
     on a Mac: it is the Linux program's source, built on Windows for macOS. Please report what

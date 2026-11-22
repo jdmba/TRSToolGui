@@ -17,10 +17,10 @@ rem trs80-tool is NOT bundled: on first start the GUI asks where it is and saves
 rem answer in TRSToolGui.cfg next to TRSToolGui.exe.
 setlocal
 cd /d "%~dp0"
-set ZIPNAME=TRSToolGui-v1.4.zip
-set LINUXZIP=TRSToolGui-v1.4-linux-x64.zip
-set MACZIP=TRSToolGui-v1.4-macos-arm64.zip
-set MACX64ZIP=TRSToolGui-v1.4-macos-x64.zip
+set ZIPNAME=TRSToolGui-v1.5.zip
+set LINUXZIP=TRSToolGui-v1.5-linux-x64.zip
+set MACZIP=TRSToolGui-v1.5-macos-arm64.zip
+set MACX64ZIP=TRSToolGui-v1.5-macos-x64.zip
 set STAGE=%TEMP%\TRSToolGui-release
 set LSTAGE=%TEMP%\TRSToolGui-release-linux
 set MSTAGE=%TEMP%\TRSToolGui-release-mac
