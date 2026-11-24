@@ -28,22 +28,22 @@ Public Class CpmFormatForm
     End Property
 
     Public Sub New(layoutsText As String, current As String)
-        Title = "CP/M layout"
+        Title = UiText.T("dlg.cpm.title")
         Resizable = True
         ClientSize = New Size(880, 520)
         MinimumSize = New Size(560, 320)
         Padding = New Padding(Ui.Margin)
-        Dim top As Label = Ui.Wrapped("A CP/M disk doesn't say how it is laid out, so trs80-tool works it out. If it picks the wrong layout for this disk, name the right one from trs80-tool's list below." &
-                                      If(String.IsNullOrEmpty(current), "", "  Now in force: " & current & "."), 840)
+        Dim top As Label = Ui.Wrapped(UiText.T("dlg.cpm.intro") &
+                                      If(String.IsNullOrEmpty(current), "", UiText.T("dlg.cpm.inforce", current)), 840)
         Dim list As TextArea = Ui.ReportBox(layoutsText, 9.0F)
         _txtName.Text = If(current, "")
-        Dim btnUse As New Button With {.Text = "Use this layout"}
-        Dim btnAuto As New Button With {.Text = "Let trs80-tool decide"}
-        Dim btnCancel As New Button With {.Text = "Cancel"}
+        Dim btnUse As New Button With {.Text = UiText.T("dlg.cpm.use")}
+        Dim btnAuto As New Button With {.Text = UiText.T("dlg.cpm.auto")}
+        Dim btnCancel As New Button With {.Text = UiText.T("btn.cancel")}
         AddHandler btnUse.Click, Sub()
                                      Dim name As String = _txtName.Text.Trim()
                                      If name.Length = 0 OrElse name.IndexOf(" "c) >= 0 Then
-                                         Ui.Info(Me, "Type one layout name from the list, such as mm-data.", Title)
+                                         Ui.Info(Me, UiText.T("dlg.cpm.bad"), Title)
                                          Return
                                      End If
                                      _chosen = name
@@ -54,7 +54,7 @@ Public Class CpmFormatForm
                                       Close(True)
                                   End Sub
         AddHandler btnCancel.Click, Sub() Close(False)
-        Content = Ui.Down(list, top, list, Ui.Across(New Label With {.Text = "Layout name (for example mm-ds-data):", .VerticalAlignment = VerticalAlignment.Center}, _txtName, btnUse, btnAuto, Nothing, btnCancel))
+        Content = Ui.Down(list, top, list, Ui.Across(New Label With {.Text = UiText.T("dlg.cpm.name"), .VerticalAlignment = VerticalAlignment.Center}, _txtName, btnUse, btnAuto, Nothing, btnCancel))
         DefaultButton = btnUse
         AbortButton = btnCancel
     End Sub

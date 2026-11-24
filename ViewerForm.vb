@@ -69,7 +69,7 @@ Public Class ViewerForm
     End Sub
 
     Private Sub BuildUi()
-        Text = "File Viewer - " & _file.SlashName
+        Text = UiText.T("dlg.viewer.title", _file.SlashName)
         StartPosition = FormStartPosition.CenterParent
         Size = New Size(760, 520)
         MinimumSize = New Size(420, 260)
@@ -97,14 +97,17 @@ Public Class ViewerForm
         _pic.SizeMode = PictureBoxSizeMode.AutoSize
         _picPanel.Controls.Add(_pic)
 
-        _grpFont.Text = "Font"
-        _rbMono.Text = "Monospaced" : _rbMono.AutoSize = True
-        _rbProp.Text = "Proportional" : _rbProp.AutoSize = True
+        _grpFont.Text = UiText.T("dlg.viewer.font")
+        _rbMono.Text = UiText.T("dlg.viewer.mono") : _rbMono.AutoSize = True
+        _rbProp.Text = UiText.T("dlg.viewer.prop") : _rbProp.AutoSize = True
         _grpFont.Controls.Add(_rbMono)
         _grpFont.Controls.Add(_rbProp)
         _rbMono.Location = New Point(10, 18)
         _rbProp.Location = New Point(110, 18)
         _grpFont.Size = New Size(215, 44)
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves.
+        UiFit.SpreadRow(10, _rbMono, _rbProp)
+        UiFit.GrowToFit(_grpFont, 8)
         AddHandler _rbMono.CheckedChanged, Sub() ApplyFont()
         AddHandler _rbProp.CheckedChanged, Sub() ApplyFont()
 
@@ -112,12 +115,12 @@ Public Class ViewerForm
         _combo.Width = 150
         AddHandler _combo.SelectedIndexChanged, Async Sub() Await ShowKindAsync()
 
-        _btnDone.Text = "Done"
+        _btnDone.Text = UiText.T("btn.done")
         _btnDone.DialogResult = DialogResult.OK
         AddHandler _btnDone.Click, Sub() Close()
-        _btnSave.Text = "Save as..."
+        _btnSave.Text = UiText.T("btn.saveas")
         AddHandler _btnSave.Click, Sub() SaveCurrent()
-        _btnOptions.Text = "Options..."
+        _btnOptions.Text = UiText.T("btn.options")
         _btnOptions.Enabled = False
         AddHandler _btnOptions.Click, Async Sub() Await EditOptionsAsync()
 
@@ -142,9 +145,13 @@ Public Class ViewerForm
         _grpFont.Location = New Point(m, y - 4)
         _combo.Location = New Point(_grpFont.Right + 12, y + 10)
         _btnOptions.Bounds = New Rectangle(_combo.Right + 8, y + 8, 80, 26)
+        UiFit.FitButton(_btnOptions)
         _lblInfo.Location = New Point(_btnOptions.Right + 12, y + 14)
         _btnDone.Bounds = New Rectangle(w - m - 80, y + 8, 80, 26)
         _btnSave.Bounds = New Rectangle(_btnDone.Left - 90, y + 8, 84, 26)
+        ' The gap of 6 is what the two fixed positions above come to in English, so this moves
+        ' nothing there and only makes room when a longer language needs it (UiFit.vb).
+        UiFit.ButtonRow(w - m, 6, _btnSave, _btnDone)
     End Sub
 
     Protected Overrides Async Sub OnShown(e As EventArgs)
@@ -156,19 +163,19 @@ Public Class ViewerForm
             _bytes = Await Program.Tool.ReadFileBytesAsync(_disk.Path, _disk.PartitionArg, _file.TrsName)
         Catch ex As Exception
             UseWaitCursor = False
-            MessageBox.Show(Me, "Could not read " & _file.SlashName & ":" & vbCrLf & ex.Message, "File viewer", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show(Me, UiText.TCrLf("dlg.viewer.readfailed", _file.SlashName, ex.Message), UiText.T("caption.fileviewer"), MessageBoxButtons.OK, MessageBoxIcon.Error)
             Close()
             Return
         End Try
         UseWaitCursor = False
-        _lblInfo.Text = TextUtil.FormatBytes(_bytes.LongLength) & " bytes" & If(_file.Description.Length > 0, "  •  " & _file.Description, "")
+        _lblInfo.Text = UiText.T("word.bytes", TextUtil.FormatBytes(_bytes.LongLength)) & If(_file.Description.Length > 0, "  •  " & _file.Description, "")
         DetectKinds()
         If _kinds(0) = ViewerKind.Edtasm OrElse (_kinds(0) = ViewerKind.Text AndAlso AsmSource.IsSourceExtension(_file.Extension)) Then
             _asm = AsmSource.Analyze(_bytes)
             _lblInfo.Text &= "  •  " & _asm.Summary()
         End If
         Dim basicKind As String = BasicKindLabel()
-        If basicKind.Length > 0 Then Text = "File Viewer - " & _file.SlashName & " (" & basicKind & ")"
+        If basicKind.Length > 0 Then Text = UiText.T("dlg.viewer.titlekind", UiText.T("dlg.viewer.title", _file.SlashName), basicKind)
         _loading = True
         _combo.Items.Clear()
         For Each k In _kinds
@@ -184,6 +191,22 @@ Public Class ViewerForm
     End Sub
 
     Private Shared Function KindName(k As ViewerKind) As String
+        Select Case k
+            Case ViewerKind.Graphics : Return UiText.T("dlg.viewer.kind.graphics")
+            Case ViewerKind.Edtasm : Return UiText.T("dlg.viewer.kind.edtasm")
+            Case ViewerKind.Basic : Return UiText.T("dlg.viewer.kind.basic")
+            Case ViewerKind.Disassembly : Return UiText.T("dlg.viewer.kind.disassembly")
+            Case ViewerKind.Text : Return UiText.T("dlg.viewer.kind.text")
+            Case Else : Return UiText.T("dlg.viewer.kind.hex")
+        End Select
+    End Function
+
+    ''' <summary>
+    ''' The same kinds as a tag for the file name the Save dialog suggests. These stay
+    ''' English whatever language the windows are in: a translated name would put accents
+    ''' and spaces into a file name on the host.
+    ''' </summary>
+    Private Shared Function KindFileTag(k As ViewerKind) As String
         Select Case k
             Case ViewerKind.Graphics : Return "Graphics"
             Case ViewerKind.Edtasm : Return "EDTASM"
@@ -273,9 +296,9 @@ Public Class ViewerForm
     ''' <summary>"ASCII", "Model I/III Tokenized" or "Model 4 Tokenized" for a BASIC program, else "" (title bar only).</summary>
     Private Function BasicKindLabel() As String
         If _kinds.Contains(ViewerKind.Basic) Then
-            Return If(IsModel4Basic(_bytes), "Model 4 Tokenized", "Model I/III Tokenized")
+            Return If(IsModel4Basic(_bytes), UiText.T("dlg.viewer.basic.m4"), UiText.T("dlg.viewer.basic.m13"))
         End If
-        If _kinds.Count > 0 AndAlso _kinds(0) = ViewerKind.Text AndAlso IsAsciiBasic(_bytes) Then Return "ASCII"
+        If _kinds.Count > 0 AndAlso _kinds(0) = ViewerKind.Text AndAlso IsAsciiBasic(_bytes) Then Return UiText.T("dlg.viewer.basic.ascii")
         Return ""
     End Function
 
@@ -356,7 +379,7 @@ Public Class ViewerForm
                     _pic.Image = Await GraphicsAsync()
                 Catch ex As Exception
                     _pic.Image = Nothing
-                    MessageBox.Show(Me, "trs80-tool could not turn this file into a picture: " & ex.Message, "File viewer", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show(Me, UiText.T("dlg.viewer.picfailed", ex.Message), UiText.T("caption.fileviewer"), MessageBoxButtons.OK, MessageBoxIcon.Error)
                 End Try
             End If
             Return
@@ -369,7 +392,7 @@ Public Class ViewerForm
             Return
         End If
         UseWaitCursor = True
-        _text.Text = "Working..."
+        _text.Text = UiText.T("dlg.viewer.working")
         Try
             Select Case _current
                 Case ViewerKind.Basic
@@ -447,7 +470,7 @@ Public Class ViewerForm
             Return Await Program.Tool.DisasmAsync(host, _disasmWords)
         Catch ex As ToolException
             ' TRSTool fell back to hex when the CMD couldn't be parsed.
-            Return "(trs80-tool could not disassemble this file: " & ex.Message & ")" & vbCrLf & vbCrLf & TextUtil.HexDump(_bytes)
+            Return UiText.T("dlg.viewer.disasmfailed", ex.Message) & vbCrLf & vbCrLf & TextUtil.HexDump(_bytes)
         Finally
             Try : Directory.Delete(Path.GetDirectoryName(host), True) : Catch : End Try
         End Try
@@ -510,13 +533,13 @@ Public Class ViewerForm
 
     Private Sub SaveCurrent()
         Using sfd As New SaveFileDialog()
-            sfd.Title = "Save view as"
+            sfd.Title = UiText.T("caption.saveview")
             If _current = ViewerKind.Graphics Then
-                sfd.Filter = "PNG image (*.png)|*.png"
+                sfd.Filter = UiText.T("filter.png")
                 sfd.FileName = _file.BaseName & ".png"
             Else
-                sfd.Filter = "Text file (*.txt)|*.txt|All files (*.*)|*.*"
-                sfd.FileName = _file.BaseName & "_" & KindName(_current) & ".txt"
+                sfd.Filter = UiText.T("filter.textfile")
+                sfd.FileName = _file.BaseName & "_" & KindFileTag(_current) & ".txt"
             End If
             If sfd.ShowDialog(Me) <> DialogResult.OK Then Return
             Try
@@ -526,7 +549,7 @@ Public Class ViewerForm
                     File.WriteAllText(sfd.FileName, _text.Text, Encoding.UTF8)
                 End If
             Catch ex As Exception
-                MessageBox.Show(Me, ex.Message, "Save view", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show(Me, ex.Message, UiText.T("caption.saveviewerr"), MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         End Using
     End Sub
@@ -538,20 +561,20 @@ End Class
 Public Class DisasmOptionsForm
     Inherits Form
 
-    Private ReadOnly _chkListing As New CheckBox() With {.Text = "Listing: addresses and bytes beside the source (--listing)", .AutoSize = True}
-    Private ReadOnly _chkNoBinary As New CheckBox() With {.Text = "Listing without the bytes (--no-binary)", .AutoSize = True}
-    Private ReadOnly _chkUpper As New CheckBox() With {.Text = "Upper-case output (--upper)", .AutoSize = True}
-    Private ReadOnly _chkNoLabels As New CheckBox() With {.Text = "No labels for jump targets (--no-labels)", .AutoSize = True}
-    Private ReadOnly _chkNoKnown As New CheckBox() With {.Text = "No labels for known ROM locations (--no-known)", .AutoSize = True}
-    Private ReadOnly _chkFull As New CheckBox() With {.Text = "Treat everything as instructions, no data areas (--full)", .AutoSize = True}
-    Private ReadOnly _chkDataComment As New CheckBox() With {.Text = "Comment each instruction with its bytes as ASCII (--data-comment)", .AutoSize = True}
+    Private ReadOnly _chkListing As New CheckBox() With {.Text = UiText.T("dlg.disasm.listing"), .AutoSize = True}
+    Private ReadOnly _chkNoBinary As New CheckBox() With {.Text = UiText.T("dlg.disasm.nobinary"), .AutoSize = True}
+    Private ReadOnly _chkUpper As New CheckBox() With {.Text = UiText.T("dlg.disasm.upper"), .AutoSize = True}
+    Private ReadOnly _chkNoLabels As New CheckBox() With {.Text = UiText.T("dlg.disasm.nolabels"), .AutoSize = True}
+    Private ReadOnly _chkNoKnown As New CheckBox() With {.Text = UiText.T("dlg.disasm.noknown"), .AutoSize = True}
+    Private ReadOnly _chkFull As New CheckBox() With {.Text = UiText.T("dlg.disasm.full"), .AutoSize = True}
+    Private ReadOnly _chkDataComment As New CheckBox() With {.Text = UiText.T("dlg.disasm.datacomment"), .AutoSize = True}
     Private ReadOnly _cmbHex As New ComboBox() With {.DropDownStyle = ComboBoxStyle.DropDownList, .Width = 160}
     Private ReadOnly _txtOrg As New TextBox() With {.Width = 90}
     Private ReadOnly _txtEntry As New TextBox() With {.Width = 240}
-    Private ReadOnly _chkSaveDefault As New CheckBox() With {.Text = "Make these the default (Preferences → Disassembly options)", .AutoSize = True}
+    Private ReadOnly _chkSaveDefault As New CheckBox() With {.Text = UiText.T("dlg.disasm.savedefault"), .AutoSize = True}
 
     Public Sub New(current As IEnumerable(Of String))
-        Text = "Disassembly options (trs80-tool disasm)"
+        Text = UiText.T("dlg.disasm.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
@@ -564,17 +587,20 @@ Public Class DisasmOptionsForm
             y += 26
         Next
         y += 6
-        Controls.Add(New Label() With {.Text = "Hex number format (--hex-format):", .AutoSize = True, .Location = New Point(12, y + 3)})
-        _cmbHex.Items.AddRange(New Object() {"default", "c  (0x12)", "dollar  ($12)", "h  (12h)"})
+        Dim lblHex As New Label() With {.Text = UiText.T("dlg.disasm.hexformat"), .AutoSize = True, .Location = New Point(12, y + 3)}
+        Controls.Add(lblHex)
+        ' SelectedIndex decides the --hex-format word, so these four are text only.
+        _cmbHex.Items.AddRange(New Object() {UiText.T("dlg.disasm.hex.default"), UiText.T("dlg.disasm.hex.c"), UiText.T("dlg.disasm.hex.dollar"), UiText.T("dlg.disasm.hex.h")})
         _cmbHex.SelectedIndex = 0
         _cmbHex.Location = New Point(260, y)
         Controls.Add(_cmbHex)
         y += 32
-        Controls.Add(New Label() With {.Text = "Load address (--org, hex, blank = from the file):", .AutoSize = True, .Location = New Point(12, y + 3)})
+        Dim lblOrg As New Label() With {.Text = UiText.T("dlg.disasm.org"), .AutoSize = True, .Location = New Point(12, y + 3)}
+        Controls.Add(lblOrg)
         _txtOrg.Location = New Point(330, y)
         Controls.Add(_txtOrg)
         y += 32
-        Controls.Add(New Label() With {.Text = "Extra entry points (--entry, comma-separated hex):", .AutoSize = True, .Location = New Point(12, y + 3)})
+        Controls.Add(New Label() With {.Text = UiText.T("dlg.disasm.entry"), .AutoSize = True, .Location = New Point(12, y + 3)})
         y += 24
         _txtEntry.Location = New Point(12, y)
         Controls.Add(_txtEntry)
@@ -582,8 +608,8 @@ Public Class DisasmOptionsForm
         _chkSaveDefault.Location = New Point(12, y)
         Controls.Add(_chkSaveDefault)
         y += 34
-        Dim btnOk As New Button() With {.Text = "OK", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(290, y, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(380, y, 80, 26)}
+        Dim btnOk As New Button() With {.Text = UiText.T("btn.ok"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(290, y, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = UiText.T("btn.cancel"), .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(380, y, 80, 26)}
         Controls.Add(btnOk) : Controls.Add(btnCancel)
         AcceptButton = btnOk : CancelButton = btnCancel
         AddHandler btnOk.Click, Sub()
@@ -592,7 +618,14 @@ Public Class DisasmOptionsForm
                                         Program.Settings.Save()
                                     End If
                                 End Sub
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves. The
+        ' seven option lines are whole sentences and decide the width.
+        UiFit.After(lblHex, _cmbHex, 10)
+        UiFit.After(lblOrg, _txtOrg, 10)
         ClientSize = New Size(470, y + 38)
+        UiFit.GrowForm(Me)
+        _txtEntry.Width = Math.Max(_txtEntry.Width, ClientSize.Width - 24)
+        UiFit.ButtonRow(ClientSize.Width - 10, 10, btnOk, btnCancel)
         LoadWords(current)
     End Sub
 
@@ -652,12 +685,12 @@ End Class
 Public Class BasicDialectForm
     Inherits Form
 
-    Private ReadOnly _rbDefault As New RadioButton() With {.Text = "The disk's DOS decides (default)", .AutoSize = True, .Location = New Point(14, 14)}
-    Private ReadOnly _rb3 As New RadioButton() With {.Text = "Model I/III BASIC tokens (--basic 3)", .AutoSize = True, .Location = New Point(14, 40)}
-    Private ReadOnly _rb4 As New RadioButton() With {.Text = "Model 4 BASIC tokens (--basic 4)", .AutoSize = True, .Location = New Point(14, 66)}
+    Private ReadOnly _rbDefault As New RadioButton() With {.Text = UiText.T("dlg.basicdialect.default"), .AutoSize = True, .Location = New Point(14, 14)}
+    Private ReadOnly _rb3 As New RadioButton() With {.Text = UiText.T("dlg.basicdialect.m13"), .AutoSize = True, .Location = New Point(14, 40)}
+    Private ReadOnly _rb4 As New RadioButton() With {.Text = UiText.T("dlg.basicdialect.m4"), .AutoSize = True, .Location = New Point(14, 66)}
 
     Public Sub New(current As String)
-        Text = "BASIC listing dialect"
+        Text = UiText.T("dlg.basicdialect.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
@@ -669,9 +702,14 @@ Public Class BasicDialectForm
             Case "4" : _rb4.Checked = True
             Case Else : _rbDefault.Checked = True
         End Select
-        Dim btnOk As New Button() With {.Text = "OK", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(140, 102, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(230, 102, 80, 26)}
+        Dim btnOk As New Button() With {.Text = UiText.T("btn.ok"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(140, 102, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = UiText.T("btn.cancel"), .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(230, 102, 80, 26)}
         Controls.Add(btnOk) : Controls.Add(btnCancel)
+
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves.
+        UiFit.GrowForm(Me)
+        UiFit.ButtonRow(ClientSize.Width - 10, 10, btnOk, btnCancel)
+
         AcceptButton = btnOk : CancelButton = btnCancel
     End Sub
 

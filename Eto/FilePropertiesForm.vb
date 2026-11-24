@@ -22,16 +22,16 @@ Public Class FilePropertiesForm
     Private ReadOnly _file As DiskFile
     Private ReadOnly _txtName As New TextBox With {.Width = 170}
     Private ReadOnly _txtDate As New TextBox With {.Width = 170}
-    Private ReadOnly _chkNoDate As New CheckBox With {.Text = "No date"}
-    Private ReadOnly _chkInvisible As New CheckBox With {.Text = "Invisible"}
-    Private ReadOnly _chkSystem As New CheckBox With {.Text = "System"}
+    Private ReadOnly _chkNoDate As New CheckBox With {.Text = UiText.T("dlg.fileprops.nodate")}
+    Private ReadOnly _chkInvisible As New CheckBox With {.Text = UiText.T("dlg.fileprops.invisible")}
+    Private ReadOnly _chkSystem As New CheckBox With {.Text = UiText.T("dlg.fileprops.system")}
     Private ReadOnly _cmbProtect As New DropDown With {.Width = 230}
     Private ReadOnly _txtPassword As New TextBox With {.Width = 120, .MaxLength = 8}
-    Private ReadOnly _chkSetPassword As New CheckBox With {.Text = "Set update password:"}
+    Private ReadOnly _chkSetPassword As New CheckBox With {.Text = UiText.T("dlg.fileprops.setupdate")}
     Private ReadOnly _txtAccess As New TextBox With {.Width = 120, .MaxLength = 8}
-    Private ReadOnly _chkSetAccess As New CheckBox With {.Text = "Set access password:"}
-    Private ReadOnly _chkCpmReadOnly As New CheckBox With {.Text = "Read-only (R/O)"}
-    Private ReadOnly _chkCpmSys As New CheckBox With {.Text = "System (SYS: not listed by DIR)"}
+    Private ReadOnly _chkSetAccess As New CheckBox With {.Text = UiText.T("dlg.fileprops.setaccess")}
+    Private ReadOnly _chkCpmReadOnly As New CheckBox With {.Text = UiText.T("dlg.fileprops.cpmro")}
+    Private ReadOnly _chkCpmSys As New CheckBox With {.Text = UiText.T("dlg.fileprops.cpmsys")}
     Private _cpmEditable As Boolean
     Private _nameEditable As Boolean
     Private _attribEditable As Boolean
@@ -42,7 +42,7 @@ Public Class FilePropertiesForm
     Private Shared ReadOnly Trsdos6Names As String() = {"FULL", "REMOVE", "RENAME", "WRITE", "UPDATE", "READ", "EXEC", "NO_ACCESS"}
 
     Public Sub New(disk As DiskImage, file As DiskFile)
-        MyBase.New("File Properties")
+        MyBase.New(UiText.T("dlg.fileprops.title"))
         _disk = disk
         _file = file
         BuildUi()
@@ -112,11 +112,11 @@ Public Class FilePropertiesForm
     Private Shared Function ProtectLabel(level As Integer, names As String()) As String
         Dim n As String = names(level)
         Select Case n
-            Case "FULL" : n = "FULL (no restriction)"
-            Case "UNUSED" : n = "(unused on this DOS)"
-            Case "NO_ACCESS" : n = "NO ACCESS"
+            Case "FULL" : n = UiText.T("dlg.fileprops.prot.full")
+            Case "UNUSED" : n = UiText.T("dlg.fileprops.prot.unused")
+            Case "NO_ACCESS" : n = UiText.T("dlg.fileprops.prot.noaccess")
         End Select
-        Return level.ToString(CultureInfo.InvariantCulture) & " - " & n
+        Return UiText.T("dlg.fileprops.prot.item", level.ToString(CultureInfo.InvariantCulture), n)
     End Function
 
     Private Function OriginalProtectIndex() As Integer
@@ -145,16 +145,16 @@ Public Class FilePropertiesForm
         Dim rows As New List(Of Object)
         _txtName.Text = _file.SlashName
         _txtName.Enabled = _nameEditable
-        rows.Add("Filename:") : rows.Add(Ui.Across(_txtName))
+        rows.Add(UiText.T("dlg.fileprops.filename")) : rows.Add(Ui.Across(_txtName))
         _txtDate.Text = _file.DateText
         _txtDate.Enabled = editable
         _chkNoDate.Enabled = editable
-        rows.Add("Date:") : rows.Add(Ui.Across(_txtDate, _chkNoDate))
-        rows.Add("") : rows.Add(Ui.Lbl("(YYYY-MM-DD; the DOS decides which years it can store)", True))
-        rows.Add("Size:") : rows.Add(Ui.Lbl(TextUtil.FormatBytes(_file.Size) & " bytes"))
-        rows.Add("Kind:") : rows.Add(Ui.Lbl(_file.Description & If(_file.ContentType.Length > 0, "  [" & _file.ContentType & "]", "")))
-        If _file.Damage.Length > 0 Then rows.Add("Damage:") : rows.Add(Ui.Lbl(_file.Damage))
-        If _file.Sha256.Length > 0 Then rows.Add("SHA-256:") : rows.Add(New Label With {.Text = _file.Sha256, .Font = Ui.Mono(8.5F)})
+        rows.Add(UiText.T("dlg.fileprops.date")) : rows.Add(Ui.Across(_txtDate, _chkNoDate))
+        rows.Add("") : rows.Add(Ui.Lbl(UiText.T("dlg.fileprops.datehint"), True))
+        rows.Add(UiText.T("dlg.fileprops.size")) : rows.Add(Ui.Lbl(UiText.T("dlg.fileprops.sizevalue", TextUtil.FormatBytes(_file.Size))))
+        rows.Add(UiText.T("dlg.fileprops.kind")) : rows.Add(Ui.Lbl(If(_file.ContentType.Length > 0, UiText.T("dlg.fileprops.kindvalue", _file.Description, _file.ContentType), _file.Description)))
+        If _file.Damage.Length > 0 Then rows.Add(UiText.T("dlg.fileprops.damage")) : rows.Add(Ui.Lbl(_file.Damage))
+        If _file.Sha256.Length > 0 Then rows.Add(UiText.T("dlg.fileprops.sha")) : rows.Add(New Label With {.Text = _file.Sha256, .Font = Ui.Mono(8.5F)})
 
         If _disk.IsTrsdosFamily Then
             _hasProtect = True
@@ -164,48 +164,50 @@ Public Class FilePropertiesForm
             Next
             _cmbProtect.SelectedIndex = OriginalProtectIndex()
             _cmbProtect.Enabled = editable
-            rows.Add("Protection:") : rows.Add(Ui.Across(_cmbProtect))
+            rows.Add(UiText.T("dlg.fileprops.protection")) : rows.Add(Ui.Across(_cmbProtect))
 
             _chkInvisible.Checked = _file.Hidden
             _chkSystem.Checked = _file.IsSystem
             _chkInvisible.Enabled = editable : _chkSystem.Enabled = editable
             Dim attrRow As TableLayout = If(_file.HasLdosBits,
-                Ui.Across(_chkInvisible, _chkSystem, Ui.Lbl("    Created: " & If(_file.IsCreated, "yes", "no") & "    MOD: " & If(_file.IsModified, "yes", "no"))),
+                Ui.Across(_chkInvisible, _chkSystem, Ui.Lbl("    " & UiText.T("dlg.fileprops.ldosbits", If(_file.IsCreated, UiText.T("word.yes"), UiText.T("word.no")), If(_file.IsModified, UiText.T("word.yes"), UiText.T("word.no"))))),
                 Ui.Across(_chkInvisible, _chkSystem))
-            rows.Add("Attributes:") : rows.Add(attrRow)
+            rows.Add(UiText.T("dlg.fileprops.attributes")) : rows.Add(attrRow)
 
             ' What the passwords are now: trs80-tool names the ones it recognises, else gives the hash.
             Dim updateNow As String = DiskFile.PasswordText(_file.UpdatePassword, _file.UpdatePasswordHash)
             Dim accessNow As String = If(_file.TimeStampsReplaceAccessPassword, "", DiskFile.PasswordText(_file.AccessPassword, _file.AccessPasswordHash))
             If updateNow.Length > 0 OrElse accessNow.Length > 0 Then
-                rows.Add("Passwords now:")
-                rows.Add(Ui.Lbl("update: " & If(updateNow.Length > 0, updateNow, "?") & If(_file.TimeStampsReplaceAccessPassword, "", "    access: " & If(accessNow.Length > 0, accessNow, "?"))))
+                Dim pwText As String = UiText.T("dlg.fileprops.pwnow.update", If(updateNow.Length > 0, updateNow, "?"))
+                If Not _file.TimeStampsReplaceAccessPassword Then pwText = UiText.T("dlg.fileprops.pwnow.access", pwText, If(accessNow.Length > 0, accessNow, "?"))
+                rows.Add(UiText.T("dlg.fileprops.pwnow"))
+                rows.Add(Ui.Lbl(pwText))
             End If
 
             _chkSetPassword.Enabled = editable
             _txtPassword.Enabled = False
             AddHandler _chkSetPassword.CheckedChanged, Sub() _txtPassword.Enabled = Ui.IsOn(_chkSetPassword)
-            rows.Add(_chkSetPassword) : rows.Add(Ui.Across(_txtPassword, Ui.Lbl("(blank = remove)", True)))
+            rows.Add(_chkSetPassword) : rows.Add(Ui.Across(_txtPassword, Ui.Lbl(UiText.T("dlg.fileprops.blankremove"), True)))
 
             ' On DOSes that keep a time stamp where the access password would be, there is none to set.
             Dim accessIsTimeStamp As Boolean = _file.TimeStampsReplaceAccessPassword
             _chkSetAccess.Enabled = editable AndAlso Not accessIsTimeStamp
             _txtAccess.Enabled = False
             AddHandler _chkSetAccess.CheckedChanged, Sub() _txtAccess.Enabled = Ui.IsOn(_chkSetAccess)
-            rows.Add(_chkSetAccess) : rows.Add(Ui.Across(_txtAccess, Ui.Lbl(If(accessIsTimeStamp, "(not on this DOS: the entry keeps a time stamp there)", "(blank = remove)"), True)))
+            rows.Add(_chkSetAccess) : rows.Add(Ui.Across(_txtAccess, Ui.Lbl(If(accessIsTimeStamp, UiText.T("dlg.fileprops.accessistimestamp"), UiText.T("dlg.fileprops.blankremove")), True)))
         Else
             Dim attrs As String = _file.AttributeLetters
-            If _file.CpmUser.HasValue Then attrs &= "  user " & _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)
+            If _file.CpmUser.HasValue Then attrs = UiText.T("dlg.fileprops.cpmuserin", attrs, _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture))
             If _file.CpmAttributes.Length > 0 Then attrs &= "  " & _file.CpmAttributes
             If _cpmEditable Then
                 _chkCpmReadOnly.Checked = _file.CpmReadOnly
                 _chkCpmSys.Checked = _file.CpmSys
-                rows.Add("Attributes:") : rows.Add(Ui.Across(_chkCpmReadOnly, _chkCpmSys))
-                If _file.CpmUser.HasValue AndAlso _file.CpmUser.Value <> 0 Then rows.Add("User area:") : rows.Add(Ui.Lbl(_file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)))
-                rows.Add("") : rows.Add(Ui.Lbl("CP/M 2.2 keeps no dates, passwords or protection levels.", True))
+                rows.Add(UiText.T("dlg.fileprops.attributes")) : rows.Add(Ui.Across(_chkCpmReadOnly, _chkCpmSys))
+                If _file.CpmUser.HasValue AndAlso _file.CpmUser.Value <> 0 Then rows.Add(UiText.T("dlg.fileprops.cpmuserarea")) : rows.Add(Ui.Lbl(_file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)))
+                rows.Add("") : rows.Add(Ui.Lbl(UiText.T("dlg.fileprops.cpmnone"), True))
             Else
-                rows.Add("Attributes:") : rows.Add(Ui.Lbl(If(attrs.Trim().Length > 0, attrs, "(none)")))
-                rows.Add("") : rows.Add(Ui.Lbl(If(_disk.IsCpm, "Changing files on CP/M disks needs trs80-tool 5.2.0 or later, and a disk it can write.", "trs80-tool doesn't change files on this kind of disk."), True))
+                rows.Add(UiText.T("dlg.fileprops.attributes")) : rows.Add(Ui.Lbl(If(attrs.Trim().Length > 0, attrs, UiText.T("dlg.fileprops.attrsnone"))))
+                rows.Add("") : rows.Add(Ui.Lbl(If(_disk.IsCpm, UiText.T("dlg.fileprops.cpmneeds520"), UiText.T("dlg.fileprops.nochange")), True))
             End If
         End If
 

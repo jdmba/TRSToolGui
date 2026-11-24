@@ -22,51 +22,71 @@ Public Class CreateHardDiskForm
 
     Private ReadOnly _numCyl As New NumericUpDown() With {.Minimum = 1, .Maximum = 1023, .Value = 840, .Width = 70}
     Private ReadOnly _numHeads As New NumericUpDown() With {.Minimum = 1, .Maximum = 8, .Value = 6, .Width = 50}
-    Private ReadOnly _rbBlank As New RadioButton() With {.Text = "Blank: no partitions (add them later with View → Partition → Add a partition)", .AutoSize = True}
-    Private ReadOnly _rbLdos As New RadioButton() With {.Text = "LDOS 5.3 partitions", .AutoSize = True}
-    Private ReadOnly _rbLsdos As New RadioButton() With {.Text = "LS-DOS 6.3 partitions (Model 4)", .AutoSize = True, .Checked = True}
-    Private ReadOnly _chkPartitions As New CheckBox() With {.Text = "Number of equal partitions:", .AutoSize = True}
+    Private ReadOnly _rbBlank As New RadioButton() With {.Text = UiText.T("dlg.newhd.blank"), .AutoSize = True}
+    Private ReadOnly _rbLdos As New RadioButton() With {.Text = UiText.T("dlg.newhd.ldos"), .AutoSize = True}
+    Private ReadOnly _rbLsdos As New RadioButton() With {.Text = UiText.T("dlg.newhd.lsdos"), .AutoSize = True, .Checked = True}
+    Private ReadOnly _chkPartitions As New CheckBox() With {.Text = UiText.T("dlg.newhd.parts"), .AutoSize = True}
     Private ReadOnly _numPartitions As New NumericUpDown() With {.Minimum = 1, .Maximum = 26, .Value = 4, .Width = 50, .Enabled = False}
     Private ReadOnly _cmbModel As New ComboBox() With {.DropDownStyle = ComboBoxStyle.DropDownList, .Width = 90}
     Private ReadOnly _txtName As New TextBox() With {.Width = 90, .MaxLength = 8, .CharacterCasing = CharacterCasing.Upper}
-    Private ReadOnly _lblModel As New Label() With {.Text = "LDOS boot sector for:", .AutoSize = True}
-    Private ReadOnly _lblName As New Label() With {.Text = "Disk name (one partition only):", .AutoSize = True}
+    Private ReadOnly _lblModel As New Label() With {.Text = UiText.T("dlg.newhd.model"), .AutoSize = True}
+    Private ReadOnly _lblName As New Label() With {.Text = UiText.T("dlg.newhd.name"), .AutoSize = True}
 
     Public Sub New()
-        Text = "Create New Hard Disk Image"
+        Text = UiText.T("dlg.newhd.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
         ShowInTaskbar = False
         ClientSize = New Size(560, 330)
 
-        Dim g1 As New GroupBox() With {.Text = "Shape (the defaults are what FreHD makes)", .Bounds = New Rectangle(10, 10, 540, 62)}
-        g1.Controls.Add(New Label() With {.Text = "Cylinders (1-1023):", .AutoSize = True, .Location = New Point(14, 28)})
+        Dim g1 As New GroupBox() With {.Text = UiText.T("dlg.newhd.shape"), .Bounds = New Rectangle(10, 10, 540, 62)}
+        Dim lblCyl As New Label() With {.Text = UiText.T("dlg.newhd.cylinders"), .AutoSize = True, .Location = New Point(14, 28)}
+        g1.Controls.Add(lblCyl)
         _numCyl.Location = New Point(140, 25)
         g1.Controls.Add(_numCyl)
-        g1.Controls.Add(New Label() With {.Text = "Heads (1-8):", .AutoSize = True, .Location = New Point(250, 28)})
+        Dim lblHeads As New Label() With {.Text = UiText.T("dlg.newhd.heads"), .AutoSize = True, .Location = New Point(250, 28)}
+        g1.Controls.Add(lblHeads)
         _numHeads.Location = New Point(330, 25)
         g1.Controls.Add(_numHeads)
 
-        Dim g2 As New GroupBox() With {.Text = "Contents", .Bounds = New Rectangle(10, 80, 540, 196)}
+        Dim g2 As New GroupBox() With {.Text = UiText.T("dlg.newhd.contents"), .Bounds = New Rectangle(10, 80, 540, 196)}
         _rbLsdos.Location = New Point(14, 24)
         _rbLdos.Location = New Point(14, 48)
         _rbBlank.Location = New Point(14, 72)
         _chkPartitions.Location = New Point(34, 104)
         _numPartitions.Location = New Point(220, 102)
-        g2.Controls.Add(New Label() With {.Text = "(otherwise as few as keep each at 203 cylinders or fewer)", .AutoSize = True, .Location = New Point(280, 105), .ForeColor = SystemColors.GrayText})
+        Dim lblPartsHint As New Label() With {.Text = UiText.T("dlg.newhd.partshint"), .AutoSize = True, .Location = New Point(280, 105), .ForeColor = SystemColors.GrayText}
+        g2.Controls.Add(lblPartsHint)
         _lblModel.Location = New Point(34, 134)
         _cmbModel.Location = New Point(220, 130)
-        _cmbModel.Items.AddRange(New Object() {"Model III", "Model I"})
+        _cmbModel.Items.AddRange(New Object() {UiText.T("word.model3"), UiText.T("word.model1")})
         _cmbModel.SelectedIndex = 0
         _lblName.Location = New Point(34, 162)
         _txtName.Location = New Point(220, 158)
-        g2.Controls.Add(New Label() With {.Text = "(blank = HARDA, HARDB, ...)", .AutoSize = True, .Location = New Point(320, 162), .ForeColor = SystemColors.GrayText})
+        Dim lblNameHint As New Label() With {.Text = UiText.T("dlg.newhd.namehint"), .AutoSize = True, .Location = New Point(320, 162), .ForeColor = SystemColors.GrayText}
+        g2.Controls.Add(lblNameHint)
         g2.Controls.AddRange(New Control() {_rbLsdos, _rbLdos, _rbBlank, _chkPartitions, _numPartitions, _lblModel, _cmbModel, _lblName, _txtName})
 
-        Dim btnOk As New Button() With {.Text = "Create...", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(380, 292, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(470, 292, 80, 26)}
+        Dim btnOk As New Button() With {.Text = UiText.T("btn.create"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(380, 292, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = UiText.T("btn.cancel"), .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(470, 292, 80, 26)}
         Controls.AddRange(New Control() {g1, g2, btnOk, btnCancel})
+
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves.
+        UiFit.AfterAll(lblCyl, 8, _numCyl)
+        UiFit.SpreadRow(16, _numCyl, lblHeads)
+        UiFit.AfterAll(lblHeads, 8, _numHeads)
+        UiFit.SpreadRow(12, _chkPartitions, _numPartitions, lblPartsHint)
+        UiFit.AfterAll(_lblModel, 8, _cmbModel)
+        UiFit.AfterAll(_lblName, 8, _txtName)
+        UiFit.SpreadRow(12, _txtName, lblNameHint)
+        UiFit.GrowToFit(g1)
+        UiFit.GrowToFit(g2)
+        g1.Width = Math.Max(g1.Width, g2.Width)
+        g2.Width = Math.Max(g1.Width, g2.Width)
+        UiFit.GrowForm(Me)
+        UiFit.ButtonRow(ClientSize.Width - 10, 10, btnOk, btnCancel)
+
         AcceptButton = btnOk : CancelButton = btnCancel
 
         AddHandler _rbBlank.CheckedChanged, Sub() UpdateEnabled()
@@ -119,38 +139,51 @@ End Class
 Public Class PartitionAddForm
     Inherits Form
 
-    Private ReadOnly _rbLdos As New RadioButton() With {.Text = "LDOS 5.3", .AutoSize = True}
-    Private ReadOnly _rbLsdos As New RadioButton() With {.Text = "LS-DOS 6.3 (Model 4)", .AutoSize = True, .Checked = True}
+    Private ReadOnly _rbLdos As New RadioButton() With {.Text = UiText.T("dlg.partadd.ldos"), .AutoSize = True}
+    Private ReadOnly _rbLsdos As New RadioButton() With {.Text = UiText.T("dos.lsdos63.m4"), .AutoSize = True, .Checked = True}
     Private ReadOnly _cmbModel As New ComboBox() With {.DropDownStyle = ComboBoxStyle.DropDownList, .Width = 90}
-    Private ReadOnly _chkCyl As New CheckBox() With {.Text = "Cylinders (35-203):", .AutoSize = True}
+    Private ReadOnly _chkCyl As New CheckBox() With {.Text = UiText.T("dlg.partadd.cylinders"), .AutoSize = True}
     Private ReadOnly _numCyl As New NumericUpDown() With {.Minimum = 35, .Maximum = 203, .Value = 203, .Width = 60, .Enabled = False}
     Private ReadOnly _txtName As New TextBox() With {.Width = 90, .MaxLength = 8, .CharacterCasing = CharacterCasing.Upper}
-    Private ReadOnly _lblModel As New Label() With {.Text = "Boot sector for:", .AutoSize = True}
+    Private ReadOnly _lblModel As New Label() With {.Text = UiText.T("dlg.partadd.model"), .AutoSize = True}
 
     Public Sub New()
-        Text = "Add a Partition"
+        Text = UiText.T("dlg.partadd.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
         ShowInTaskbar = False
         ClientSize = New Size(480, 232)
 
-        Controls.Add(New Label() With {.Text = "trs80-tool formats an empty data partition in the image's free space and prints the" & vbCrLf & "settings the DOS's hard disk driver must be given to find it.", .AutoSize = True, .Location = New Point(12, 10)})
+        Controls.Add(New Label() With {.Text = UiText.TCrLf("dlg.partadd.intro"), .AutoSize = True, .Location = New Point(12, 10)})
         _rbLsdos.Location = New Point(14, 52)
         _rbLdos.Location = New Point(14, 76)
         _lblModel.Location = New Point(120, 78)
         _cmbModel.Location = New Point(220, 74)
-        _cmbModel.Items.AddRange(New Object() {"Model III", "Model I"})
+        _cmbModel.Items.AddRange(New Object() {UiText.T("word.model3"), UiText.T("word.model1")})
         _cmbModel.SelectedIndex = 0
         _chkCyl.Location = New Point(14, 112)
         _numCyl.Location = New Point(160, 110)
-        Controls.Add(New Label() With {.Text = "(otherwise the rest of the free block, at most 203)", .AutoSize = True, .Location = New Point(230, 113), .ForeColor = SystemColors.GrayText})
-        Controls.Add(New Label() With {.Text = "Disk name:", .AutoSize = True, .Location = New Point(14, 148)})
+        Dim lblCylHint As New Label() With {.Text = UiText.T("dlg.partadd.cylhint"), .AutoSize = True, .Location = New Point(230, 113), .ForeColor = SystemColors.GrayText}
+        Controls.Add(lblCylHint)
+        Dim lblName As New Label() With {.Text = UiText.T("dlg.partadd.name"), .AutoSize = True, .Location = New Point(14, 148)}
+        Controls.Add(lblName)
         _txtName.Location = New Point(160, 144)
-        Controls.Add(New Label() With {.Text = "(blank = HARD and the first free letter)", .AutoSize = True, .Location = New Point(260, 148), .ForeColor = SystemColors.GrayText})
-        Dim btnOk As New Button() With {.Text = "Add", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(300, 194, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(390, 194, 80, 26)}
+        Dim lblNameHint As New Label() With {.Text = UiText.T("dlg.partadd.namehint"), .AutoSize = True, .Location = New Point(260, 148), .ForeColor = SystemColors.GrayText}
+        Controls.Add(lblNameHint)
+        Dim btnOk As New Button() With {.Text = UiText.T("btn.add"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(300, 194, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = UiText.T("btn.cancel"), .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(390, 194, 80, 26)}
         Controls.AddRange(New Control() {_rbLsdos, _rbLdos, _lblModel, _cmbModel, _chkCyl, _numCyl, _txtName, btnOk, btnCancel})
+
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves.
+        UiFit.SpreadRow(12, _rbLdos, _lblModel)
+        UiFit.AfterAll(_lblModel, 8, _cmbModel)
+        UiFit.SpreadRow(12, _chkCyl, _numCyl, lblCylHint)
+        UiFit.AfterAll(lblName, 8, _txtName)
+        UiFit.SpreadRow(12, _txtName, lblNameHint)
+        UiFit.GrowForm(Me)
+        UiFit.ButtonRow(ClientSize.Width - 10, 10, btnOk, btnCancel)
+
         AcceptButton = btnOk : CancelButton = btnCancel
 
         AddHandler _rbLdos.CheckedChanged, Sub() UpdateEnabled()

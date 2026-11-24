@@ -284,8 +284,8 @@ End Module
 Public Class OkCancelDialog
     Inherits Dialog(Of Boolean)
 
-    Protected ReadOnly OkButton As New Button With {.Text = "OK"}
-    Protected ReadOnly CancelButtonControl As New Button With {.Text = "Cancel"}
+    Protected ReadOnly OkButton As New Button With {.Text = UiText.T("btn.ok")}
+    Protected ReadOnly CancelButtonControl As New Button With {.Text = UiText.T("btn.cancel")}
 
     Public Sub New(title As String)
         Me.Title = title

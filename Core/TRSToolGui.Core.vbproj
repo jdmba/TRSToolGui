@@ -10,11 +10,19 @@
     <OptionExplicit>On</OptionExplicit>
     <OptionInfer>On</OptionInfer>
     <Nullable>disable</Nullable>
-    <Version>1.5.0</Version>
+    <Version>1.6.0</Version>
     <Product>TRSToolGui</Product>
     <Authors>Ira Goldklang and Claude AI</Authors>
     <Company>Ira Goldklang and Claude AI</Company>
     <Copyright>© 2026 Ira Goldklang and Claude AI</Copyright>
     <Description>The engine adapter, disk model and analysis code of TRSToolGui, without any window toolkit</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- The program's user-visible text, one table per language, read by UiText.vb. The name a table is
+         embedded under is worked out from its file name, so a new language needs no change here: put
+         Lang\<code>.txt beside en.txt and list the code in UiText._declared. -->
+    <EmbeddedResource Include="Lang\*.txt">
+      <LogicalName>TRSToolGui.Lang.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

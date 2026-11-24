@@ -30,7 +30,7 @@ Public Class CpmFormatForm
     ''' <param name="layoutsText">What "disk IMAGE help cpm-format" printed.</param>
     ''' <param name="current">The layout in force for the image, or "" when trs80-tool decides.</param>
     Public Sub New(layoutsText As String, current As String)
-        Text = "CP/M layout"
+        Text = UiText.T("dlg.cpm.title")
         FormBorderStyle = FormBorderStyle.Sizable
         MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
@@ -40,8 +40,8 @@ Public Class CpmFormatForm
 
         Dim lblTop As New Label() With {
             .AutoSize = False, .Dock = DockStyle.Top, .Height = 40, .Padding = New Padding(8, 8, 8, 0),
-            .Text = "A CP/M disk doesn't say how it is laid out, so trs80-tool works it out. If it picks the wrong layout for this disk, name the right one from trs80-tool's list below." &
-                    If(String.IsNullOrEmpty(current), "", "  Now in force: " & current & ".")}
+            .Text = UiText.T("dlg.cpm.intro") &
+                    If(String.IsNullOrEmpty(current), "", UiText.T("dlg.cpm.inforce", current))}
 
         Dim txtList As New TextBox() With {
             .Multiline = True, .ReadOnly = True, .ScrollBars = ScrollBars.Both, .WordWrap = False, .Dock = DockStyle.Fill,
@@ -49,16 +49,16 @@ Public Class CpmFormatForm
             .Text = If(layoutsText, "").Replace(vbCrLf, vbLf).Replace(vbLf, vbCrLf)}
 
         Dim bottom As New Panel() With {.Dock = DockStyle.Bottom, .Height = 44}
-        Dim lblName As New Label() With {.AutoSize = True, .Location = New Point(10, 14), .Text = "Layout name (for example mm-ds-data):"}
+        Dim lblName As New Label() With {.AutoSize = True, .Location = New Point(10, 14), .Text = UiText.T("dlg.cpm.name")}
         _txtName.Bounds = New Rectangle(250, 10, 150, 23)
         _txtName.Text = If(current, "")
-        Dim btnUse As New Button() With {.Text = "Use this layout", .Bounds = New Rectangle(410, 9, 120, 26)}
-        Dim btnAuto As New Button() With {.Text = "Let trs80-tool decide", .Bounds = New Rectangle(536, 9, 150, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(692, 9, 80, 26)}
+        Dim btnUse As New Button() With {.Text = UiText.T("dlg.cpm.use"), .Bounds = New Rectangle(410, 9, 120, 26)}
+        Dim btnAuto As New Button() With {.Text = UiText.T("dlg.cpm.auto"), .Bounds = New Rectangle(536, 9, 150, 26)}
+        Dim btnCancel As New Button() With {.Text = UiText.T("btn.cancel"), .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(692, 9, 80, 26)}
         AddHandler btnUse.Click, Sub()
                                      Dim name As String = _txtName.Text.Trim()
                                      If name.Length = 0 OrElse name.IndexOf(" "c) >= 0 Then
-                                         MessageBox.Show(Me, "Type one layout name from the list, such as mm-data.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                                         MessageBox.Show(Me, UiText.T("dlg.cpm.bad"), Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
                                          Return
                                      End If
                                      _chosen = name
@@ -74,6 +74,22 @@ Public Class CpmFormatForm
         Controls.Add(txtList)
         Controls.Add(bottom)
         Controls.Add(lblTop)
+
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves.
+        UiFit.FitWrapped(lblTop, ClientSize.Width)
+        UiFit.AfterAll(lblName, 8, _txtName)
+        ' 772 is where the three buttons end in English (410 + 120, 536 + 150, 692 + 80 with a
+        ' gap of 6), so laying them out from there moves nothing; a longer language pushes the
+        ' row right and the window grows with it, keeping the margin it has always had.
+        Dim edge As Integer = 772
+        UiFit.ButtonRow(edge, 6, btnUse, btnAuto, btnCancel)
+        Dim shortBy As Integer = (_txtName.Right + 12) - btnUse.Left
+        If shortBy > 0 Then
+            edge += shortBy
+            UiFit.ButtonRow(edge, 6, btnUse, btnAuto, btnCancel)
+        End If
+        If ClientSize.Width < edge + 88 Then ClientSize = New Size(edge + 88, ClientSize.Height)
+
         AcceptButton = btnUse
         CancelButton = btnCancel
     End Sub

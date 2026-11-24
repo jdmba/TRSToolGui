@@ -50,9 +50,9 @@ Public Class SectorMapForm
     Private ReadOnly _grid As New GridView With {.GridLines = GridLines.Horizontal, .AllowMultipleSelection = False}
     Private ReadOnly _details As TextArea
     Private ReadOnly _bad As New GridView With {.AllowMultipleSelection = False}
-    Private ReadOnly _lblSummary As New Label With {.Text = "Reading sectors..."}
-    Private ReadOnly _btnRefresh As New Button With {.Text = "Refresh"}
-    Private ReadOnly _btnProtection As New Button With {.Text = "Protection && artifacts...", .Enabled = False}
+    Private ReadOnly _lblSummary As New Label With {.Text = UiText.T("dlg.sectormap.reading")}
+    Private ReadOnly _btnRefresh As New Button With {.Text = UiText.T("btn.refresh")}
+    Private ReadOnly _btnProtection As New Button With {.Text = UiText.T("btn.protection"), .Enabled = False}
     Private _rows As New List(Of MapRow)
     Private ReadOnly _columnNumber As New Dictionary(Of GridColumn, Integer)
     Private ReadOnly _monoFont As Font = Ui.Mono(9.0F)
@@ -65,7 +65,7 @@ Public Class SectorMapForm
     End Sub
 
     Private Sub BuildUi()
-        Title = "Sector map - " & Path.GetFileName(_disk.Path)
+        Title = UiText.T("dlg.sectormap.title", Path.GetFileName(_disk.Path))
         ClientSize = New Size(1040, 660)
         MinimumSize = New Size(640, 400)
         Padding = New Padding(Ui.Margin)
@@ -73,28 +73,28 @@ Public Class SectorMapForm
         AddHandler _grid.CellClick, Sub(s, e) ShowCell(e.Row, e.GridColumn)
         AddHandler _grid.CellFormatting, AddressOf OnMapCellFormatting
 
-        AddBadColumn("Cyl", 45, Function(r) r.Cyl)
-        AddBadColumn("Side", 45, Function(r) r.Side)
-        AddBadColumn("Sector", 60, Function(r) r.Number)
-        AddBadColumn("Problem", 260, Function(r) r.Problem)
-        AddBadColumn("File(s) at this sector", 220, Function(r) r.Files)
+        AddBadColumn(UiText.T("dlg.sectormap.col.cyl"), 45, Function(r) r.Cyl)
+        AddBadColumn(UiText.T("dlg.sectormap.col.side"), 45, Function(r) r.Side)
+        AddBadColumn(UiText.T("dlg.sectormap.col.sector"), 60, Function(r) r.Number)
+        AddBadColumn(UiText.T("dlg.sectormap.col.problem"), 260, Function(r) r.Problem)
+        AddBadColumn(UiText.T("dlg.sectormap.col.files"), 220, Function(r) r.Files)
         AddHandler _bad.SelectionChanged, Sub() SelectFromBadList()
 
         Dim right As New Splitter With {
             .Orientation = Orientation.Vertical,
-            .Panel1 = Ui.Down(_details, Ui.Lbl("Selected sector:"), _details),
-            .Panel2 = Ui.Down(_bad, Ui.Lbl("Bad sectors (missing or CRC error) and the files that use them — what ""sectors --bad"" lists:"), _bad),
+            .Panel1 = Ui.Down(_details, Ui.Lbl(UiText.T("dlg.sectormap.selheader")), _details),
+            .Panel2 = Ui.Down(_bad, Ui.Lbl(UiText.T("dlg.sectormap.badheader")), _bad),
             .Position = 330}
         Dim split As New Splitter With {.Orientation = Orientation.Horizontal, .Panel1 = _grid, .Panel2 = right, .Position = 560}
 
         AddHandler _btnRefresh.Click, Async Sub() Await LoadAsync()
         AddHandler _btnProtection.Click, Sub() ShowProtection()
-        Dim buttons As TableLayout = Ui.Across(Ui.Btn("Text report...", Async Sub() Await ShowTextReportAsync(False)),
-                                               Ui.Btn("Bad sectors (text)...", Async Sub() Await ShowTextReportAsync(True)),
-                                               Ui.Btn("Save report...", Async Sub() Await SaveReportAsync()),
-                                               _btnRefresh, _btnProtection, Nothing, Ui.Btn("Close", Sub() Close()))
+        Dim buttons As TableLayout = Ui.Across(Ui.Btn(UiText.T("btn.textreport"), Async Sub() Await ShowTextReportAsync(False)),
+                                               Ui.Btn(UiText.T("btn.badtext"), Async Sub() Await ShowTextReportAsync(True)),
+                                               Ui.Btn(UiText.T("btn.savereport"), Async Sub() Await SaveReportAsync()),
+                                               _btnRefresh, _btnProtection, Nothing, Ui.Btn(UiText.T("btn.close"), Sub() Close()))
         Content = Ui.Down(split, _lblSummary,
-                          Ui.Lbl("Legend (as trs80-tool prints it):  S single density   D double density   C CRC error   X deleted-data mark   ? not found   - not on this track.  Click a sector for its header line and hex dump.", True),
+                          Ui.Lbl(UiText.T("dlg.sectormap.legend"), True),
                           split, buttons)
     End Sub
 
@@ -109,7 +109,7 @@ Public Class SectorMapForm
 
     Private Async Function LoadAsync() As Task
         _btnRefresh.Enabled = False
-        _lblSummary.Text = "Reading sectors with trs80-tool..."
+        _lblSummary.Text = UiText.T("dlg.sectormap.readingtool")
         Dim problem As String = Nothing
         Try
             ' --protection (5.1.0) adds trs80-tool's signs of copy protection and its imaging artifacts.
@@ -121,8 +121,8 @@ Public Class SectorMapForm
         End Try
         _btnRefresh.Enabled = True
         If problem IsNot Nothing Then
-            _lblSummary.Text = "trs80-tool could not read the sectors."
-            Ui.Fail(Me, "trs80-tool could not read the sectors of this image:" & vbLf & vbLf & problem, "Sector map")
+            _lblSummary.Text = UiText.T("dlg.sectormap.readfailed")
+            Ui.Fail(Me, UiText.T("dlg.sectormap.readfailedmsg", problem), UiText.T("caption.sectormap"))
             Return
         End If
         FillGrid()
@@ -138,30 +138,31 @@ Public Class SectorMapForm
         Dim sb As New StringBuilder()
         sb.AppendLine(Path.GetFileName(_disk.Path) & ": " & If(_info.Description, "") & If(String.IsNullOrEmpty(_info.Os), "", ", " & _info.Os))
         sb.AppendLine()
-        sb.AppendLine("Signs of copy protection (trs80-tool sectors --protection)")
+        sb.AppendLine(UiText.T("dlg.sectormap.prot.header"))
+        ' The four and eight spaces below are the report's indent, so they stay here.
         If _info.Protection Is Nothing Then
-            sb.AppendLine("    (not reported by this trs80-tool)")
+            sb.AppendLine("    " & UiText.T("dlg.sectormap.prot.notreported"))
         ElseIf _info.Protection.Count = 0 Then
-            sb.AppendLine("    No signs of copy protection (which doesn't prove there's none).")
+            sb.AppendLine("    " & UiText.T("dlg.sectormap.prot.none"))
         Else
             For Each sign In _info.Protection
                 Dim verdict As String
                 Select Case If(sign.Verdict, "")
-                    Case "protected" : verdict = "PROTECTED"
-                    Case "dosProtected" : verdict = "DOS PROTECTED"
-                    Case "possible" : verdict = "possible"
-                    Case "info" : verdict = "not protection"
+                    Case "protected" : verdict = UiText.T("dlg.sectormap.verdict.protected")
+                    Case "dosProtected" : verdict = UiText.T("dlg.sectormap.verdict.dosprotected")
+                    Case "possible" : verdict = UiText.T("dlg.sectormap.verdict.possible")
+                    Case "info" : verdict = UiText.T("dlg.sectormap.verdict.info")
                     Case Else : verdict = sign.Verdict
                 End Select
-                sb.AppendLine("    [" & verdict & "] " & sign.Message)
-                If Not String.IsNullOrEmpty(sign.Scheme) Then sb.AppendLine("        Scheme: " & sign.Scheme)
-                If sign.Schemes IsNot Nothing AndAlso sign.Schemes.Count > 0 Then sb.AppendLine("        Seen with (trs-80.com scheme numbers): " & String.Join(", ", sign.Schemes))
+                sb.AppendLine("    " & UiText.T("dlg.sectormap.prot.sign", verdict, sign.Message))
+                If Not String.IsNullOrEmpty(sign.Scheme) Then sb.AppendLine("        " & UiText.T("dlg.sectormap.prot.scheme", sign.Scheme))
+                If sign.Schemes IsNot Nothing AndAlso sign.Schemes.Count > 0 Then sb.AppendLine("        " & UiText.T("dlg.sectormap.prot.schemes", String.Join(", ", sign.Schemes)))
             Next
         End If
         sb.AppendLine()
-        sb.AppendLine("Imaging artifacts (bad or missing sectors the imaging likely caused; reimaging may read them)")
+        sb.AppendLine(UiText.T("dlg.sectormap.art.header"))
         If _info.ImagingArtifacts Is Nothing OrElse _info.ImagingArtifacts.Count = 0 Then
-            sb.AppendLine("    None.")
+            sb.AppendLine("    " & UiText.T("dlg.sectormap.art.none"))
         Else
             For Each a In _info.ImagingArtifacts
                 sb.AppendLine("    " & a.Message)
@@ -172,7 +173,7 @@ Public Class SectorMapForm
 
     Private Sub ShowProtection()
         If _info Is Nothing Then Return
-        Dim f As New TextReportForm("Copy protection signs and imaging artifacts - " & Path.GetFileName(_disk.Path), ProtectionReport())
+        Dim f As New TextReportForm(UiText.T("dlg.sectormap.prot.title", Path.GetFileName(_disk.Path)), ProtectionReport())
         f.ShowOwned(Me)
     End Sub
 
@@ -183,7 +184,7 @@ Public Class SectorMapForm
         _rows = New List(Of MapRow)
         Dim sectors As List(Of Trs80Tool.SectorJson) = _info.Sectors
         If sectors.Count = 0 Then
-            _lblSummary.Text = "No sectors reported for this image."
+            _lblSummary.Text = UiText.T("dlg.sectormap.nosectors")
             Return
         End If
         ' Columns: every sector number that occurs anywhere, ascending (protected disks may have odd ones).
@@ -222,10 +223,14 @@ Public Class SectorMapForm
         _grid.DataStore = _rows
 
         Dim desc As String = If(_info.Description, "")
-        Dim os As String = If(_info.Os, "unknown operating system")
-        _lblSummary.Text = desc & If(desc.Length > 0, ", ", "") & os & "  —  " & (maxCyl + 1).ToString(CultureInfo.InvariantCulture) & " cylinders, " & (maxSide + 1).ToString(CultureInfo.InvariantCulture) & " side(s), " &
-            sectors.Count.ToString(CultureInfo.InvariantCulture) & " sector positions, " & If(bad = 0, "no bad sectors", bad.ToString(CultureInfo.InvariantCulture) & " bad sector(s)") &
-            If(stray > 0, ", " & stray.ToString(CultureInfo.InvariantCulture) & " outside the usual numbers", "")
+        Dim os As String = If(_info.Os, UiText.T("dlg.sectormap.unknownos"))
+        ' The comma that joins the description to the operating system is punctuation, so it stays here.
+        Dim line As String = UiText.T("dlg.sectormap.summary", desc & If(desc.Length > 0, ", ", "") & os,
+            (maxCyl + 1).ToString(CultureInfo.InvariantCulture), (maxSide + 1).ToString(CultureInfo.InvariantCulture),
+            sectors.Count.ToString(CultureInfo.InvariantCulture),
+            If(bad = 0, UiText.T("dlg.sectormap.nobad"), UiText.T("dlg.sectormap.somebad", bad.ToString(CultureInfo.InvariantCulture))))
+        If stray > 0 Then line = UiText.T("dlg.sectormap.stray", line, stray.ToString(CultureInfo.InvariantCulture))
+        _lblSummary.Text = line
     End Sub
 
     ''' <summary>The map's colours: bad sectors red, deleted-data marks orange, FM white, MFM pale blue, stray numbers yellow.</summary>
@@ -260,25 +265,25 @@ Public Class SectorMapForm
             If Not sj.IsBad Then Continue For
             Dim problem As String
             If sj.Missing Then
-                problem = "missing (not found on the track)"
+                problem = UiText.T("dlg.sectormap.missing")
             Else
-                problem = "CRC error"
+                problem = UiText.T("dlg.sectormap.crcerror")
                 Dim parts As New List(Of String)
-                If sj.IdCrc IsNot Nothing AndAlso Not sj.IdCrc.Valid Then parts.Add("ID " & sj.IdCrc.Stored.ToString("X4", CultureInfo.InvariantCulture) & " != " & sj.IdCrc.Computed.ToString("X4", CultureInfo.InvariantCulture))
-                If sj.DataCrc IsNot Nothing AndAlso Not sj.DataCrc.Valid Then parts.Add("data " & sj.DataCrc.Stored.ToString("X4", CultureInfo.InvariantCulture) & " != " & sj.DataCrc.Computed.ToString("X4", CultureInfo.InvariantCulture))
-                If parts.Count > 0 Then problem &= " (" & String.Join(", ", parts) & ")"
+                If sj.IdCrc IsNot Nothing AndAlso Not sj.IdCrc.Valid Then parts.Add(UiText.T("dlg.sectormap.idcrc", sj.IdCrc.Stored.ToString("X4", CultureInfo.InvariantCulture), sj.IdCrc.Computed.ToString("X4", CultureInfo.InvariantCulture)))
+                If sj.DataCrc IsNot Nothing AndAlso Not sj.DataCrc.Valid Then parts.Add(UiText.T("dlg.sectormap.datacrc", sj.DataCrc.Stored.ToString("X4", CultureInfo.InvariantCulture), sj.DataCrc.Computed.ToString("X4", CultureInfo.InvariantCulture)))
+                If parts.Count > 0 Then problem = UiText.T("dlg.sectormap.crcdetail", problem, String.Join(", ", parts))
             End If
             ' trs80-tool says when a bad sector is something the imaging likely caused, so reimaging may read it.
-            If sj.ImagingArtifactText.Length > 0 Then problem &= " - imaging artifact: " & sj.ImagingArtifactText
+            If sj.ImagingArtifactText.Length > 0 Then problem = UiText.T("dlg.sectormap.artifactsuffix", problem, sj.ImagingArtifactText)
             rows.Add(New BadRow With {
                 .Sector = sj,
                 .Cyl = sj.Cylinder.ToString(CultureInfo.InvariantCulture),
                 .Side = sj.Side.ToString(CultureInfo.InvariantCulture),
                 .Number = sj.Sector.ToString(CultureInfo.InvariantCulture),
                 .Problem = problem,
-                .Files = If(sj.Files IsNot Nothing AndAlso sj.Files.Count > 0, String.Join(", ", sj.Files), "(no file at this sector)")})
+                .Files = If(sj.Files IsNot Nothing AndAlso sj.Files.Count > 0, String.Join(", ", sj.Files), UiText.T("dlg.sectormap.nofileat"))})
         Next
-        If rows.Count = 0 Then rows.Add(New BadRow With {.Problem = "No bad sectors."})
+        If rows.Count = 0 Then rows.Add(New BadRow With {.Problem = UiText.T("dlg.sectormap.nobadsectors")})
         _bad.DataStore = rows
     End Sub
 
@@ -292,18 +297,18 @@ Public Class SectorMapForm
         If row.Sectors.TryGetValue(number, sj) Then
             ShowSector(sj)
         Else
-            _details.Text = "Cylinder " & row.Cylinder.ToString(CultureInfo.InvariantCulture) & ", side " & row.Side.ToString(CultureInfo.InvariantCulture) & ", sector " & number.ToString(CultureInfo.InvariantCulture) & ": not on this track"
+            _details.Text = UiText.T("dlg.sectormap.notontrack", row.Cylinder.ToString(CultureInfo.InvariantCulture), row.Side.ToString(CultureInfo.InvariantCulture), number.ToString(CultureInfo.InvariantCulture))
         End If
     End Sub
 
     Private Sub ShowSector(sj As Trs80Tool.SectorJson)
         Dim sb As New StringBuilder()
         sb.Append(sj.HeaderText).Append(vbLf)
-        If sj.ImagingArtifactText.Length > 0 Then sb.Append("Imaging artifact: " & sj.ImagingArtifactText & ".").Append(vbLf)
+        If sj.ImagingArtifactText.Length > 0 Then sb.Append(UiText.T("dlg.sectormap.artifact", sj.ImagingArtifactText)).Append(vbLf)
         If sj.Files IsNot Nothing AndAlso sj.Files.Count > 0 Then
-            sb.Append(If(sj.Files.Count = 1, "File", "Files") & " at this sector: " & String.Join(", ", sj.Files)).Append(vbLf)
+            sb.Append(UiText.T(If(sj.Files.Count = 1, "dlg.sectormap.fileat", "dlg.sectormap.filesat"), String.Join(", ", sj.Files))).Append(vbLf)
         Else
-            sb.Append("There is no file at this sector.").Append(vbLf)
+            sb.Append(UiText.T("dlg.sectormap.nofile")).Append(vbLf)
         End If
         Dim data As Byte() = sj.GetBytes()
         If data IsNot Nothing Then
@@ -341,17 +346,17 @@ Public Class SectorMapForm
             r = Await Program.Tool.SectorsTextAsync(_disk.Path, badOnly)
         Catch ex As Exception
             r = Nothing
-            Ui.Fail(Me, ex.Message, "Sector map")
+            Ui.Fail(Me, ex.Message, UiText.T("caption.sectormap"))
         End Try
         If r Is Nothing Then Return
         Dim body As String = If(r.Succeeded, r.StdOut, r.ErrorText)
-        If badOnly AndAlso body.Trim().Length = 0 Then body = "trs80-tool reports no bad sectors on this floppy (""sectors --bad"" prints nothing for a clean disk)."
+        If badOnly AndAlso body.Trim().Length = 0 Then body = UiText.T("dlg.sectormap.nobadtext")
         Dim f As New TextReportForm(If(badOnly, "sectors --bad", "sectors") & " - " & Path.GetFileName(_disk.Path), body)
         f.ShowOwned(Me)
     End Function
 
     Private Async Function SaveReportAsync() As Task
-        Dim target As String = Ui.PickSave(Me, "Save sector report", "Text file (*.txt)|*.txt|All files (*.*)|*.*",
+        Dim target As String = Ui.PickSave(Me, UiText.T("caption.savesectorreport"), UiText.T("filter.textfile"),
                                            Path.Combine(Path.GetDirectoryName(_disk.Path), Path.GetFileNameWithoutExtension(_disk.Path) & "_sectors.txt"), "txt")
         If target Is Nothing Then Return
         Try
@@ -362,11 +367,11 @@ Public Class SectorMapForm
             sb.AppendLine(If(all.Succeeded, all.StdOut, all.ErrorText))
             sb.AppendLine().AppendLine("trs80-tool sectors --bad """ & _disk.Path & """").AppendLine()
             Dim badText As String = If(bad.Succeeded, bad.StdOut, bad.ErrorText)
-            sb.AppendLine(If(badText.Trim().Length = 0, "(no bad sectors)", badText))
+            sb.AppendLine(If(badText.Trim().Length = 0, UiText.T("dlg.sectormap.nobadparen"), badText))
             If _info IsNot Nothing Then sb.AppendLine().AppendLine(ProtectionReport())
             File.WriteAllText(target, Ui.HostLines(sb.ToString()), New UTF8Encoding(True))
         Catch ex As Exception
-            Ui.Fail(Me, ex.Message, "Save sector report")
+            Ui.Fail(Me, ex.Message, UiText.T("caption.savesectorreport"))
         End Try
     End Function
 End Class

@@ -36,7 +36,7 @@ Public Class DiskInfoForm
 
     ''' <summary>Runs the analysis off the UI thread (a big DMK is a few MB) and fills the tabs.</summary>
     Public Async Function LoadAsync() As Threading.Tasks.Task
-        _status.Text = "Reading " & Path.GetFileName(_path) & "..."
+        _status.Text = UiText.T("dlg.dmk.reading", Path.GetFileName(_path))
         UseWaitCursor = True
         Try
             Dim p As String = _path
@@ -44,7 +44,7 @@ Public Class DiskInfoForm
             Fill()
             _status.Text = If(_analysis.Dos IsNot Nothing, _analysis.Dos.Result, _analysis.Image.Kind)
         Catch ex As Exception
-            _status.Text = "Could not analyse the image: " & ex.Message
+            _status.Text = UiText.T("dlg.dmk.failed", ex.Message)
             _txtReport.Text = ex.ToString()
         Finally
             UseWaitCursor = False
@@ -52,7 +52,7 @@ Public Class DiskInfoForm
     End Function
 
     Private Sub BuildUi()
-        Text = "DMK analysis - " & Path.GetFileName(_path)
+        Text = UiText.T("dlg.dmk.title", Path.GetFileName(_path))
         StartPosition = FormStartPosition.CenterParent
         ClientSize = New Size(960, 640)
         MinimumSize = New Size(640, 400)
@@ -60,7 +60,7 @@ Public Class DiskInfoForm
 
         _tabs.Dock = DockStyle.Fill
         ' Summary
-        Dim tpSummary As New TabPage("Summary")
+        Dim tpSummary As New TabPage(UiText.T("dlg.dmk.tab.summary"))
         With _lvSummary
             .Dock = DockStyle.Fill
             .View = View.Details
@@ -68,12 +68,13 @@ Public Class DiskInfoForm
             .HeaderStyle = ColumnHeaderStyle.Nonclickable
             .ShowGroups = True
             .Font = New Font(HostPlatform.UiFontName, 9.0F)
-            .Columns.Add("Item", 190)
-            .Columns.Add("Value", 720)
+            .Columns.Add(UiText.T("dlg.dmk.col.item"), 190)
+            .Columns.Add(UiText.T("dlg.dmk.col.value"), 720)
         End With
+        UiFit.FitListColumns(_lvSummary)
         tpSummary.Controls.Add(_lvSummary)
         ' Tracks
-        Dim tpTracks As New TabPage("Tracks")
+        Dim tpTracks As New TabPage(UiText.T("dlg.dmk.tab.tracks"))
         With _grid
             .Dock = DockStyle.Fill
             .ReadOnly = True
@@ -84,16 +85,18 @@ Public Class DiskInfoForm
             .SelectionMode = DataGridViewSelectionMode.FullRowSelect
             .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
             .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
-            .Columns.Add("cyl", "Cyl") : .Columns(0).Width = 40
-            .Columns.Add("side", "Side") : .Columns(1).Width = 40
-            .Columns.Add("ids", "IDs") : .Columns(2).Width = 40
-            .Columns.Add("layout", "Layout (density × count × size, numbering, marks)") : .Columns(3).Width = 480
-            .Columns.Add("bad", "Bad") : .Columns(4).Width = 40
-            .Columns.Add("notes", "Notes") : .Columns(5).Width = 300
+            .Columns.Add("cyl", UiText.T("dlg.dmk.col.cyl")) : .Columns(0).Width = 40
+            .Columns.Add("side", UiText.T("dlg.dmk.col.side")) : .Columns(1).Width = 40
+            .Columns.Add("ids", UiText.T("dlg.dmk.col.ids")) : .Columns(2).Width = 40
+            .Columns.Add("layout", UiText.T("dlg.dmk.col.layout")) : .Columns(3).Width = 480
+            .Columns.Add("bad", UiText.T("dlg.dmk.col.bad")) : .Columns(4).Width = 40
+            .Columns.Add("notes", UiText.T("dlg.dmk.col.notes")) : .Columns(5).Width = 300
         End With
+        ' A heading is never cut: French's "Défauts" does not fit the 40 pixels "Bad" wants.
+        UiFit.FitColumns(_grid)
         tpTracks.Controls.Add(_grid)
         ' Report
-        Dim tpReport As New TabPage("Report")
+        Dim tpReport As New TabPage(UiText.T("dlg.dmk.tab.report"))
         With _txtReport
             .Dock = DockStyle.Fill
             .Multiline = True
@@ -111,18 +114,21 @@ Public Class DiskInfoForm
         _status.Size = New Size(560, 18)
         _status.AutoEllipsis = True
         _status.Anchor = AnchorStyles.Left Or AnchorStyles.Top Or AnchorStyles.Right
-        Dim btnCopy As New Button() With {.Text = "Copy report", .Size = New Size(100, 26), .Anchor = AnchorStyles.Right Or AnchorStyles.Top}
-        Dim btnSave As New Button() With {.Text = "Save report...", .Size = New Size(100, 26), .Anchor = AnchorStyles.Right Or AnchorStyles.Top}
-        Dim btnClose As New Button() With {.Text = "Close", .Size = New Size(80, 26), .Anchor = AnchorStyles.Right Or AnchorStyles.Top, .DialogResult = DialogResult.Cancel}
+        Dim btnCopy As New Button() With {.Text = UiText.T("btn.copyreport"), .Size = New Size(100, 26), .Top = 6, .Anchor = AnchorStyles.Right Or AnchorStyles.Top}
+        Dim btnSave As New Button() With {.Text = UiText.T("btn.savereport"), .Size = New Size(100, 26), .Top = 6, .Anchor = AnchorStyles.Right Or AnchorStyles.Top}
+        Dim btnClose As New Button() With {.Text = UiText.T("btn.close"), .Size = New Size(80, 26), .Top = 6, .Anchor = AnchorStyles.Right Or AnchorStyles.Top, .DialogResult = DialogResult.Cancel}
+        ' Each button is as wide as its own text needs (UiFit.vb): the French of "Save report..."
+        ' is "Enregistrer le rapport...", which does not fit the 100 pixels English wants.
+        UiFit.FitButton(btnCopy) : UiFit.FitButton(btnSave) : UiFit.FitButton(btnClose)
         AddHandler btnCopy.Click, Sub()
                                       If _txtReport.Text.Length > 0 Then Clipboard.SetText(_txtReport.Text)
                                   End Sub
         AddHandler btnSave.Click, AddressOf OnSave
         AddHandler bottom.Resize, Sub()
-                                      btnClose.Location = New Point(bottom.Width - 90, 6)
-                                      btnSave.Location = New Point(bottom.Width - 200, 6)
-                                      btnCopy.Location = New Point(bottom.Width - 310, 6)
-                                      _status.Width = Math.Max(100, bottom.Width - 330)
+                                      ' Laid out from the right by their real widths, so a longer
+                                      ' language cannot push one button under another.
+                                      UiFit.ButtonRow(bottom.Width - 10, 10, btnCopy, btnSave, btnClose)
+                                      _status.Width = Math.Max(100, btnCopy.Left - _status.Left - 10)
                                   End Sub
         bottom.Controls.AddRange(New Control() {_status, btnCopy, btnSave, btnClose})
         Controls.Add(_tabs)
@@ -135,7 +141,7 @@ Public Class DiskInfoForm
         _lvSummary.BeginUpdate()
         _lvSummary.Items.Clear()
         _lvSummary.Groups.Clear()
-        Dim gFacts As New ListViewGroup("Image and identification")
+        Dim gFacts As New ListViewGroup(UiText.T("dlg.dmk.facts"))
         _lvSummary.Groups.Add(gFacts)
         For Each kv In a.Facts
             Dim it As New ListViewItem(kv.Key) With {.Group = gFacts}
@@ -151,11 +157,11 @@ Public Class DiskInfoForm
                 Dim label As String
                 Dim colour As Color = SystemColors.WindowText
                 Select Case f.Level
-                    Case "protection" : label = "Protection" : colour = Color.DarkRed
-                    Case "sign" : label = "Sign" : colour = Color.DarkOrange
-                    Case "damage" : label = "Damage" : colour = Color.Firebrick
-                    Case "artifact" : label = "Imaging" : colour = Color.DarkSlateBlue
-                    Case "warning" : label = "Note" : colour = Color.DarkGoldenrod
+                    Case "protection" : label = UiText.T("dlg.dmk.level.protection") : colour = Color.DarkRed
+                    Case "sign" : label = UiText.T("dlg.dmk.level.sign") : colour = Color.DarkOrange
+                    Case "damage" : label = UiText.T("dlg.dmk.level.damage") : colour = Color.Firebrick
+                    Case "artifact" : label = UiText.T("dlg.dmk.level.artifact") : colour = Color.DarkSlateBlue
+                    Case "warning" : label = UiText.T("dlg.dmk.level.note") : colour = Color.DarkGoldenrod
                     Case Else : label = ""
                 End Select
                 Dim it As New ListViewItem(label) With {.Group = g, .ForeColor = colour, .ToolTipText = f.Text}
@@ -170,15 +176,15 @@ Public Class DiskInfoForm
         For Each t In a.Image.Tracks
             Dim notes As New List(Of String)
             If Not t.Present Then
-                notes.Add("missing from the file")
+                notes.Add(UiText.T("dlg.dmk.note.missing"))
             Else
-                If t.BadPointers > 0 Then notes.Add(t.BadPointers.ToString(CultureInfo.InvariantCulture) & " bad pointer(s)")
+                If t.BadPointers > 0 Then notes.Add(UiText.T("dlg.dmk.note.badpointers", t.BadPointers.ToString(CultureInfo.InvariantCulture)))
                 Dim wrong As Integer = t.Good.Where(Function(s) s.IdCylinder <> t.Cylinder).Count()
-                If wrong > 0 Then notes.Add(wrong.ToString(CultureInfo.InvariantCulture) & " ID(s) name another cylinder")
-                If t.Good.Any(Function(s) s.SizeCode > 3) Then notes.Add("size code > 3")
-                If t.Cylinder >= 1 AndAlso t.HasFm AndAlso t.HasMfm Then notes.Add("mixed density")
-                If a.DosCylinders > 0 AndAlso t.Cylinder >= a.DosCylinders Then notes.Add("beyond the DOS's " & a.DosCylinders.ToString(CultureInfo.InvariantCulture) & " cylinders")
-                If a.Dos IsNot Nothing AndAlso t.Cylinder = a.Dos.DirectoryCylinder AndAlso t.Side = a.Dos.DirectorySide Then notes.Add("directory")
+                If wrong > 0 Then notes.Add(UiText.T("dlg.dmk.note.wrongids", wrong.ToString(CultureInfo.InvariantCulture)))
+                If t.Good.Any(Function(s) s.SizeCode > 3) Then notes.Add(UiText.T("dlg.dmk.note.sizecode"))
+                If t.Cylinder >= 1 AndAlso t.HasFm AndAlso t.HasMfm Then notes.Add(UiText.T("dlg.dmk.note.mixed"))
+                If a.DosCylinders > 0 AndAlso t.Cylinder >= a.DosCylinders Then notes.Add(UiText.T("dlg.dmk.note.beyonddos", a.DosCylinders.ToString(CultureInfo.InvariantCulture)))
+                If a.Dos IsNot Nothing AndAlso t.Cylinder = a.Dos.DirectoryCylinder AndAlso t.Side = a.Dos.DirectorySide Then notes.Add(UiText.T("dlg.dmk.note.directory"))
             End If
             Dim badCount As Integer = t.Sectors.Where(Function(s) s.IsBad).Count()
             Dim row As Integer = _grid.Rows.Add(t.Cylinder, t.Side, t.Sectors.Count, StripBad(t.Summary()), If(badCount = 0, "", badCount.ToString(CultureInfo.InvariantCulture)), String.Join("; ", notes))
@@ -196,15 +202,15 @@ Public Class DiskInfoForm
     Private Sub OnSave(sender As Object, e As EventArgs)
         If _analysis Is Nothing Then Return
         Using dlg As New SaveFileDialog()
-            dlg.Title = "Save the DMK analysis report"
-            dlg.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
-            dlg.FileName = Path.GetFileNameWithoutExtension(_path) & " - DMK analysis.txt"
+            dlg.Title = UiText.T("dlg.dmk.savetitle")
+            dlg.Filter = UiText.T("filter.text")
+            dlg.FileName = UiText.T("dlg.dmk.savename", Path.GetFileNameWithoutExtension(_path))
             dlg.InitialDirectory = Path.GetDirectoryName(_path)
             If dlg.ShowDialog(Me) = DialogResult.OK Then
                 Try
                     File.WriteAllText(dlg.FileName, _txtReport.Text)
                 Catch ex As Exception
-                    MessageBox.Show(Me, ex.Message, "Save report", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show(Me, ex.Message, UiText.T("dlg.dmk.savecaption"), MessageBoxButtons.OK, MessageBoxIcon.Error)
                 End Try
             End If
         End Using

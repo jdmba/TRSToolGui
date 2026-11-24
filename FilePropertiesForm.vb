@@ -117,11 +117,11 @@ Public Class FilePropertiesForm
     Private Shared Function ProtectLabel(level As Integer, names As String()) As String
         Dim n As String = names(level)
         Select Case n
-            Case "FULL" : n = "FULL (no restriction)"
-            Case "UNUSED" : n = "(unused on this DOS)"
-            Case "NO_ACCESS" : n = "NO ACCESS"
+            Case "FULL" : n = UiText.T("dlg.fileprops.prot.full")
+            Case "UNUSED" : n = UiText.T("dlg.fileprops.prot.unused")
+            Case "NO_ACCESS" : n = UiText.T("dlg.fileprops.prot.noaccess")
         End Select
-        Return level.ToString(CultureInfo.InvariantCulture) & " - " & n
+        Return UiText.T("dlg.fileprops.prot.item", level.ToString(CultureInfo.InvariantCulture), n)
     End Function
 
     ''' <summary>The file's current level (0-7) from trs80-tool's protection string; 0 when it cannot be read.</summary>
@@ -141,8 +141,11 @@ Public Class FilePropertiesForm
         Return 0
     End Function
 
+    ''' <summary>Every label-and-value row, so the value column can clear the widest label (UiFit.vb).</summary>
+    Private ReadOnly _rows As New List(Of KeyValuePair(Of Control, Control))()
+
     Private Sub BuildUi()
-        Text = "File Properties"
+        Text = UiText.T("dlg.fileprops.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
@@ -153,30 +156,30 @@ Public Class FilePropertiesForm
         Dim caps As EngineCapabilities = Program.Tool.Capabilities
         _cpmEditable = _disk.IsWritable AndAlso _disk.IsCpm AndAlso Not _disk.IsHardDisk AndAlso caps IsNot Nothing AndAlso caps.HasDiskOption("attrib", "--read-only")
         Dim y As Integer = 12
-        AddLabel(12, y + 3, "Filename:")
+        _rows.Add(New KeyValuePair(Of Control, Control)(AddLabel(12, y + 3, UiText.T("dlg.fileprops.filename")), _txtName))
         _txtName.Bounds = New Rectangle(110, y, 160, 23)
         _txtName.Text = _file.SlashName
         _txtName.Enabled = editable OrElse _cpmEditable
         Controls.Add(_txtName)
         y += 30
-        AddLabel(12, y + 3, "Date:")
+        _rows.Add(New KeyValuePair(Of Control, Control)(AddLabel(12, y + 3, UiText.T("dlg.fileprops.date")), _txtDate))
         _txtDate.Bounds = New Rectangle(110, y, 160, 23)
         _txtDate.Text = _file.DateText
         _txtDate.Enabled = editable
         Controls.Add(_txtDate)
-        _chkNoDate.Text = "No date" : _chkNoDate.AutoSize = True
+        _chkNoDate.Text = UiText.T("dlg.fileprops.nodate") : _chkNoDate.AutoSize = True
         _chkNoDate.Location = New Point(280, y + 2)
         _chkNoDate.Enabled = editable
         Controls.Add(_chkNoDate)
-        AddLabel(110, y + 26, "(YYYY-MM-DD; the DOS decides which years it can store)")
+        AddLabel(110, y + 26, UiText.T("dlg.fileprops.datehint"))
         y += 48
-        AddStatic(y, "Size:", TextUtil.FormatBytes(_file.Size) & " bytes") : y += 24
-        AddStatic(y, "Kind:", _file.Description & If(_file.ContentType.Length > 0, "  [" & _file.ContentType & "]", "")) : y += 24
-        If _file.Damage.Length > 0 Then AddStatic(y, "Damage:", _file.Damage) : y += 24
-        If _file.Sha256.Length > 0 Then AddStatic(y, "SHA-256:", _file.Sha256) : y += 24
+        AddStatic(y, UiText.T("dlg.fileprops.size"), UiText.T("dlg.fileprops.sizevalue", TextUtil.FormatBytes(_file.Size))) : y += 24
+        AddStatic(y, UiText.T("dlg.fileprops.kind"), If(_file.ContentType.Length > 0, UiText.T("dlg.fileprops.kindvalue", _file.Description, _file.ContentType), _file.Description)) : y += 24
+        If _file.Damage.Length > 0 Then AddStatic(y, UiText.T("dlg.fileprops.damage"), _file.Damage) : y += 24
+        If _file.Sha256.Length > 0 Then AddStatic(y, UiText.T("dlg.fileprops.sha"), _file.Sha256) : y += 24
 
         If _disk.IsTrsdosFamily Then
-            AddLabel(12, y + 3, "Protection:")
+            Dim lblProt As Label = AddLabel(12, y + 3, UiText.T("dlg.fileprops.protection"))
             _cmbProtect.DropDownStyle = ComboBoxStyle.DropDownList
             Dim names As String() = ProtectNames()
             For level As Integer = 0 To names.Length - 1
@@ -184,36 +187,41 @@ Public Class FilePropertiesForm
             Next
             _cmbProtect.SelectedIndex = OriginalProtectIndex()
             _cmbProtect.Bounds = New Rectangle(110, y, 220, 23)
+            _rows.Add(New KeyValuePair(Of Control, Control)(lblProt, _cmbProtect))
             _cmbProtect.Enabled = editable
             Controls.Add(_cmbProtect)
             y += 30
-            AddLabel(12, y + 3, "Attributes:")
-            _chkInvisible.Text = "Invisible" : _chkInvisible.AutoSize = True : _chkInvisible.Checked = _file.Hidden
-            _chkSystem.Text = "System" : _chkSystem.AutoSize = True : _chkSystem.Checked = _file.IsSystem
+            _rows.Add(New KeyValuePair(Of Control, Control)(AddLabel(12, y + 3, UiText.T("dlg.fileprops.attributes")), _chkInvisible))
+            _chkInvisible.Text = UiText.T("dlg.fileprops.invisible") : _chkInvisible.AutoSize = True : _chkInvisible.Checked = _file.Hidden
+            _chkSystem.Text = UiText.T("dlg.fileprops.system") : _chkSystem.AutoSize = True : _chkSystem.Checked = _file.IsSystem
             _chkInvisible.Location = New Point(110, y + 2)
             _chkSystem.Location = New Point(200, y + 2)
             _chkInvisible.Enabled = editable : _chkSystem.Enabled = editable
             Controls.Add(_chkInvisible) : Controls.Add(_chkSystem)
             ' The LDOS line keeps two more bits in the entry, which trs80-tool reports but does not change.
-            If _file.HasLdosBits Then AddLabel(290, y + 3, "Created: " & If(_file.IsCreated, "yes", "no") & "    MOD: " & If(_file.IsModified, "yes", "no"))
+            If _file.HasLdosBits Then AddLabel(290, y + 3, UiText.T("dlg.fileprops.ldosbits", If(_file.IsCreated, UiText.T("word.yes"), UiText.T("word.no")), If(_file.IsModified, UiText.T("word.yes"), UiText.T("word.no"))))
             y += 30
             Dim updateNow As String = DiskFile.PasswordText(_file.UpdatePassword, _file.UpdatePasswordHash)
             Dim accessNow As String = If(_file.TimeStampsReplaceAccessPassword, "", DiskFile.PasswordText(_file.AccessPassword, _file.AccessPasswordHash))
             If updateNow.Length > 0 OrElse accessNow.Length > 0 Then
-                AddStatic(y, "Passwords now:", "update: " & If(updateNow.Length > 0, updateNow, "?") & If(_file.TimeStampsReplaceAccessPassword, "", "    access: " & If(accessNow.Length > 0, accessNow, "?"))) : y += 24
+                Dim pwText As String = UiText.T("dlg.fileprops.pwnow.update", If(updateNow.Length > 0, updateNow, "?"))
+                If Not _file.TimeStampsReplaceAccessPassword Then pwText = UiText.T("dlg.fileprops.pwnow.access", pwText, If(accessNow.Length > 0, accessNow, "?"))
+                AddStatic(y, UiText.T("dlg.fileprops.pwnow"), pwText) : y += 24
             End If
-            _chkSetPassword.Text = "Set update password:" : _chkSetPassword.AutoSize = True
+            _chkSetPassword.Text = UiText.T("dlg.fileprops.setupdate") : _chkSetPassword.AutoSize = True
             _chkSetPassword.Location = New Point(12, y + 2)
+            _rows.Add(New KeyValuePair(Of Control, Control)(_chkSetPassword, _txtPassword))
             _chkSetPassword.Enabled = editable
             _txtPassword.Bounds = New Rectangle(170, y, 120, 23)
             _txtPassword.MaxLength = 8
             _txtPassword.Enabled = False
             AddHandler _chkSetPassword.CheckedChanged, Sub() _txtPassword.Enabled = _chkSetPassword.Checked
             Controls.Add(_chkSetPassword) : Controls.Add(_txtPassword)
-            AddLabel(300, y + 3, "(blank = remove)")
+            AddLabel(300, y + 3, UiText.T("dlg.fileprops.blankremove"))
             y += 30
-            _chkSetAccess.Text = "Set access password:" : _chkSetAccess.AutoSize = True
+            _chkSetAccess.Text = UiText.T("dlg.fileprops.setaccess") : _chkSetAccess.AutoSize = True
             _chkSetAccess.Location = New Point(12, y + 2)
+            _rows.Add(New KeyValuePair(Of Control, Control)(_chkSetAccess, _txtAccess))
             ' LDOS 5.3 / LS-DOS 6.3 keep a time stamp where the access password would go; trs80-tool says so for
             ' every file of such a disk and refuses to set one.
             Dim accessIsTimeStamp As Boolean = _file.TimeStampsReplaceAccessPassword
@@ -223,44 +231,59 @@ Public Class FilePropertiesForm
             _txtAccess.Enabled = False
             AddHandler _chkSetAccess.CheckedChanged, Sub() _txtAccess.Enabled = _chkSetAccess.Checked
             Controls.Add(_chkSetAccess) : Controls.Add(_txtAccess)
-            AddLabel(300, y + 3, If(accessIsTimeStamp, "(not on this DOS: the entry keeps a time stamp there)", "(blank = remove)"))
+            AddLabel(300, y + 3, If(accessIsTimeStamp, UiText.T("dlg.fileprops.accessistimestamp"), UiText.T("dlg.fileprops.blankremove")))
             y += 30
         Else
             _chkInvisible.Enabled = False
             Dim attrs As String = _file.AttributeLetters
-            If _file.CpmUser.HasValue Then attrs &= "  user " & _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)
+            If _file.CpmUser.HasValue Then attrs = UiText.T("dlg.fileprops.cpmuserin", attrs, _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture))
             If _file.CpmAttributes.Length > 0 Then attrs &= "  " & _file.CpmAttributes
             If _cpmEditable Then
-                AddLabel(12, y + 3, "Attributes:")
-                _chkCpmReadOnly.Text = "Read-only (R/O)" : _chkCpmReadOnly.AutoSize = True : _chkCpmReadOnly.Checked = _file.CpmReadOnly
-                _chkCpmSys.Text = "System (SYS: not listed by DIR)" : _chkCpmSys.AutoSize = True : _chkCpmSys.Checked = _file.CpmSys
+                _rows.Add(New KeyValuePair(Of Control, Control)(AddLabel(12, y + 3, UiText.T("dlg.fileprops.attributes")), _chkCpmReadOnly))
+                _chkCpmReadOnly.Text = UiText.T("dlg.fileprops.cpmro") : _chkCpmReadOnly.AutoSize = True : _chkCpmReadOnly.Checked = _file.CpmReadOnly
+                _chkCpmSys.Text = UiText.T("dlg.fileprops.cpmsys") : _chkCpmSys.AutoSize = True : _chkCpmSys.Checked = _file.CpmSys
                 _chkCpmReadOnly.Location = New Point(110, y + 2)
                 _chkCpmSys.Location = New Point(240, y + 2)
                 Controls.Add(_chkCpmReadOnly) : Controls.Add(_chkCpmSys)
                 y += 28
-                If _file.CpmUser.HasValue AndAlso _file.CpmUser.Value <> 0 Then AddStatic(y, "User area:", _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)) : y += 24
-                AddLabel(12, y, "CP/M 2.2 keeps no dates, passwords or protection levels.") : y += 24
+                If _file.CpmUser.HasValue AndAlso _file.CpmUser.Value <> 0 Then AddStatic(y, UiText.T("dlg.fileprops.cpmuserarea"), _file.CpmUser.Value.ToString(CultureInfo.InvariantCulture)) : y += 24
+                AddLabel(12, y, UiText.T("dlg.fileprops.cpmnone")) : y += 24
             Else
-                AddStatic(y, "Attributes:", If(attrs.Trim().Length > 0, attrs, "(none)")) : y += 24
-                AddLabel(12, y, If(_disk.IsCpm, "Changing files on CP/M disks needs trs80-tool 5.2.0 or later, and a disk it can write.", "trs80-tool doesn't change files on this kind of disk.")) : y += 24
+                AddStatic(y, UiText.T("dlg.fileprops.attributes"), If(attrs.Trim().Length > 0, attrs, UiText.T("dlg.fileprops.attrsnone"))) : y += 24
+                AddLabel(12, y, If(_disk.IsCpm, UiText.T("dlg.fileprops.cpmneeds520"), UiText.T("dlg.fileprops.nochange"))) : y += 24
             End If
         End If
 
-        Dim btnOk As New Button() With {.Text = "OK", .DialogResult = DialogResult.OK, .Bounds = New Rectangle(300, y + 6, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(390, y + 6, 80, 26)}
+        Dim btnOk As New Button() With {.Text = UiText.T("btn.ok"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(300, y + 6, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = UiText.T("btn.cancel"), .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(390, y + 6, 80, 26)}
         btnOk.Enabled = editable OrElse _cpmEditable
         Controls.Add(btnOk) : Controls.Add(btnCancel)
+
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves. The value
+        ' column clears the widest label, and the boxes beside the attribute and password rows
+        ' follow whatever is to their left.
+        UiFit.AlignColumn(_rows, 10)
+        UiFit.SpreadRow(10, _txtDate, _chkNoDate)
+        UiFit.SpreadRow(12, _chkInvisible, _chkSystem)
+        UiFit.SpreadRow(12, _chkCpmReadOnly, _chkCpmSys)
+        UiFit.GrowForm(Me)
         AcceptButton = btnOk
         CancelButton = btnCancel
-        ClientSize = New Size(484, y + 42)
+        ClientSize = New Size(Math.Max(484, ClientSize.Width), y + 42)
+        UiFit.ButtonRow(ClientSize.Width - 14, 10, btnOk, btnCancel)
     End Sub
 
-    Private Sub AddLabel(x As Integer, y As Integer, text As String)
-        Controls.Add(New Label() With {.AutoSize = True, .Location = New Point(x, y), .Text = text})
-    End Sub
+    ''' <summary>Adds a label and gives it back, so the layout pass can measure it.</summary>
+    Private Function AddLabel(x As Integer, y As Integer, text As String) As Label
+        Dim lbl As New Label() With {.AutoSize = True, .Location = New Point(x, y), .Text = text}
+        Controls.Add(lbl)
+        Return lbl
+    End Function
 
     Private Sub AddStatic(y As Integer, label As String, value As String)
-        AddLabel(12, y, label)
-        Controls.Add(New Label() With {.AutoSize = False, .Location = New Point(110, y), .Size = New Size(360, 18), .Text = value, .AutoEllipsis = True})
+        Dim lbl As Label = AddLabel(12, y, label)
+        Dim val As New Label() With {.AutoSize = False, .Location = New Point(110, y), .Size = New Size(360, 18), .Text = value, .AutoEllipsis = True}
+        Controls.Add(val)
+        _rows.Add(New KeyValuePair(Of Control, Control)(lbl, val))
     End Sub
 End Class

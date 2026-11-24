@@ -27,7 +27,7 @@ Public Class TextReportForm
 
     Private ReadOnly _txt As TextArea
     Private ReadOnly _filter As New TextBox With {.Width = 300}
-    Private ReadOnly _btnRun As New Button With {.Text = "Run"}
+    Private ReadOnly _btnRun As New Button With {.Text = UiText.T("btn.run")}
     Private ReadOnly _refresher As Func(Of String, Task(Of String))
     Private ReadOnly _baseTitle As String
 
@@ -43,7 +43,7 @@ Public Class TextReportForm
         MinimumSize = New Size(480, 300)
         Padding = New Padding(Ui.Margin)
         _txt = Ui.ReportBox(text)
-        Dim buttons As TableLayout = Ui.Across(Ui.Btn("Copy to clipboard", Sub() Ui.CopyTextToClipboard(_txt.Text)), Ui.Btn("Save as...", AddressOf SaveText), Nothing, Ui.Btn("Close", Sub() Close()))
+        Dim buttons As TableLayout = Ui.Across(Ui.Btn(UiText.T("btn.copyclipboard"), Sub() Ui.CopyTextToClipboard(_txt.Text)), Ui.Btn(UiText.T("btn.saveas"), AddressOf SaveText), Nothing, Ui.Btn(UiText.T("btn.close"), Sub() Close()))
         If filterLabel IsNot Nothing AndAlso refresher IsNot Nothing Then
             AddHandler _btnRun.Click, Async Sub() Await RefreshAsync()
             AddHandler _filter.KeyDown, Async Sub(s, e)
@@ -80,12 +80,12 @@ Public Class TextReportForm
     End Function
 
     Private Sub SaveText()
-        Dim target As String = Ui.PickSave(Me, "Save report", "Text file (*.txt)|*.txt|All files (*.*)|*.*", Regex.Replace(_baseTitle, "[^A-Za-z0-9_.-]+", "_") & ".txt", "txt")
+        Dim target As String = Ui.PickSave(Me, UiText.T("caption.savereport"), UiText.T("filter.textfile"), Regex.Replace(_baseTitle, "[^A-Za-z0-9_.-]+", "_") & ".txt", "txt")
         If target Is Nothing Then Return
         Try
             File.WriteAllText(target, Ui.HostLines(_txt.Text), New UTF8Encoding(True))
         Catch ex As Exception
-            Ui.Fail(Me, ex.Message, "Save report")
+            Ui.Fail(Me, ex.Message, UiText.T("caption.savereport"))
         End Try
     End Sub
 End Class
@@ -96,19 +96,21 @@ Public Class CheckRepairForm
 
     Private ReadOnly _disk As DiskImage
     Private ReadOnly _txt As TextArea
-    Private ReadOnly _chkFree As New CheckBox With {.Text = "Also free granules the GAT marks used but no file claims (--free-unclaimed)"}
-    Private ReadOnly _chkSizes As New CheckBox With {.Text = "Also fix program sizes whose transfer record is past the directory size (--fix-program-sizes)"}
-    Private ReadOnly _chkMissing As New CheckBox With {.Text = "Also mark used the free granules the image doesn't fully hold, so the DOS won't use them either (--mark-missing-used)"}
-    Private ReadOnly _btnCheck As New Button With {.Text = "Re-check"}
-    Private ReadOnly _btnPreview As New Button With {.Text = "Preview repair (dry run)"}
-    Private ReadOnly _btnRepair As New Button With {.Text = "Repair"}
-    Private ReadOnly _btnClose As New Button With {.Text = "Close"}
+    Private ReadOnly _chkFree As New CheckBox With {.Text = UiText.T("dlg.checkrepair.free")}
+    Private ReadOnly _chkSizes As New CheckBox With {.Text = UiText.T("dlg.checkrepair.sizes")}
+    Private ReadOnly _chkMissing As New CheckBox With {.Text = UiText.T("dlg.checkrepair.missing")}
+    Private ReadOnly _btnCheck As New Button With {.Text = UiText.T("btn.recheck")}
+    Private ReadOnly _btnPreview As New Button With {.Text = UiText.T("btn.previewrepair")}
+    Private ReadOnly _btnRepair As New Button With {.Text = UiText.T("btn.repair")}
+    Private ReadOnly _btnClose As New Button With {.Text = UiText.T("btn.close")}
     Private ReadOnly _canRepair As Boolean
     Private _changed As Boolean = False
 
     Public Sub New(disk As DiskImage)
         _disk = disk
-        Title = "Check & repair - " & Path.GetFileName(disk.Path) & If(disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing, " - partition " & disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture), "")
+        Dim shown As String = UiText.T("dlg.checkrepair.title", Path.GetFileName(disk.Path))
+        If disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing Then shown = UiText.T("title.partition", shown, disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))
+        Title = shown
         Resizable = True
         ClientSize = New Size(880, 600)
         MinimumSize = New Size(560, 360)
@@ -124,7 +126,7 @@ Public Class CheckRepairForm
         _canRepair = Not (disk.WriteProtected.HasValue AndAlso disk.WriteProtected.Value)
         _btnPreview.Enabled = _canRepair
         _btnRepair.Enabled = _canRepair
-        If Not _canRepair Then _txt.Text = "The image's write-protect flag is set; clear it in Disk properties before repairing." & vbLf & vbLf
+        If Not _canRepair Then _txt.Text = UiText.T("dlg.checkrepair.wp") & vbLf & vbLf
     End Sub
 
     Public ReadOnly Property Changed As Boolean
@@ -170,7 +172,7 @@ Public Class CheckRepairForm
 
     Private Async Function RunRepairAsync(dryRun As Boolean) As Task
         If Not dryRun Then
-            If Not Ui.Ask(Me, "Repair writes to the image (trs80-tool saves it only if every step succeeds)." & vbLf & vbLf & "Go ahead?", "Repair", MessageBoxType.Warning, True) Then Return
+            If Not Ui.Ask(Me, UiText.T("dlg.checkrepair.confirm"), UiText.T("caption.repair"), MessageBoxType.Warning, True) Then Return
         End If
         SetBusy(True)
         Try
@@ -194,19 +196,19 @@ Public Class TrimForm
 
     Private ReadOnly _rbDefault, _rbCylinders, _rbSide As RadioButton
     Private ReadOnly _numCyl As New NumericStepper With {.MinValue = 1, .MaxValue = 255, .Value = 35, .DecimalPlaces = 0, .Width = 80}
-    Private ReadOnly _chkForce As New CheckBox With {.Text = "Force: drop tracks whose data can't be proven unused, or trim a write-protected image" & vbLf & "(--force; never tracks with signs of copy protection)"}
+    Private ReadOnly _chkForce As New CheckBox With {.Text = UiText.T("dlg.trim.force") & vbLf & UiText.T("dlg.trim.forcenote")}
 
     Public Sub New(disk As DiskImage)
-        MyBase.New("Trim - " & Path.GetFileName(disk.Path))
-        _rbDefault = New RadioButton With {.Text = "Drop only the cylinders trs80-tool can prove are past the disk's end (default)", .Checked = True}
-        _rbCylinders = New RadioButton(_rbDefault) With {.Text = "Keep cylinders 0 to N-1, with N ="}
-        _rbSide = New RadioButton(_rbDefault) With {.Text = "Drop side 1, keeping only side 0 (--side 0)"}
+        MyBase.New(UiText.T("dlg.trim.title", Path.GetFileName(disk.Path)))
+        _rbDefault = New RadioButton With {.Text = UiText.T("dlg.trim.default"), .Checked = True}
+        _rbCylinders = New RadioButton(_rbDefault) With {.Text = UiText.T("dlg.trim.cylinders")}
+        _rbSide = New RadioButton(_rbDefault) With {.Text = UiText.T("dlg.trim.side")}
         If disk.Geometry IsNot Nothing AndAlso disk.Geometry.CylinderCount > 0 Then _numCyl.Value = Math.Min(255, Math.Max(1, disk.Geometry.CylinderCount))
         AddHandler _rbCylinders.CheckedChanged, Sub() _numCyl.Enabled = _rbCylinders.Checked
         _numCyl.Enabled = False
         Finish(Ui.Down(Nothing,
-                       Ui.Lbl("Remove the part of the image the disk doesn't use. trs80-tool refuses to drop tracks that hold data unless forced."),
-                       _rbDefault, Ui.Across(_rbCylinders, _numCyl), _rbSide, _chkForce), "Trim")
+                       Ui.Lbl(UiText.T("dlg.trim.intro")),
+                       _rbDefault, Ui.Across(_rbCylinders, _numCyl), _rbSide, _chkForce), UiText.T("btn.trim"))
     End Sub
 
     Public Function OptionWords() As List(Of String)
@@ -226,34 +228,34 @@ Public Class BootForm
     Inherits OkCancelDialog
 
     Private ReadOnly _rbM1, _rbM3, _rbM4 As RadioButton
-    Private ReadOnly _chkWritable As New CheckBox With {.Text = "Let the emulated DOS write to the image (--writable; otherwise every floppy is write-protected)"}
+    Private ReadOnly _chkWritable As New CheckBox With {.Text = UiText.T("dlg.boot.writable")}
     Private ReadOnly _lstMount As New ListBox With {.Size = New Size(460, 100)}
     Private ReadOnly _txtPrinter As New TextBox With {.Width = 380}
 
     Public Sub New(disk As DiskImage)
-        MyBase.New("Boot in the emulator - " & Path.GetFileName(disk.Path))
-        _rbM1 = New RadioButton With {.Text = "Model I"}
-        _rbM3 = New RadioButton(_rbM1) With {.Text = "Model III"}
-        _rbM4 = New RadioButton(_rbM1) With {.Text = "Model 4"}
+        MyBase.New(UiText.T("dlg.boot.title", Path.GetFileName(disk.Path)))
+        _rbM1 = New RadioButton With {.Text = UiText.T("word.model1")}
+        _rbM3 = New RadioButton(_rbM1) With {.Text = UiText.T("word.model3")}
+        _rbM4 = New RadioButton(_rbM1) With {.Text = UiText.T("word.model4")}
         Select Case GuessModel(disk.DosName)
             Case 1 : _rbM1.Checked = True
             Case 4 : _rbM4.Checked = True
             Case Else : _rbM3.Checked = True
         End Select
-        Dim mountButtons As TableLayout = Ui.Down(Nothing, Ui.Btn("Add...", AddressOf AddMount), Ui.Btn("Remove", Sub()
+        Dim mountButtons As TableLayout = Ui.Down(Nothing, Ui.Btn(UiText.T("btn.addellipsis"), AddressOf AddMount), Ui.Btn(UiText.T("btn.remove"), Sub()
                                                                                                                    If _lstMount.SelectedIndex >= 0 Then _lstMount.Items.RemoveAt(_lstMount.SelectedIndex)
                                                                                                                End Sub))
         Finish(Ui.Down(Nothing,
-                       Ui.Wrapped("Starts ""trs80-tool run"" in a terminal window with this image in drive 0. Close that window (or Ctrl-C) to stop the emulator; the file list here is read again when it ends.", 560),
-                       Ui.Group("TRS-80 model (--model)", Ui.Across(_rbM1, _rbM3, _rbM4)),
+                       Ui.Wrapped(UiText.T("dlg.boot.intro.unix"), 560),
+                       Ui.Group(UiText.T("dlg.boot.model"), Ui.Across(_rbM1, _rbM3, _rbM4)),
                        _chkWritable,
-                       Ui.Lbl("Also mount in the next drives (--mount):"),
+                       Ui.Lbl(UiText.T("dlg.boot.mount")),
                        Ui.Across(_lstMount, mountButtons),
-                       Ui.Lbl("Printer output file (--printer, optional):"),
-                       Ui.Across(_txtPrinter, Ui.Btn("Browse...", Sub()
-                                                                      Dim chosen As String = Ui.PickSave(Me, "Printer output file", "Text file (*.txt)|*.txt|All files (*.*)|*.*", Nothing, "txt")
+                       Ui.Lbl(UiText.T("dlg.boot.printer")),
+                       Ui.Across(_txtPrinter, Ui.Btn(UiText.T("btn.browse"), Sub()
+                                                                      Dim chosen As String = Ui.PickSave(Me, UiText.T("dlg.boot.pickprinter"), UiText.T("filter.textfile"), Nothing, "txt")
                                                                       If chosen IsNot Nothing Then _txtPrinter.Text = chosen
-                                                                  End Sub))), "Boot")
+                                                                  End Sub))), UiText.T("btn.boot"))
     End Sub
 
     Public Shared Function GuessModel(dosName As String) As Integer
@@ -265,8 +267,8 @@ Public Class BootForm
 
     Private Sub AddMount()
         Using ofd As New OpenFileDialog()
-            ofd.Title = "Image to mount"
-            Ui.SetFilters(ofd, "Disk and cassette images (*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.cas;*.wav)|*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.cas;*.wav|All files (*.*)|*.*")
+            ofd.Title = UiText.T("dlg.boot.pickmount")
+            Ui.SetFilters(ofd, UiText.T("filter.mountimages"))
             ofd.MultiSelect = True
             If ofd.ShowDialog(Me) <> DialogResult.Ok Then Return
             For Each f In ofd.Filenames

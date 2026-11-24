@@ -44,7 +44,7 @@ Public Class ViewerForm
     Private ReadOnly _combo As New DropDown With {.Width = 150}
     Private ReadOnly _rbMono As RadioButton
     Private ReadOnly _rbProp As RadioButton
-    Private ReadOnly _btnOptions As New Button With {.Text = "Options...", .Enabled = False}
+    Private ReadOnly _btnOptions As New Button With {.Text = UiText.T("btn.options"), .Enabled = False}
     ''' <summary>Per-viewer disassembly words, starting from the Preferences default.</summary>
     Private _disasmWords As List(Of String) = Program.Settings.DisasmOptionWords()
     Private _basicDialect As String = ""          ' "" = let the DOS decide, "3" or "4" = --basic N
@@ -63,13 +63,13 @@ Public Class ViewerForm
     Public Sub New(disk As DiskImage, file As DiskFile)
         _disk = disk
         _file = file
-        _rbMono = New RadioButton With {.Text = "Monospaced"}
-        _rbProp = New RadioButton(_rbMono) With {.Text = "Proportional"}
+        _rbMono = New RadioButton With {.Text = UiText.T("dlg.viewer.mono")}
+        _rbProp = New RadioButton(_rbMono) With {.Text = UiText.T("dlg.viewer.prop")}
         BuildUi()
     End Sub
 
     Private Sub BuildUi()
-        Title = "File Viewer - " & _file.SlashName
+        Title = UiText.T("dlg.viewer.title", _file.SlashName)
         ClientSize = New Size(820, 560)
         MinimumSize = New Size(420, 260)
         Padding = New Padding(Ui.Margin)
@@ -80,7 +80,7 @@ Public Class ViewerForm
         AddHandler _rbProp.CheckedChanged, Sub() ApplyFont()
         AddHandler _combo.SelectedIndexChanged, Async Sub() Await ShowKindAsync()
         AddHandler _btnOptions.Click, Async Sub() Await EditOptionsAsync()
-        Dim bottom As TableLayout = Ui.Across(Ui.Group("Font", Ui.Across(_rbMono, _rbProp)), _combo, _btnOptions, _lblInfo, Nothing, Ui.Btn("Save as...", AddressOf SaveCurrent), Ui.Btn("Done", Sub() Close()))
+        Dim bottom As TableLayout = Ui.Across(Ui.Group(UiText.T("dlg.viewer.font"), Ui.Across(_rbMono, _rbProp)), _combo, _btnOptions, _lblInfo, Nothing, Ui.Btn(UiText.T("btn.saveas"), AddressOf SaveCurrent), Ui.Btn(UiText.T("btn.done"), Sub() Close()))
         Content = Ui.Down(_view, _view, bottom)
     End Sub
 
@@ -88,18 +88,18 @@ Public Class ViewerForm
         MyBase.OnShown(e)
         _rbMono.Checked = Program.Settings.ViewerMonospaced
         _rbProp.Checked = Not _rbMono.Checked
-        _text.Text = "Working..."
+        _text.Text = UiText.T("dlg.viewer.working")
         Try
             _bytes = Await Program.Tool.ReadFileBytesAsync(_disk.Path, _disk.PartitionArg, _file.TrsName)
         Catch ex As Exception
             _bytes = Nothing
-            Ui.Fail(Me, "Could not read " & _file.SlashName & ":" & vbLf & ex.Message, "File viewer")
+            Ui.Fail(Me, UiText.T("dlg.viewer.readfailed", _file.SlashName, ex.Message), UiText.T("caption.fileviewer"))
         End Try
         If _bytes Is Nothing Then
             Close()
             Return
         End If
-        _lblInfo.Text = TextUtil.FormatBytes(_bytes.LongLength) & " bytes" & If(_file.Description.Length > 0, "  •  " & _file.Description, "")
+        _lblInfo.Text = UiText.T("word.bytes", TextUtil.FormatBytes(_bytes.LongLength)) & If(_file.Description.Length > 0, "  •  " & _file.Description, "")
         DetectKinds()
         ' Assembler source: say which layout it is in and where it really ends (old slack past that is not shown).
         If _kinds(0) = ViewerKind.Edtasm OrElse (_kinds(0) = ViewerKind.Text AndAlso AsmSource.IsSourceExtension(_file.Extension)) Then
@@ -107,7 +107,7 @@ Public Class ViewerForm
             _lblInfo.Text &= "  •  " & _asm.Summary()
         End If
         Dim basicKind As String = BasicKindLabel()
-        If basicKind.Length > 0 Then Title = "File Viewer - " & _file.SlashName & " (" & basicKind & ")"
+        If basicKind.Length > 0 Then Title = UiText.T("dlg.viewer.titlekind", UiText.T("dlg.viewer.title", _file.SlashName), basicKind)
         _loading = True
         _combo.Items.Clear()
         For Each k In _kinds
@@ -123,6 +123,22 @@ Public Class ViewerForm
     End Sub
 
     Private Shared Function KindName(k As ViewerKind) As String
+        Select Case k
+            Case ViewerKind.Graphics : Return UiText.T("dlg.viewer.kind.graphics")
+            Case ViewerKind.Edtasm : Return UiText.T("dlg.viewer.kind.edtasm")
+            Case ViewerKind.Basic : Return UiText.T("dlg.viewer.kind.basic")
+            Case ViewerKind.Disassembly : Return UiText.T("dlg.viewer.kind.disassembly")
+            Case ViewerKind.Text : Return UiText.T("dlg.viewer.kind.text")
+            Case Else : Return UiText.T("dlg.viewer.kind.hex")
+        End Select
+    End Function
+
+    ''' <summary>
+    ''' The same kinds as a tag for the file name the Save dialog suggests. These stay
+    ''' English whatever language the windows are in: a translated name would put accents
+    ''' and spaces into a file name on the host.
+    ''' </summary>
+    Private Shared Function KindFileTag(k As ViewerKind) As String
         Select Case k
             Case ViewerKind.Graphics : Return "Graphics"
             Case ViewerKind.Edtasm : Return "EDTASM"
@@ -160,9 +176,9 @@ Public Class ViewerForm
     ''' <summary>The kind of BASIC program for the title bar; empty when the file isn't BASIC.</summary>
     Private Function BasicKindLabel() As String
         If _kinds.Contains(ViewerKind.Basic) Then
-            Return If(FileKinds.IsModel4Basic(_bytes), "Model 4 Tokenized", "Model I/III Tokenized")
+            Return If(FileKinds.IsModel4Basic(_bytes), UiText.T("dlg.viewer.basic.m4"), UiText.T("dlg.viewer.basic.m13"))
         End If
-        If _kinds.Count > 0 AndAlso _kinds(0) = ViewerKind.Text AndAlso FileKinds.IsAsciiBasic(_bytes) Then Return "ASCII"
+        If _kinds.Count > 0 AndAlso _kinds(0) = ViewerKind.Text AndAlso FileKinds.IsAsciiBasic(_bytes) Then Return UiText.T("dlg.viewer.basic.ascii")
         Return ""
     End Function
 
@@ -180,7 +196,7 @@ Public Class ViewerForm
                     _pic.Image = Await GraphicsAsync()
                 Catch ex As Exception
                     _pic.Image = Nothing
-                    Ui.Fail(Me, "trs80-tool could not turn this file into a picture: " & ex.Message, "File viewer")
+                    Ui.Fail(Me, UiText.T("dlg.viewer.picfailed", ex.Message), UiText.T("caption.fileviewer"))
                 End Try
             End If
             Return
@@ -192,7 +208,7 @@ Public Class ViewerForm
             SetText(content)
             Return
         End If
-        _text.Text = "Working..."
+        _text.Text = UiText.T("dlg.viewer.working")
         Try
             Select Case _current
                 Case ViewerKind.Basic
@@ -261,7 +277,7 @@ Public Class ViewerForm
         Try
             Return Await Program.Tool.DisasmAsync(host, _disasmWords)
         Catch ex As ToolException
-            Return "(trs80-tool could not disassemble this file: " & ex.Message & ")" & vbLf & vbLf & TextUtil.HexDump(_bytes)
+            Return UiText.T("dlg.viewer.disasmfailed", ex.Message) & vbLf & vbLf & TextUtil.HexDump(_bytes)
         Finally
             Try : Directory.Delete(Path.GetDirectoryName(host), True) : Catch : End Try
         End Try
@@ -302,9 +318,9 @@ Public Class ViewerForm
     Private Sub SaveCurrent()
         Dim target As String
         If _current = ViewerKind.Graphics Then
-            target = Ui.PickSave(Me, "Save view as", "PNG image (*.png)|*.png", _file.BaseName & ".png", "png")
+            target = Ui.PickSave(Me, UiText.T("caption.saveview"), UiText.T("filter.png"), _file.BaseName & ".png", "png")
         Else
-            target = Ui.PickSave(Me, "Save view as", "Text file (*.txt)|*.txt|All files (*.*)|*.*", _file.BaseName & "_" & KindName(_current) & ".txt", "txt")
+            target = Ui.PickSave(Me, UiText.T("caption.saveview"), UiText.T("filter.textfile"), _file.BaseName & "_" & KindFileTag(_current) & ".txt", "txt")
         End If
         If target Is Nothing Then Return
         Try
@@ -314,7 +330,7 @@ Public Class ViewerForm
                 File.WriteAllText(target, Ui.HostLines(_text.Text), New UTF8Encoding(True))
             End If
         Catch ex As Exception
-            Ui.Fail(Me, ex.Message, "Save view")
+            Ui.Fail(Me, ex.Message, UiText.T("caption.saveviewerr"))
         End Try
     End Sub
 End Class
@@ -323,28 +339,29 @@ End Class
 Public Class DisasmOptionsForm
     Inherits OkCancelDialog
 
-    Private ReadOnly _chkListing As New CheckBox With {.Text = "Listing: addresses and bytes beside the source (--listing)"}
-    Private ReadOnly _chkNoBinary As New CheckBox With {.Text = "Listing without the bytes (--no-binary)"}
-    Private ReadOnly _chkUpper As New CheckBox With {.Text = "Upper-case output (--upper)"}
-    Private ReadOnly _chkNoLabels As New CheckBox With {.Text = "No labels for jump targets (--no-labels)"}
-    Private ReadOnly _chkNoKnown As New CheckBox With {.Text = "No labels for known ROM locations (--no-known)"}
-    Private ReadOnly _chkFull As New CheckBox With {.Text = "Treat everything as instructions, no data areas (--full)"}
-    Private ReadOnly _chkDataComment As New CheckBox With {.Text = "Comment each instruction with its bytes as ASCII (--data-comment)"}
+    Private ReadOnly _chkListing As New CheckBox With {.Text = UiText.T("dlg.disasm.listing")}
+    Private ReadOnly _chkNoBinary As New CheckBox With {.Text = UiText.T("dlg.disasm.nobinary")}
+    Private ReadOnly _chkUpper As New CheckBox With {.Text = UiText.T("dlg.disasm.upper")}
+    Private ReadOnly _chkNoLabels As New CheckBox With {.Text = UiText.T("dlg.disasm.nolabels")}
+    Private ReadOnly _chkNoKnown As New CheckBox With {.Text = UiText.T("dlg.disasm.noknown")}
+    Private ReadOnly _chkFull As New CheckBox With {.Text = UiText.T("dlg.disasm.full")}
+    Private ReadOnly _chkDataComment As New CheckBox With {.Text = UiText.T("dlg.disasm.datacomment")}
     Private ReadOnly _cmbHex As New DropDown With {.Width = 170}
     Private ReadOnly _txtOrg As New TextBox With {.Width = 100}
     Private ReadOnly _txtEntry As New TextBox With {.Width = 260}
-    Private ReadOnly _chkSaveDefault As New CheckBox With {.Text = "Make these the default (Preferences → Disassembly options)"}
+    Private ReadOnly _chkSaveDefault As New CheckBox With {.Text = UiText.T("dlg.disasm.savedefault")}
 
     Public Sub New(current As IEnumerable(Of String))
-        MyBase.New("Disassembly options (trs80-tool disasm)")
-        For Each item In New String() {"default", "c  (0x12)", "dollar  ($12)", "h  (12h)"}
+        MyBase.New(UiText.T("dlg.disasm.title"))
+        ' SelectedIndex decides the --hex-format word, so these four are text only.
+        For Each item In New String() {UiText.T("dlg.disasm.hex.default"), UiText.T("dlg.disasm.hex.c"), UiText.T("dlg.disasm.hex.dollar"), UiText.T("dlg.disasm.hex.h")}
             _cmbHex.Items.Add(item)
         Next
         _cmbHex.SelectedIndex = 0
         Finish(Ui.Down(Nothing, _chkListing, _chkNoBinary, _chkUpper, _chkNoLabels, _chkNoKnown, _chkFull, _chkDataComment,
-                       Ui.Fields("Hex number format (--hex-format):", Ui.Across(_cmbHex),
-                                 "Load address (--org, hex, blank = from the file):", Ui.Across(_txtOrg),
-                                 "Extra entry points (--entry, comma-separated hex):", Ui.Across(_txtEntry)),
+                       Ui.Fields(UiText.T("dlg.disasm.hexformat"), Ui.Across(_cmbHex),
+                                 UiText.T("dlg.disasm.org"), Ui.Across(_txtOrg),
+                                 UiText.T("dlg.disasm.entry"), Ui.Across(_txtEntry)),
                        _chkSaveDefault))
         LoadWords(current)
     End Sub
@@ -416,10 +433,10 @@ Public Class BasicDialectForm
     Private ReadOnly _rbDefault, _rb3, _rb4 As RadioButton
 
     Public Sub New(current As String)
-        MyBase.New("BASIC listing dialect")
-        _rbDefault = New RadioButton With {.Text = "The disk's DOS decides (default)"}
-        _rb3 = New RadioButton(_rbDefault) With {.Text = "Model I/III BASIC tokens (--basic 3)"}
-        _rb4 = New RadioButton(_rbDefault) With {.Text = "Model 4 BASIC tokens (--basic 4)"}
+        MyBase.New(UiText.T("dlg.basicdialect.title"))
+        _rbDefault = New RadioButton With {.Text = UiText.T("dlg.basicdialect.default")}
+        _rb3 = New RadioButton(_rbDefault) With {.Text = UiText.T("dlg.basicdialect.m13")}
+        _rb4 = New RadioButton(_rbDefault) With {.Text = UiText.T("dlg.basicdialect.m4")}
         Select Case current
             Case "3" : _rb3.Checked = True
             Case "4" : _rb4.Checked = True

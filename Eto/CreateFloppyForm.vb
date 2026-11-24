@@ -22,8 +22,8 @@ Public Class CreateFloppyForm
     Private ReadOnly _rbT23, _rbT13, _rbLdos, _rbT62, _rbLs63, _rbCpm As RadioButton
     ''' <summary>trs80-tool 5.2.0 formats and creates Montezuma Micro CP/M disks (create cpm, format cpm).</summary>
     Private ReadOnly _cpmAvailable As Boolean = Program.Tool IsNot Nothing AndAlso Program.Tool.Has520
-    Private ReadOnly _chkSystem As New CheckBox With {.Text = "System (bootable) disk from trs80-tool's bundled DOS"}
-    Private ReadOnly _chkMinimal As New CheckBox With {.Text = "only the DOS's own files (--minimal)", .Enabled = False}
+    Private ReadOnly _chkSystem As New CheckBox With {.Text = UiText.T("dlg.newfloppy.system")}
+    Private ReadOnly _chkMinimal As New CheckBox With {.Text = UiText.T("dlg.newfloppy.minimal"), .Enabled = False}
     Private ReadOnly _rbModel1, _rbModel3 As RadioButton
     Private ReadOnly _rbSd, _rbDd As RadioButton
     Private ReadOnly _rbSs, _rbDs As RadioButton
@@ -43,27 +43,27 @@ Public Class CreateFloppyForm
     ''' System box are left out, and the DOS and geometry start from the open disk's.
     ''' </summary>
     Public Sub New(formatMode As Boolean, currentDos As String, cylinders As Integer, sides As Integer, density As String)
-        MyBase.New(If(formatMode, "Format Disk Image", "Create New Floppy Image"))
+        MyBase.New(If(formatMode, UiText.T("dlg.newfloppy.formattitle"), UiText.T("dlg.newfloppy.title")))
         _formatMode = formatMode
         _rbDmk = New RadioButton With {.Text = "DMK", .Checked = True}
         _rbJv1 = New RadioButton(_rbDmk) With {.Text = "JV1"}
         _rbJv3 = New RadioButton(_rbDmk) With {.Text = "JV3"}
-        _rbLdos = New RadioButton With {.Text = "LDOS 5.3 (Model I/III)", .Checked = True}
-        _rbT23 = New RadioButton(_rbLdos) With {.Text = "TRSDOS 2.3 (Model I)"}
-        _rbT13 = New RadioButton(_rbLdos) With {.Text = "TRSDOS 1.3 (Model III)"}
-        _rbT62 = New RadioButton(_rbLdos) With {.Text = "TRSDOS 6.2 (Model 4)"}
-        _rbLs63 = New RadioButton(_rbLdos) With {.Text = "LS-DOS 6.3 (Model 4)"}
-        _rbCpm = New RadioButton(_rbLdos) With {.Text = "Montezuma Micro CP/M 2.2 (Model 4)"}
+        _rbLdos = New RadioButton With {.Text = UiText.T("dos.ldos53.m13"), .Checked = True}
+        _rbT23 = New RadioButton(_rbLdos) With {.Text = UiText.T("dos.trsdos23.m1")}
+        _rbT13 = New RadioButton(_rbLdos) With {.Text = UiText.T("dos.trsdos13.m3")}
+        _rbT62 = New RadioButton(_rbLdos) With {.Text = UiText.T("dos.trsdos62.m4")}
+        _rbLs63 = New RadioButton(_rbLdos) With {.Text = UiText.T("dos.lsdos63.m4")}
+        _rbCpm = New RadioButton(_rbLdos) With {.Text = UiText.T("dos.cpm.mm22.m4")}
         _rbModel3 = New RadioButton With {.Text = "III", .Checked = True}
         _rbModel1 = New RadioButton(_rbModel3) With {.Text = "I"}
-        _rbDd = New RadioButton With {.Text = "Double", .Checked = True}
-        _rbSd = New RadioButton(_rbDd) With {.Text = "Single"}
+        _rbDd = New RadioButton With {.Text = UiText.T("dlg.newfloppy.double"), .Checked = True}
+        _rbSd = New RadioButton(_rbDd) With {.Text = UiText.T("dlg.newfloppy.single")}
         _rbSs = New RadioButton With {.Text = "1", .Checked = True}
         _rbDs = New RadioButton(_rbSs) With {.Text = "2"}
         _rb40 = New RadioButton With {.Text = "40", .Checked = True}
         _rb35 = New RadioButton(_rb40) With {.Text = "35"}
         _rb80 = New RadioButton(_rb40) With {.Text = "80"}
-        _rbOther = New RadioButton(_rb40) With {.Text = "Other:"}
+        _rbOther = New RadioButton(_rb40) With {.Text = UiText.T("dlg.newfloppy.other")}
         _txtDate.Text = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
         BuildUi()
         If formatMode Then
@@ -112,9 +112,9 @@ Public Class CreateFloppyForm
     Public ReadOnly Property ImageTypeFilter As String
         Get
             Select Case ImageTypeExtension
-                Case "jv1" : Return "JV1 floppy image (*.jv1;*.dsk)|*.jv1;*.dsk"
-                Case "jv3" : Return "JV3 floppy image (*.jv3;*.dsk)|*.jv3;*.dsk"
-                Case Else : Return "DMK floppy image (*.dmk)|*.dmk"
+                Case "jv1" : Return UiText.T("filter.jv1")
+                Case "jv3" : Return UiText.T("filter.jv3")
+                Case Else : Return UiText.T("filter.dmk")
             End Select
         End Get
     End Property
@@ -187,32 +187,32 @@ Public Class CreateFloppyForm
     End Function
 
     Private Sub BuildUi()
-        Dim dosRows As New List(Of Control) From {_rbT23, _rbT13, Ui.Across(_rbLdos, Ui.Lbl("    for Model:"), _rbModel1, _rbModel3), _rbT62, _rbLs63}
+        Dim dosRows As New List(Of Control) From {_rbT23, _rbT13, Ui.Across(_rbLdos, Ui.Lbl("    " & UiText.T("dlg.newfloppy.formodel")), _rbModel1, _rbModel3), _rbT62, _rbLs63}
         If _cpmAvailable Then dosRows.Add(_rbCpm)
-        Dim gDos As GroupBox = Ui.Group("File system (DOS)", Ui.Down(Nothing, dosRows.ToArray()))
+        Dim gDos As GroupBox = Ui.Group(UiText.T("dlg.newfloppy.dos"), Ui.Down(Nothing, dosRows.ToArray()))
 
         Dim firstLeft As Control
         If _formatMode Then
-            firstLeft = Ui.Wrapped("Erases every file on the open image and formats it as an empty data disk (the image stays a DMK).", 170)
+            firstLeft = Ui.Wrapped(UiText.T("dlg.newfloppy.formatnote"), 170)
         Else
-            firstLeft = Ui.Group("Disk image type", Ui.Down(Nothing, _rbJv1, _rbJv3, _rbDmk))
+            firstLeft = Ui.Group(UiText.T("dlg.newfloppy.imagetype"), Ui.Down(Nothing, _rbJv1, _rbJv3, _rbDmk))
         End If
         Dim top As New TableLayout With {.Spacing = New Size(Ui.Gap, Ui.Gap)}
         top.Rows.Add(New TableRow(New TableCell(firstLeft), New TableCell(gDos, True)))
 
-        Dim gDensity As GroupBox = Ui.Group("Density", Ui.Down(Nothing, _rbSd, _rbDd))
-        Dim gSides As GroupBox = Ui.Group("Sides", Ui.Down(Nothing, _rbSs, _rbDs))
-        Dim gTracks As GroupBox = Ui.Group("Number of tracks (cylinders)", Ui.Down(Nothing, Ui.Across(_rb35, _rb40, _rb80), Ui.Across(_rbOther, _txtTracks)))
+        Dim gDensity As GroupBox = Ui.Group(UiText.T("dlg.newfloppy.density"), Ui.Down(Nothing, _rbSd, _rbDd))
+        Dim gSides As GroupBox = Ui.Group(UiText.T("dlg.newfloppy.sides"), Ui.Down(Nothing, _rbSs, _rbDs))
+        Dim gTracks As GroupBox = Ui.Group(UiText.T("dlg.newfloppy.tracks"), Ui.Down(Nothing, Ui.Across(_rb35, _rb40, _rb80), Ui.Across(_rbOther, _txtTracks)))
         Dim middle As New TableLayout With {.Spacing = New Size(Ui.Gap, Ui.Gap)}
         middle.Rows.Add(New TableRow(New TableCell(gDensity, True), New TableCell(gSides, True), New TableCell(gTracks, True)))
 
-        Dim gVolume As GroupBox = Ui.Group("Volume information", Ui.Fields("Name (8 chars):", Ui.Across(_txtName), "Date (YYYY-MM-DD):", Ui.Across(_txtDate)))
+        Dim gVolume As GroupBox = Ui.Group(UiText.T("dlg.newfloppy.volume"), Ui.Fields(UiText.T("dlg.newfloppy.name"), Ui.Across(_txtName), UiText.T("dlg.newfloppy.date"), Ui.Across(_txtDate)))
 
         Dim rows As New List(Of Control) From {top}
         If Not _formatMode Then rows.Add(Ui.Across(_chkSystem, _chkMinimal))
         rows.Add(middle)
         rows.Add(gVolume)
-        Finish(Ui.Down(Nothing, rows.ToArray()), If(_formatMode, "Format", Nothing))
+        Finish(Ui.Down(Nothing, rows.ToArray()), If(_formatMode, UiText.T("btn.format"), Nothing))
 
         For Each rb In New RadioButton() {_rbJv1, _rbJv3, _rbDmk, _rbT23, _rbT13, _rbLdos, _rbT62, _rbLs63, _rbCpm, _rbModel1, _rbModel3, _rbSd, _rbDd, _rbSs, _rbDs, _rb35, _rb40, _rb80, _rbOther}
             AddHandler rb.CheckedChanged, Sub() ApplyInterlocks()
@@ -289,25 +289,25 @@ Public Class CreateFloppyForm
     End Property
 
     Protected Overrides Function Accept() As Boolean
-        Const caption As String = "Error creating floppy image"
+        Dim caption As String = UiText.T("caption.newfloppyerror")
         If _rbCpm.Checked Then Return True     ' nothing to check: no name, no date, and the track count is 40 or 80
         Dim nm As String = _txtName.Text.Trim()
         If nm.Length = 0 OrElse _txtDate.Text.Trim().Length = 0 Then
-            Ui.Fail(Me, "Volume name and date are required!", caption)
+            Ui.Fail(Me, UiText.T("dlg.newfloppy.needname"), caption)
             Return False
         End If
         If Not Regex.IsMatch(nm, "^[A-Za-z][A-Za-z0-9]{0,7}$") Then
-            Ui.Fail(Me, "The volume name must be 1–8 letters and digits, starting with a letter.", caption)
+            Ui.Fail(Me, UiText.T("dlg.newfloppy.badname"), caption)
             Return False
         End If
         If TextUtil.ToYmd(_txtDate.Text) Is Nothing Then
-            Ui.Fail(Me, "The date must be a valid date, preferably YYYY-MM-DD.", caption)
+            Ui.Fail(Me, UiText.T("dlg.newfloppy.baddate"), caption)
             Return False
         End If
         If _rbOther.Checked Then
             Dim n As Integer
             If Not Integer.TryParse(_txtTracks.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, n) OrElse n < 1 OrElse n > 255 Then
-                Ui.Fail(Me, "Track count is not valid!", caption)
+                Ui.Fail(Me, UiText.T("dlg.newfloppy.badtracks"), caption)
                 Return False
             End If
         End If

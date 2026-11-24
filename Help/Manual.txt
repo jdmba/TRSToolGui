@@ -8,7 +8,7 @@ that version can't do. It runs on Windows, from version 1.3 on Linux, and from v
 Mac. This manual describes the Windows program; the sections ON LINUX and ON THE MAC at the end
 list what differs there.
 
-TRSToolGui 1.5 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
+TRSToolGui 1.6 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
 refused at startup with a message saying so. With trs80-tool 5.2.0 or later, Montezuma Micro CP/M
 disks (and the other CP/M layouts trs80-tool knows) can be changed too: Add, Delete, Rename and
 the two CP/M attributes work on them, and File > New makes them. CP/M keeps no file dates, so
@@ -167,6 +167,10 @@ EDIT
                            of the program being started for each one. Much faster. If it ever
                            stops answering, the GUI goes back to one start per action for the
                            rest of the session. Help > Engine capabilities says which is in use.
+      Language             The language of the program's own text: English or French. The
+                           choice takes effect the next time the program starts. What stays in
+                           English whichever you pick: the disk analysis reports, anything
+                           trs80-tool itself prints, this manual and the changelog.
       trs80-tool log file  Passes --log-file on every call. Blank = no log.
       Disassembly options  The default words passed to "disasm" for the file viewer. "Default"
                            puts back the standard set (the same listing TRSTools produced).
@@ -347,6 +351,10 @@ HELP
   trs80-tool manual (web)
       Opens https://www.my-trs-80.com/tool/ in your browser.
 
+  Report a problem (web)
+      Opens the TRSToolGui issues page in your browser. REPORTING A PROBLEM below says what
+      is worth putting in a report.
+
   About TRSToolGui...
       The version, release date and build of TRSToolGui, and which trs80-tool it uses.
 
@@ -393,12 +401,32 @@ FILE VIEWER
   most likely wrote it.
 
 
+REPORTING A PROBLEM
+-------------------
+
+  Every problem report for TRSToolGui is an issue at https://github.com/jdmba/TRSToolGui/issues,
+  and Help > Report a problem (web) opens that page. Keeping them in one list means none gets
+  lost, and each one keeps its own thread until it is answered or fixed.
+
+  What is worth putting in a report:
+    - the two version lines from Help > About: the release and the build it was made from;
+    - the trs80-tool version, which Help > Engine capabilities names;
+    - Windows, Linux or a Mac, and which version of it;
+    - what you did, what you expected, and what happened instead;
+    - the exact words of any message, copied rather than described;
+    - the disk image itself, if one particular disk causes it and you are able to share it.
+
+  A word that reads wrongly in another language is worth reporting too. The French text is a
+  first translation and no native speaker who knows TRS-80 disks has been through it yet, so a
+  term that is wrong for floppies is useful to hear about.
+
+
 ON LINUX
 
   TRSToolGui for Linux (x64) is the same program with its windows built on Eto.Forms, which
   uses GTK 3. Every menu, dialog and window above is there. What differs:
 
-  Starting it          Unzip TRSToolGui-v1.5-linux-x64.zip, make the file runnable once with
+  Starting it          Unzip TRSToolGui-v1.6-linux-x64.zip, make the file runnable once with
                        "chmod +x TRSToolGui", and start it:  ./TRSToolGui [image file]
                        It needs GTK 3, which desktop Linux has, and nothing else: .NET is inside
                        the file.
@@ -433,8 +461,8 @@ ON THE MAC
   written it had not yet been run on a Mac, so expect rough edges and please report them. What
   differs from the rest of this manual:
 
-  Which download       TRSToolGui-v1.5-macos-arm64.zip for a Mac with Apple Silicon (M1 and later),
-                       TRSToolGui-v1.5-macos-x64.zip for a Mac with an Intel processor. It needs
+  Which download       TRSToolGui-v1.6-macos-arm64.zip for a Mac with Apple Silicon (M1 and later),
+                       TRSToolGui-v1.6-macos-x64.zip for a Mac with an Intel processor. It needs
                        macOS 14 or later and nothing else: .NET is inside the app.
   Installing it        Double-click the zip to unpack it, then drag TRSToolGui.app to Applications
                        or to any folder you like. Move it before the first start: macOS runs a

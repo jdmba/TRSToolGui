@@ -27,6 +27,12 @@ End Enum
 Public Class Settings
     ''' <summary>Full path of trs80-tool (may be renamed). Empty = look for it (Trs80Tool.Locate), else ask at startup.</summary>
     Public Property ToolPath As String = ""
+    ''' <summary>
+    ''' The language of the program's own text: one of the codes UiText.Languages offers ("en", "fr", ...).
+    ''' Empty means English, which is what a new installation gets. The language is never taken from the
+    ''' system's own: it is English until the user picks another one in Preferences.
+    ''' </summary>
+    Public Property Language As String = ""
     Public Property ShowInvisible As Boolean = False
     Public Property ShowSystem As Boolean = False
     Public Property ExtractDirectory As String = ""

@@ -22,29 +22,30 @@ Public Class CreateHardDiskForm
     Private ReadOnly _numCyl As New NumericStepper With {.MinValue = 1, .MaxValue = 1023, .Value = 840, .DecimalPlaces = 0, .Width = 90}
     Private ReadOnly _numHeads As New NumericStepper With {.MinValue = 1, .MaxValue = 8, .Value = 6, .DecimalPlaces = 0, .Width = 70}
     Private ReadOnly _rbBlank, _rbLdos, _rbLsdos As RadioButton
-    Private ReadOnly _chkPartitions As New CheckBox With {.Text = "Number of equal partitions:"}
+    Private ReadOnly _chkPartitions As New CheckBox With {.Text = UiText.T("dlg.newhd.parts")}
     Private ReadOnly _numPartitions As New NumericStepper With {.MinValue = 1, .MaxValue = 26, .Value = 4, .DecimalPlaces = 0, .Width = 70, .Enabled = False}
     Private ReadOnly _cmbModel As New DropDown With {.Width = 110}
     Private ReadOnly _txtName As New TextBox With {.Width = 110, .MaxLength = 8}
-    Private ReadOnly _lblModel As New Label With {.Text = "LDOS boot sector for:", .VerticalAlignment = VerticalAlignment.Center}
-    Private ReadOnly _lblName As New Label With {.Text = "Disk name (one partition only):", .VerticalAlignment = VerticalAlignment.Center}
+    Private ReadOnly _lblModel As New Label With {.Text = UiText.T("dlg.newhd.model"), .VerticalAlignment = VerticalAlignment.Center}
+    Private ReadOnly _lblName As New Label With {.Text = UiText.T("dlg.newhd.name"), .VerticalAlignment = VerticalAlignment.Center}
 
     Public Sub New()
-        MyBase.New("Create New Hard Disk Image")
-        _rbLsdos = New RadioButton With {.Text = "LS-DOS 6.3 partitions (Model 4)", .Checked = True}
-        _rbLdos = New RadioButton(_rbLsdos) With {.Text = "LDOS 5.3 partitions"}
-        _rbBlank = New RadioButton(_rbLsdos) With {.Text = "Blank: no partitions (add them later with View → Partition → Add a partition)"}
-        _cmbModel.Items.Add("Model III")
-        _cmbModel.Items.Add("Model I")
+        MyBase.New(UiText.T("dlg.newhd.title"))
+        _rbLsdos = New RadioButton With {.Text = UiText.T("dlg.newhd.lsdos"), .Checked = True}
+        _rbLdos = New RadioButton(_rbLsdos) With {.Text = UiText.T("dlg.newhd.ldos")}
+        _rbBlank = New RadioButton(_rbLsdos) With {.Text = UiText.T("dlg.newhd.blank")}
+        _cmbModel.Items.Add(UiText.T("word.model3"))
+        _cmbModel.Items.Add(UiText.T("word.model1"))
         _cmbModel.SelectedIndex = 0
-        Dim g1 As GroupBox = Ui.Group("Shape (the defaults are what FreHD makes)",
-            Ui.Across(New Label With {.Text = "Cylinders (1-1023):", .VerticalAlignment = VerticalAlignment.Center}, _numCyl, New Label With {.Text = "    Heads (1-8):", .VerticalAlignment = VerticalAlignment.Center}, _numHeads))
+        ' The four spaces before the second label are the gap between the two fields, not text.
+        Dim g1 As GroupBox = Ui.Group(UiText.T("dlg.newhd.shape"),
+            Ui.Across(New Label With {.Text = UiText.T("dlg.newhd.cylinders"), .VerticalAlignment = VerticalAlignment.Center}, _numCyl, New Label With {.Text = "    " & UiText.T("dlg.newhd.heads"), .VerticalAlignment = VerticalAlignment.Center}, _numHeads))
         Dim inner As TableLayout = Ui.Fields(
-            _chkPartitions, Ui.Across(_numPartitions, Ui.Lbl("(otherwise as few as keep each at 203 cylinders or fewer)", True)),
+            _chkPartitions, Ui.Across(_numPartitions, Ui.Lbl(UiText.T("dlg.newhd.partshint"), True)),
             _lblModel, Ui.Across(_cmbModel),
-            _lblName, Ui.Across(_txtName, Ui.Lbl("(blank = HARDA, HARDB, ...)", True)))
-        Dim g2 As GroupBox = Ui.Group("Contents", Ui.Down(Nothing, _rbLsdos, _rbLdos, _rbBlank, New Panel With {.Padding = New Padding(20, 4, 0, 0), .Content = inner}))
-        Finish(Ui.Down(Nothing, g1, g2), "Create...")
+            _lblName, Ui.Across(_txtName, Ui.Lbl(UiText.T("dlg.newhd.namehint"), True)))
+        Dim g2 As GroupBox = Ui.Group(UiText.T("dlg.newhd.contents"), Ui.Down(Nothing, _rbLsdos, _rbLdos, _rbBlank, New Panel With {.Padding = New Padding(20, 4, 0, 0), .Content = inner}))
+        Finish(Ui.Down(Nothing, g1, g2), UiText.T("btn.create"))
         AddHandler _rbBlank.CheckedChanged, Sub() UpdateEnabled()
         AddHandler _rbLdos.CheckedChanged, Sub() UpdateEnabled()
         AddHandler _rbLsdos.CheckedChanged, Sub() UpdateEnabled()
@@ -96,24 +97,24 @@ Public Class PartitionAddForm
 
     Private ReadOnly _rbLdos, _rbLsdos As RadioButton
     Private ReadOnly _cmbModel As New DropDown With {.Width = 110}
-    Private ReadOnly _chkCyl As New CheckBox With {.Text = "Cylinders (35-203):"}
+    Private ReadOnly _chkCyl As New CheckBox With {.Text = UiText.T("dlg.partadd.cylinders")}
     Private ReadOnly _numCyl As New NumericStepper With {.MinValue = 35, .MaxValue = 203, .Value = 203, .DecimalPlaces = 0, .Width = 80, .Enabled = False}
     Private ReadOnly _txtName As New TextBox With {.Width = 110, .MaxLength = 8}
-    Private ReadOnly _lblModel As New Label With {.Text = "    Boot sector for:", .VerticalAlignment = VerticalAlignment.Center}
+    Private ReadOnly _lblModel As New Label With {.Text = "    " & UiText.T("dlg.partadd.model"), .VerticalAlignment = VerticalAlignment.Center}
 
     Public Sub New()
-        MyBase.New("Add a Partition")
-        _rbLsdos = New RadioButton With {.Text = "LS-DOS 6.3 (Model 4)", .Checked = True}
-        _rbLdos = New RadioButton(_rbLsdos) With {.Text = "LDOS 5.3"}
-        _cmbModel.Items.Add("Model III")
-        _cmbModel.Items.Add("Model I")
+        MyBase.New(UiText.T("dlg.partadd.title"))
+        _rbLsdos = New RadioButton With {.Text = UiText.T("dos.lsdos63.m4"), .Checked = True}
+        _rbLdos = New RadioButton(_rbLsdos) With {.Text = UiText.T("dlg.partadd.ldos")}
+        _cmbModel.Items.Add(UiText.T("word.model3"))
+        _cmbModel.Items.Add(UiText.T("word.model1"))
         _cmbModel.SelectedIndex = 0
         Finish(Ui.Down(Nothing,
-                       Ui.Lbl("trs80-tool formats an empty data partition in the image's free space and prints the" & vbLf & "settings the DOS's hard disk driver must be given to find it."),
+                       Ui.Lbl(UiText.T("dlg.partadd.intro")),
                        _rbLsdos,
                        Ui.Across(_rbLdos, _lblModel, _cmbModel),
-                       Ui.Fields(_chkCyl, Ui.Across(_numCyl, Ui.Lbl("(otherwise the rest of the free block, at most 203)", True)),
-                                 "Disk name:", Ui.Across(_txtName, Ui.Lbl("(blank = HARD and the first free letter)", True)))), "Add")
+                       Ui.Fields(_chkCyl, Ui.Across(_numCyl, Ui.Lbl(UiText.T("dlg.partadd.cylhint"), True)),
+                                 UiText.T("dlg.partadd.name"), Ui.Across(_txtName, Ui.Lbl(UiText.T("dlg.partadd.namehint"), True)))), UiText.T("btn.add"))
         AddHandler _rbLdos.CheckedChanged, Sub() UpdateEnabled()
         AddHandler _chkCyl.CheckedChanged, Sub() UpdateEnabled()
         UpdateEnabled()

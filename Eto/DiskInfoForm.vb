@@ -61,26 +61,26 @@ Public Class DiskInfoForm
 
     ''' <summary>Reads and analyses the image on a worker thread, then fills the tabs.</summary>
     Public Async Function LoadAsync() As Task
-        _status.Text = "Reading " & Path.GetFileName(_path) & "..."
+        _status.Text = UiText.T("dlg.dmk.reading", Path.GetFileName(_path))
         Try
             Dim p As String = _path
             _analysis = Await Task.Run(Function() DmkAnalysis.Analyze(p))
             Fill()
             _status.Text = If(_analysis.Dos IsNot Nothing, _analysis.Dos.Result, _analysis.Image.Kind)
         Catch ex As Exception
-            _status.Text = "Could not analyse the image: " & ex.Message
+            _status.Text = UiText.T("dlg.dmk.failed", ex.Message)
             _txtReport.Text = Ui.Lf(ex.ToString())
         End Try
     End Function
 
     Private Sub BuildUi()
-        Title = "DMK analysis - " & Path.GetFileName(_path)
+        Title = UiText.T("dlg.dmk.title", Path.GetFileName(_path))
         ClientSize = New Size(980, 640)
         MinimumSize = New Size(640, 400)
         Padding = New Padding(Ui.Margin)
 
-        _summary.Columns.Add(New GridColumn With {.HeaderText = "Item", .Width = 200, .DataCell = New TextBoxCell With {.Binding = Binding.Delegate(Of SummaryRow, String)(Function(r) r.Item)}})
-        _summary.Columns.Add(New GridColumn With {.HeaderText = "Value", .Width = 1400, .DataCell = New TextBoxCell With {.Binding = Binding.Delegate(Of SummaryRow, String)(Function(r) r.Value)}})
+        _summary.Columns.Add(New GridColumn With {.HeaderText = UiText.T("dlg.dmk.col.item"), .Width = 200, .DataCell = New TextBoxCell With {.Binding = Binding.Delegate(Of SummaryRow, String)(Function(r) r.Item)}})
+        _summary.Columns.Add(New GridColumn With {.HeaderText = UiText.T("dlg.dmk.col.value"), .Width = 1400, .DataCell = New TextBoxCell With {.Binding = Binding.Delegate(Of SummaryRow, String)(Function(r) r.Value)}})
         AddHandler _summary.CellFormatting, Sub(s, e)
                                                 Dim r As SummaryRow = TryCast(e.Item, SummaryRow)
                                                 If r Is Nothing Then Return
@@ -88,12 +88,12 @@ Public Class DiskInfoForm
                                                 If r.HasColour Then e.ForegroundColor = r.Colour
                                             End Sub
 
-        AddTrackColumn("Cyl", 50, Function(r) r.Cyl)
-        AddTrackColumn("Side", 50, Function(r) r.Side)
-        AddTrackColumn("IDs", 50, Function(r) r.Ids)
-        AddTrackColumn("Layout (density × count × size, numbering, marks)", 520, Function(r) r.Layout)
-        AddTrackColumn("Bad", 50, Function(r) r.Bad)
-        AddTrackColumn("Notes", 400, Function(r) r.Notes)
+        AddTrackColumn(UiText.T("dlg.dmk.col.cyl"), 50, Function(r) r.Cyl)
+        AddTrackColumn(UiText.T("dlg.dmk.col.side"), 50, Function(r) r.Side)
+        AddTrackColumn(UiText.T("dlg.dmk.col.ids"), 50, Function(r) r.Ids)
+        AddTrackColumn(UiText.T("dlg.dmk.col.layout"), 520, Function(r) r.Layout)
+        AddTrackColumn(UiText.T("dlg.dmk.col.bad"), 50, Function(r) r.Bad)
+        AddTrackColumn(UiText.T("dlg.dmk.col.notes"), 400, Function(r) r.Notes)
         AddHandler _tracks.CellFormatting, Sub(s, e)
                                                Dim r As TrackRow = TryCast(e.Item, TrackRow)
                                                If r Is Nothing Then Return
@@ -102,17 +102,17 @@ Public Class DiskInfoForm
                                            End Sub
 
         Dim tabs As New TabControl()
-        tabs.Pages.Add(New TabPage With {.Text = "Summary", .Content = _summary})
-        tabs.Pages.Add(New TabPage With {.Text = "Tracks", .Content = _tracks})
-        tabs.Pages.Add(New TabPage With {.Text = "Report", .Content = _txtReport})
+        tabs.Pages.Add(New TabPage With {.Text = UiText.T("dlg.dmk.tab.summary"), .Content = _summary})
+        tabs.Pages.Add(New TabPage With {.Text = UiText.T("dlg.dmk.tab.tracks"), .Content = _tracks})
+        tabs.Pages.Add(New TabPage With {.Text = UiText.T("dlg.dmk.tab.report"), .Content = _txtReport})
 
         Dim bottom As New TableLayout With {.Spacing = New Size(Ui.Gap, Ui.Gap)}
         bottom.Rows.Add(New TableRow(New TableCell(_status, True),
-                                     New TableCell(Ui.Btn("Copy report", Sub()
+                                     New TableCell(Ui.Btn(UiText.T("btn.copyreport"), Sub()
                                                                              If _txtReport.Text.Length > 0 Then Ui.CopyTextToClipboard(_txtReport.Text)
                                                                          End Sub)),
-                                     New TableCell(Ui.Btn("Save report...", AddressOf OnSave)),
-                                     New TableCell(Ui.Btn("Close", Sub() Close()))))
+                                     New TableCell(Ui.Btn(UiText.T("btn.savereport"), AddressOf OnSave)),
+                                     New TableCell(Ui.Btn(UiText.T("btn.close"), Sub() Close()))))
         Content = Ui.Down(tabs, tabs, bottom)
     End Sub
 
@@ -125,7 +125,7 @@ Public Class DiskInfoForm
 
         ' ---- Summary: the facts first, then the findings by section
         Dim rows As New List(Of SummaryRow)
-        rows.Add(New SummaryRow With {.Item = "Image and identification", .IsHeading = True})
+        rows.Add(New SummaryRow With {.Item = UiText.T("dlg.dmk.facts"), .IsHeading = True})
         For Each kv In a.Facts
             rows.Add(New SummaryRow With {.Item = "   " & kv.Key, .Value = kv.Value})
         Next
@@ -137,11 +137,12 @@ Public Class DiskInfoForm
             For Each f In items
                 Dim row As New SummaryRow With {.Value = Ui.Lf(f.Text).Replace(vbLf, " | ").Replace("    ", " ")}
                 Select Case f.Level
-                    Case "protection" : row.Item = "   Protection" : row.HasColour = True : row.Colour = Colors.DarkRed
-                    Case "sign" : row.Item = "   Sign" : row.HasColour = True : row.Colour = Colors.DarkOrange
-                    Case "damage" : row.Item = "   Damage" : row.HasColour = True : row.Colour = Colors.Firebrick
-                    Case "artifact" : row.Item = "   Imaging" : row.HasColour = True : row.Colour = Colors.DarkSlateBlue
-                    Case "warning" : row.Item = "   Note" : row.HasColour = True : row.Colour = Colors.DarkGoldenrod
+                    ' The three spaces indent the row under its section heading; they are not text.
+                    Case "protection" : row.Item = "   " & UiText.T("dlg.dmk.level.protection") : row.HasColour = True : row.Colour = Colors.DarkRed
+                    Case "sign" : row.Item = "   " & UiText.T("dlg.dmk.level.sign") : row.HasColour = True : row.Colour = Colors.DarkOrange
+                    Case "damage" : row.Item = "   " & UiText.T("dlg.dmk.level.damage") : row.HasColour = True : row.Colour = Colors.Firebrick
+                    Case "artifact" : row.Item = "   " & UiText.T("dlg.dmk.level.artifact") : row.HasColour = True : row.Colour = Colors.DarkSlateBlue
+                    Case "warning" : row.Item = "   " & UiText.T("dlg.dmk.level.note") : row.HasColour = True : row.Colour = Colors.DarkGoldenrod
                 End Select
                 rows.Add(row)
             Next
@@ -154,15 +155,15 @@ Public Class DiskInfoForm
             Dim tr As DmkTrack = t
             Dim notes As New List(Of String)
             If Not tr.Present Then
-                notes.Add("missing from the file")
+                notes.Add(UiText.T("dlg.dmk.note.missing"))
             Else
-                If tr.BadPointers > 0 Then notes.Add(tr.BadPointers.ToString(CultureInfo.InvariantCulture) & " bad pointer(s)")
+                If tr.BadPointers > 0 Then notes.Add(UiText.T("dlg.dmk.note.badpointers", tr.BadPointers.ToString(CultureInfo.InvariantCulture)))
                 Dim wrong As Integer = tr.Good.Where(Function(s) s.IdCylinder <> tr.Cylinder).Count()
-                If wrong > 0 Then notes.Add(wrong.ToString(CultureInfo.InvariantCulture) & " ID(s) name another cylinder")
-                If tr.Good.Any(Function(s) s.SizeCode > 3) Then notes.Add("size code > 3")
-                If tr.Cylinder >= 1 AndAlso tr.HasFm AndAlso tr.HasMfm Then notes.Add("mixed density")
-                If a.DosCylinders > 0 AndAlso tr.Cylinder >= a.DosCylinders Then notes.Add("beyond the DOS's " & a.DosCylinders.ToString(CultureInfo.InvariantCulture) & " cylinders")
-                If a.Dos IsNot Nothing AndAlso tr.Cylinder = a.Dos.DirectoryCylinder AndAlso tr.Side = a.Dos.DirectorySide Then notes.Add("directory")
+                If wrong > 0 Then notes.Add(UiText.T("dlg.dmk.note.wrongids", wrong.ToString(CultureInfo.InvariantCulture)))
+                If tr.Good.Any(Function(s) s.SizeCode > 3) Then notes.Add(UiText.T("dlg.dmk.note.sizecode"))
+                If tr.Cylinder >= 1 AndAlso tr.HasFm AndAlso tr.HasMfm Then notes.Add(UiText.T("dlg.dmk.note.mixed"))
+                If a.DosCylinders > 0 AndAlso tr.Cylinder >= a.DosCylinders Then notes.Add(UiText.T("dlg.dmk.note.beyonddos", a.DosCylinders.ToString(CultureInfo.InvariantCulture)))
+                If a.Dos IsNot Nothing AndAlso tr.Cylinder = a.Dos.DirectoryCylinder AndAlso tr.Side = a.Dos.DirectorySide Then notes.Add(UiText.T("dlg.dmk.note.directory"))
             End If
             Dim badCount As Integer = tr.Sectors.Where(Function(s) s.IsBad).Count()
             Dim row As New TrackRow With {
@@ -189,13 +190,13 @@ Public Class DiskInfoForm
 
     Private Sub OnSave()
         If _analysis Is Nothing Then Return
-        Dim target As String = Ui.PickSave(Me, "Save the DMK analysis report", "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                                           Path.Combine(Path.GetDirectoryName(_path), Path.GetFileNameWithoutExtension(_path) & " - DMK analysis.txt"), "txt")
+        Dim target As String = Ui.PickSave(Me, UiText.T("dlg.dmk.savetitle"), UiText.T("filter.text"),
+                                           Path.Combine(Path.GetDirectoryName(_path), UiText.T("dlg.dmk.savename", Path.GetFileNameWithoutExtension(_path))), "txt")
         If target Is Nothing Then Return
         Try
             File.WriteAllText(target, Ui.HostLines(_txtReport.Text), New UTF8Encoding(True))
         Catch ex As Exception
-            Ui.Fail(Me, ex.Message, "Save report")
+            Ui.Fail(Me, ex.Message, UiText.T("dlg.dmk.savecaption"))
         End Try
     End Sub
 End Class

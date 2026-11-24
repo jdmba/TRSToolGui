@@ -34,6 +34,9 @@ Public Module Program
         Application.SetHighDpiMode(HighDpiMode.SystemAware)
 
         Settings = Settings.Load()
+        ' The language goes in before anything reaches the screen, because text already built is not
+        ' revisited. An empty setting, which is what a new installation has, leaves English in force.
+        If Not String.IsNullOrEmpty(Settings.Language) Then UiText.Use(Settings.Language)
         Dim toolPath As String = Trs80Tool.Locate(Settings.ToolPath)
         If toolPath Is Nothing Then toolPath = AskForTool()
         Tool = New Trs80Tool(If(toolPath, ""))
@@ -62,20 +65,19 @@ Public Module Program
     ''' the engine and asks again at the next start).
     ''' </summary>
     Private Function AskForTool() As String
-        MessageBox.Show("TRSToolGui needs trs80-tool, which was not found." & vbCrLf & vbCrLf &
-            "If you don't have it, download ""trs80-tool for Windows 10+"" from https://www.my-trs-80.com/tool/." & vbCrLf & vbCrLf &
-            "Click OK, then choose trs80-tool.exe. Its location is saved in:" & vbCrLf & Settings.FilePath,
+        MessageBox.Show(UiText.T("msg.toolmissing.head") & vbCrLf & vbCrLf &
+            UiText.T("msg.toolmissing.download.windows") & vbCrLf & vbCrLf &
+            UiText.T("msg.toolmissing.choose", "trs80-tool.exe") & vbCrLf & Settings.FilePath,
             AppName, MessageBoxButtons.OK, MessageBoxIcon.Information)
         Using ofd As New OpenFileDialog()
-            ofd.Title = "Locate trs80-tool"
-            ofd.Filter = "Programs (*.exe;*.cmd;*.bat)|*.exe;*.cmd;*.bat|All files (*.*)|*.*"
+            ofd.Title = UiText.T("dlg.prefs.picktool")
+            ofd.Filter = UiText.T("filter.programs")
             ofd.FileName = Trs80Tool.DefaultExeName
             If ofd.ShowDialog() <> DialogResult.OK OrElse Not File.Exists(ofd.FileName) Then Return Nothing
             Settings.ToolPath = ofd.FileName
         End Using
         If Not Settings.Save() Then
-            MessageBox.Show("The trs80-tool location could not be saved to" & vbCrLf & Settings.FilePath & vbCrLf & vbCrLf &
-                "This program's folder may be read-only. The location will be used for this session only.",
+            MessageBox.Show(UiText.TCrLf("msg.toolsavefailed", Settings.FilePath, UiText.T("msg.toolsavefailed.readonly")),
                 AppName, MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End If
         Return Settings.ToolPath
@@ -84,7 +86,7 @@ Public Module Program
     ''' <summary>Text of a file embedded from the Help folder (Manual.txt, Changelog.txt, License.txt).</summary>
     Public Function ReadHelpText(name As String) As String
         Using st As Stream = GetType(Program).Assembly.GetManifestResourceStream("TRSToolGui." & name)
-            If st Is Nothing Then Return "(" & name & " is missing from this build.)"
+            If st Is Nothing Then Return UiText.T("msg.helpmissing", name)
             Using sr As New StreamReader(st, System.Text.Encoding.UTF8)
                 Return sr.ReadToEnd()
             End Using

@@ -25,16 +25,16 @@ Public Class ConvertFileForm
     Private ReadOnly _txtOut As New TextBox With {.Width = 560}
     Private ReadOnly _cmbBaud As New DropDown With {.Width = 120}
     Private ReadOnly _txtStart As New TextBox With {.Width = 120}
-    Private ReadOnly _chkSystem As New CheckBox With {.Text = "Include system files when the input is a disk image (--system)"}
-    Private ReadOnly _chkCpm As New CheckBox With {.Text = "CP/M: keep whole 128-byte records (--cpm-records)"}
-    Private ReadOnly _chkForce As New CheckBox With {.Text = "Floppy images: write even if the new format can't hold everything (--force)"}
+    Private ReadOnly _chkSystem As New CheckBox With {.Text = UiText.T("dlg.convert.system")}
+    Private ReadOnly _chkCpm As New CheckBox With {.Text = UiText.T("dlg.convert.cpm")}
+    Private ReadOnly _chkForce As New CheckBox With {.Text = UiText.T("dlg.convert.force")}
     Private ReadOnly _txtResult As TextArea
-    Private ReadOnly _btnRun As New Button With {.Text = "Convert"}
-    Private ReadOnly _btnClose As New Button With {.Text = "Close"}
+    Private ReadOnly _btnRun As New Button With {.Text = UiText.T("btn.convert")}
+    Private ReadOnly _btnClose As New Button With {.Text = UiText.T("btn.close")}
     Private _outputPath As String = Nothing
 
     Public Sub New(initialInputs As IEnumerable(Of String))
-        Title = "Convert file(s) (trs80-tool convert)"
+        Title = UiText.T("dlg.convert.title")
         Resizable = True
         ClientSize = New Size(720, 580)
         MinimumSize = New Size(600, 480)
@@ -44,7 +44,8 @@ Public Class ConvertFileForm
                 _lstIn.Items.Add(f)
             Next
         End If
-        For Each item In New String() {"default", "250", "500", "1500"}
+        ' Only item 0 is text: the others are the numbers trs80-tool is given (SelectedIndex > 0 below).
+        For Each item In New String() {UiText.T("dlg.convert.bauddefault"), "250", "500", "1500"}
             _cmbBaud.Items.Add(item)
         Next
         _cmbBaud.SelectedIndex = 0
@@ -52,22 +53,22 @@ Public Class ConvertFileForm
         AddHandler _txtOut.TextChanged, Sub() UpdateEnabled()
         AddHandler _btnRun.Click, Async Sub() Await RunAsync()
         AddHandler _btnClose.Click, Sub() Close()
-        Dim inButtons As TableLayout = Ui.Down(Nothing, Ui.Btn("Add...", AddressOf AddInputs), Ui.Btn("Remove", Sub()
+        Dim inButtons As TableLayout = Ui.Down(Nothing, Ui.Btn(UiText.T("btn.addellipsis"), AddressOf AddInputs), Ui.Btn(UiText.T("btn.remove"), Sub()
                                                                                                                   If _lstIn.SelectedIndex >= 0 Then _lstIn.Items.RemoveAt(_lstIn.SelectedIndex)
                                                                                                               End Sub))
         Dim inRow As New TableLayout With {.Spacing = New Size(Ui.Gap, Ui.Gap)}
         inRow.Rows.Add(New TableRow(New TableCell(_lstIn, True), New TableCell(inButtons)))
         Dim outRow As New TableLayout With {.Spacing = New Size(Ui.Gap, Ui.Gap)}
-        outRow.Rows.Add(New TableRow(New TableCell(_txtOut, True), New TableCell(Ui.Btn("Browse...", AddressOf BrowseOutput))))
+        outRow.Rows.Add(New TableRow(New TableCell(_txtOut, True), New TableCell(Ui.Btn(UiText.T("btn.browse"), AddressOf BrowseOutput))))
         Content = Ui.Down(_txtResult,
-                          Ui.Lbl("Input file(s) — several inputs are combined into one CAS/WAV output:"),
+                          Ui.Lbl(UiText.T("dlg.convert.inputs")),
                           inRow,
-                          Ui.Lbl("Output file (the extension picks the conversion: .bas .asc .cmd .3bn .cas .wav .dmk .jv1 .jv3 .hfe .imd):"),
+                          Ui.Lbl(UiText.T("dlg.convert.output")),
                           outRow,
-                          Ui.Fields("Cassette baud (--baud, CAS/WAV):", Ui.Across(_cmbBaud),
-                                    "Start address (--start, hex or auto; ROM/BIN → CMD/3BN):", Ui.Across(_txtStart)),
+                          Ui.Fields(UiText.T("dlg.convert.baud"), Ui.Across(_cmbBaud),
+                                    UiText.T("dlg.convert.start"), Ui.Across(_txtStart)),
                           _chkSystem, _chkCpm, _chkForce,
-                          Ui.Lbl("trs80-tool output:"),
+                          Ui.Lbl(UiText.T("msg.engineoutput")),
                           _txtResult,
                           Ui.Across(Nothing, _btnRun, _btnClose))
         AbortButton = _btnClose
@@ -90,8 +91,8 @@ Public Class ConvertFileForm
 
     Private Sub AddInputs()
         Using ofd As New OpenFileDialog()
-            ofd.Title = "Input file(s) to convert"
-            Ui.SetFilters(ofd, "TRS-80 files (*.bas;*.asc;*.cmd;*.3bn;*.cas;*.wav;*.rom;*.bin;*.hex;*.asm;*.dmk;*.jv1;*.jv3;*.dsk;*.hfe;*.imd;*.scp)|*.bas;*.asc;*.cmd;*.3bn;*.cas;*.wav;*.rom;*.bin;*.hex;*.asm;*.dmk;*.jv1;*.jv3;*.dsk;*.hfe;*.imd;*.scp|All files (*.*)|*.*")
+            ofd.Title = UiText.T("dlg.convert.pickinputs")
+            Ui.SetFilters(ofd, UiText.T("filter.convertin"))
             ofd.MultiSelect = True
             If ofd.ShowDialog(Me) <> DialogResult.Ok Then Return
             For Each f In ofd.Filenames
@@ -118,7 +119,7 @@ Public Class ConvertFileForm
     End Sub
 
     Private Sub BrowseOutput()
-        Dim chosen As String = Ui.PickSave(Me, "Output file", "BASIC tokenized (*.bas)|*.bas|BASIC text (*.asc)|*.asc|CMD program (*.cmd)|*.cmd|Cassette system program (*.3bn)|*.3bn|Cassette image (*.cas)|*.cas|Cassette audio (*.wav)|*.wav|DMK floppy image (*.dmk)|*.dmk|JV3 floppy image (*.jv3)|*.jv3|JV1 floppy image (*.jv1)|*.jv1|HFE floppy image (*.hfe)|*.hfe|IMD floppy image (*.imd)|*.imd|All files (*.*)|*.*",
+        Dim chosen As String = Ui.PickSave(Me, UiText.T("dlg.convert.pickoutput"), UiText.T("filter.convertout"),
                                            If(_txtOut.Text.Trim().Length > 0, _txtOut.Text.Trim(), Nothing))
         If chosen IsNot Nothing Then _txtOut.Text = chosen
     End Sub
@@ -139,12 +140,12 @@ Public Class ConvertFileForm
 
     Private Async Function RunAsync() As Task
         If _lstIn.Items.Count = 0 Then
-            Ui.Warn(Me, "Add at least one input file.", "Convert")
+            Ui.Warn(Me, UiText.T("dlg.convert.noinputs"), UiText.T("btn.convert"))
             Return
         End If
         Dim outFile As String = _txtOut.Text.Trim()
         If outFile.Length = 0 OrElse Path.GetExtension(outFile).Length = 0 Then
-            Ui.Warn(Me, "Give an output file with an extension; trs80-tool converts by the output's extension.", "Convert")
+            Ui.Warn(Me, UiText.T("dlg.convert.nooutput"), UiText.T("btn.convert"))
             Return
         End If
         Dim inputs As New List(Of String)
@@ -171,23 +172,24 @@ Public Class AssembleForm
     Private ReadOnly _txtSrc As New TextBox With {.Width = 560}
     Private ReadOnly _txtOut As New TextBox With {.Width = 560}
     Private ReadOnly _rbM1, _rbM3, _rbM4 As RadioButton
-    Private ReadOnly _chkListing As New CheckBox With {.Text = "Write a listing file next to the output (--listing OUT.lst)", .Checked = True}
+    Private ReadOnly _chkListing As New CheckBox With {.Text = UiText.T("dlg.asm.listing"), .Checked = True}
     Private ReadOnly _cmbBaud As New DropDown With {.Width = 130}
     Private ReadOnly _txtResult As TextArea
-    Private ReadOnly _btnRun As New Button With {.Text = "Assemble"}
-    Private ReadOnly _btnClose As New Button With {.Text = "Close"}
+    Private ReadOnly _btnRun As New Button With {.Text = UiText.T("btn.assemble")}
+    Private ReadOnly _btnClose As New Button With {.Text = UiText.T("btn.close")}
     Private _outputPath As String = Nothing
 
     Public Sub New()
-        Title = "Assemble (trs80-tool asm)"
+        Title = UiText.T("dlg.asm.title")
         Resizable = True
         ClientSize = New Size(720, 520)
         MinimumSize = New Size(600, 420)
         Padding = New Padding(Ui.Margin)
-        _rbM3 = New RadioButton With {.Text = "Model III (default)", .Checked = True}
-        _rbM1 = New RadioButton(_rbM3) With {.Text = "Model I"}
-        _rbM4 = New RadioButton(_rbM3) With {.Text = "Model 4"}
-        For Each item In New String() {"default (500)", "250", "500", "1500"}
+        _rbM3 = New RadioButton With {.Text = UiText.T("dlg.asm.m3"), .Checked = True}
+        _rbM1 = New RadioButton(_rbM3) With {.Text = UiText.T("dlg.asm.m1")}
+        _rbM4 = New RadioButton(_rbM3) With {.Text = UiText.T("dlg.asm.m4")}
+        ' Only item 0 is text; the rest are the numbers trs80-tool is given.
+        For Each item In New String() {UiText.T("dlg.asm.bauddefault"), "250", "500", "1500"}
             _cmbBaud.Items.Add(item)
         Next
         _cmbBaud.SelectedIndex = 0
@@ -196,16 +198,16 @@ Public Class AssembleForm
         AddHandler _btnRun.Click, Async Sub() Await RunAsync()
         AddHandler _btnClose.Click, Sub() Close()
         Dim srcRow As New TableLayout With {.Spacing = New Size(Ui.Gap, Ui.Gap)}
-        srcRow.Rows.Add(New TableRow(New TableCell(_txtSrc, True), New TableCell(Ui.Btn("Browse...", AddressOf BrowseSource))))
+        srcRow.Rows.Add(New TableRow(New TableCell(_txtSrc, True), New TableCell(Ui.Btn(UiText.T("btn.browse"), AddressOf BrowseSource))))
         Dim outRow As New TableLayout With {.Spacing = New Size(Ui.Gap, Ui.Gap)}
-        outRow.Rows.Add(New TableRow(New TableCell(_txtOut, True), New TableCell(Ui.Btn("Browse...", AddressOf BrowseOutput))))
+        outRow.Rows.Add(New TableRow(New TableCell(_txtOut, True), New TableCell(Ui.Btn(UiText.T("btn.browse"), AddressOf BrowseOutput))))
         Content = Ui.Down(_txtResult,
-                          Ui.Lbl("Z80 source file (.asm):"), srcRow,
-                          Ui.Lbl("Output file (.cmd, .3bn, .cas or .wav):"), outRow,
-                          Ui.Across(Ui.Group("Target (--model; defines __MODEL__ for the source)", Ui.Across(_rbM1, _rbM3, _rbM4)),
-                                    New Label With {.Text = "    Cassette baud (--baud):", .VerticalAlignment = VerticalAlignment.Center}, _cmbBaud),
+                          Ui.Lbl(UiText.T("dlg.asm.source")), srcRow,
+                          Ui.Lbl(UiText.T("dlg.asm.output")), outRow,
+                          Ui.Across(Ui.Group(UiText.T("dlg.asm.target"), Ui.Across(_rbM1, _rbM3, _rbM4)),
+                                    New Label With {.Text = "    " & UiText.T("dlg.asm.baud"), .VerticalAlignment = VerticalAlignment.Center}, _cmbBaud),
                           _chkListing,
-                          Ui.Lbl("trs80-tool output:"),
+                          Ui.Lbl(UiText.T("msg.engineoutput")),
                           _txtResult,
                           Ui.Across(Nothing, _btnRun, _btnClose))
         AbortButton = _btnClose
@@ -224,14 +226,14 @@ Public Class AssembleForm
     End Sub
 
     Private Sub BrowseSource()
-        Dim chosen As String = Ui.PickFile(Me, "Z80 source", "Assembler source (*.asm;*.z80;*.src;*.txt)|*.asm;*.z80;*.src;*.txt|All files (*.*)|*.*")
+        Dim chosen As String = Ui.PickFile(Me, UiText.T("dlg.asm.picksource"), UiText.T("filter.asmsource"))
         If chosen Is Nothing Then Return
         _txtSrc.Text = chosen
         If _txtOut.Text.Trim().Length = 0 Then _txtOut.Text = Path.ChangeExtension(chosen, ".cmd")
     End Sub
 
     Private Sub BrowseOutput()
-        Dim chosen As String = Ui.PickSave(Me, "Assembled output", "CMD program (*.cmd)|*.cmd|Cassette system program (*.3bn)|*.3bn|Cassette image (*.cas)|*.cas|Cassette audio (*.wav)|*.wav",
+        Dim chosen As String = Ui.PickSave(Me, UiText.T("dlg.asm.pickoutput"), UiText.T("filter.asmoutput"),
                                            If(_txtOut.Text.Trim().Length > 0, _txtOut.Text.Trim(), Nothing), "cmd")
         If chosen IsNot Nothing Then _txtOut.Text = chosen
     End Sub
@@ -251,17 +253,17 @@ Public Class AssembleForm
         Dim src As String = _txtSrc.Text.Trim()
         Dim outFile As String = _txtOut.Text.Trim()
         If src.Length = 0 OrElse Not File.Exists(src) Then
-            Ui.Warn(Me, "Choose an existing source file.", "Assemble")
+            Ui.Warn(Me, UiText.T("dlg.asm.nosource"), UiText.T("btn.assemble"))
             Return
         End If
         If outFile.Length = 0 OrElse Path.GetExtension(outFile).Length = 0 Then
-            Ui.Warn(Me, "Give an output file with an extension (.cmd, .3bn, .cas or .wav).", "Assemble")
+            Ui.Warn(Me, UiText.T("dlg.asm.nooutput"), UiText.T("btn.assemble"))
             Return
         End If
         _btnRun.Enabled = False
         Try
             Dim r As ToolResult = Await Program.Tool.AsmAsync(src, outFile, OptionWords())
-            _txtResult.Text = Ui.Lf(r.CommandLine & vbLf & vbLf & If(r.Succeeded, If(r.StdOut.Trim().Length = 0, "Assembled without messages.", r.StdOut), r.ErrorText))
+            _txtResult.Text = Ui.Lf(r.CommandLine & vbLf & vbLf & If(r.Succeeded, If(r.StdOut.Trim().Length = 0, UiText.T("dlg.asm.nomessages"), r.StdOut), r.ErrorText))
             If r.Succeeded AndAlso File.Exists(outFile) Then _outputPath = outFile
         Catch ex As Exception
             _txtResult.Text = ex.Message

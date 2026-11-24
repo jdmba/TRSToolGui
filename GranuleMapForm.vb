@@ -30,16 +30,16 @@ Public Class GranuleMapForm
     Private _mapText As String = ""
 
     Private ReadOnly _txtFilter As New TextBox() With {.Width = 260}
-    Private ReadOnly _btnApply As New Button() With {.Text = "Show", .Width = 70, .Height = 25}
+    Private ReadOnly _btnApply As New Button() With {.Text = UiText.T("btn.show"), .Width = 70, .Height = 25}
     Private ReadOnly _lblSummary As New Label()
     Private ReadOnly _grid As New DataGridView()
     Private ReadOnly _files As New ListView()
     Private ReadOnly _details As New TextBox()
     Private ReadOnly _split As New SplitContainer()
     Private ReadOnly _splitRight As New SplitContainer()
-    Private ReadOnly _btnText As New Button() With {.Text = "trs80-tool's text map...", .Width = 160, .Height = 26}
-    Private ReadOnly _btnRefresh As New Button() With {.Text = "Refresh", .Width = 80, .Height = 26}
-    Private ReadOnly _btnClose As New Button() With {.Text = "Close", .Width = 80, .Height = 26}
+    Private ReadOnly _btnText As New Button() With {.Text = UiText.T("btn.textmap"), .Width = 160, .Height = 26}
+    Private ReadOnly _btnRefresh As New Button() With {.Text = UiText.T("btn.refresh"), .Width = 80, .Height = 26}
+    Private ReadOnly _btnClose As New Button() With {.Text = UiText.T("btn.close"), .Width = 80, .Height = 26}
 
     Private Shared ReadOnly MonoFont As New Font(HostPlatform.MonospaceFontName, 9.0F)
 
@@ -51,22 +51,30 @@ Public Class GranuleMapForm
 
     Public Sub New(disk As DiskImage)
         _disk = disk
-        Text = "Granule map - " & Path.GetFileName(disk.Path) & If(disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing, " - partition " & disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture), "")
+        Dim shown As String = UiText.T("dlg.granule.title", Path.GetFileName(disk.Path))
+        If disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing Then shown = UiText.T("title.partition", shown, disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))
+        Text = shown
         StartPosition = FormStartPosition.CenterParent
         Size = New Size(980, 640)
         MinimumSize = New Size(640, 400)
         ShowInTaskbar = True
 
         Dim top As New Panel() With {.Dock = DockStyle.Top, .Height = 36}
-        top.Controls.Add(New Label() With {.Text = "Only these files (TRS-80 name patterns, e.g. *.BAS SYS?.SYS):", .AutoSize = True, .Location = New Point(8, 10)})
+        Dim lblFilter As New Label() With {.Text = UiText.T("dlg.granule.filter"), .AutoSize = True, .Location = New Point(8, 10)}
+        top.Controls.Add(lblFilter)
         _txtFilter.Location = New Point(380, 6)
         _btnApply.Location = New Point(648, 5)
         top.Controls.AddRange(New Control() {_txtFilter, _btnApply})
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves.
+        UiFit.AfterAll(lblFilter, 8, _txtFilter, _btnApply)
 
         _lblSummary.Dock = DockStyle.Top
         _lblSummary.Height = 40
         _lblSummary.Padding = New Padding(6, 2, 0, 0)
-        _lblSummary.Text = "Reading the granule map..."
+        _lblSummary.Text = UiText.T("dlg.granule.reading")
+
+        ' The summary and its legend are two lines of English and can be three of a longer
+        ' language; the label is given the height its text really needs (UiFit.vb).
 
         With _grid
             .Dock = DockStyle.Fill
@@ -97,8 +105,8 @@ Public Class GranuleMapForm
             .MultiSelect = False
             .Dock = DockStyle.Fill
             .Columns.Add("#", 36, HorizontalAlignment.Right)
-            .Columns.Add("File", 110)
-            .Columns.Add("Granules", 70, HorizontalAlignment.Right)
+            .Columns.Add(UiText.T("dlg.granule.col.file"), 110)
+            .Columns.Add(UiText.T("dlg.granule.col.granules"), 70, HorizontalAlignment.Right)
         End With
         AddHandler _files.SelectedIndexChanged, Sub() SelectFirstCellOfFile()
 
@@ -114,6 +122,7 @@ Public Class GranuleMapForm
 
         _splitRight.Dock = DockStyle.Fill
         _splitRight.Orientation = Orientation.Horizontal
+        UiFit.FitListColumns(_files)
         _splitRight.Panel1.Controls.Add(_files)
         _splitRight.Panel2.Controls.Add(_details)
 
@@ -122,10 +131,13 @@ Public Class GranuleMapForm
         _split.Panel2.Controls.Add(_splitRight)
 
         Dim bottom As New Panel() With {.Dock = DockStyle.Bottom, .Height = 40}
-        _btnText.Location = New Point(8, 7)
-        _btnRefresh.Location = New Point(176, 7)
+        ' The two report buttons are sized to their own text: "trs80-tool's text map..." is
+        ' "Carte texte de trs80-tool..." in French.
+        UiFit.ButtonRowLeft(8, 8, _btnText, _btnRefresh)
+        _btnText.Top = 7 : _btnRefresh.Top = 7
+        UiFit.FitButton(_btnClose)
         _btnClose.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        _btnClose.Location = New Point(bottom.Width - 90, 7)
+        _btnClose.Location = New Point(bottom.Width - _btnClose.Width - 10, 7)
         bottom.Controls.AddRange(New Control() {_btnText, _btnRefresh, _btnClose})
 
         Controls.Add(_split)
@@ -170,14 +182,14 @@ Public Class GranuleMapForm
                 _grid.Columns.Clear()
                 _files.Items.Clear()
                 _details.Text = ""
-                _lblSummary.Text = "trs80-tool can't draw this disk's granules: " & r.ErrorText
+                SetSummary(UiText.T("dlg.granule.failed", r.ErrorText))
                 Return
             End If
             FillGrid()
             FillFiles()
-            _lblSummary.Text = SummaryText()
+            SetSummary(SummaryText())
         Catch ex As Exception
-            _lblSummary.Text = ex.Message
+            SetSummary(ex.Message)
         Finally
             UseWaitCursor = False
             _btnApply.Enabled = True
@@ -185,19 +197,25 @@ Public Class GranuleMapForm
         End Try
     End Function
 
+    ''' <summary>Sets the summary line and gives the label the height its wrapped text needs.</summary>
+    Private Sub SetSummary(text As String)
+        _lblSummary.Text = text
+        UiFit.FitWrapped(_lblSummary, ClientSize.Width)
+    End Sub
+
     Private Function SummaryText() As String
         Dim t As Trs80Tool.MapTotalsJson = _map.Totals
         If t Is Nothing Then Return ""
         Dim used As Integer = t.GranuleCount - t.FreeGranuleCount - t.NotOnImageGranuleCount - t.PastEndGranuleCount
         Dim sb As New StringBuilder()
-        sb.Append(used.ToString("N0", CultureInfo.InvariantCulture)).Append(" of ").Append(t.GranuleCount.ToString("N0", CultureInfo.InvariantCulture)).Append(" granules used, ")
-        sb.Append(t.FreeGranuleCount.ToString("N0", CultureInfo.InvariantCulture)).Append(" free (").Append(TextUtil.FormatKb(t.FreeByteCount)).Append("). A granule is ")
-        sb.Append(t.GranuleByteCount.ToString("N0", CultureInfo.InvariantCulture)).Append(" bytes.")
-        If t.NotOnImageGranuleCount > 0 Then sb.Append(" ").Append(t.NotOnImageGranuleCount.ToString("N0", CultureInfo.InvariantCulture)).Append(" free granule(s) aren't fully on the image.")
-        If t.PastEndGranuleCount > 0 Then sb.Append(" ").Append(t.PastEndGranuleCount.ToString("N0", CultureInfo.InvariantCulture)).Append(" are past the disk's proven end.")
-        If t.LockedOutGranuleCount > 0 Then sb.Append(" ").Append(t.LockedOutGranuleCount.ToString("N0", CultureInfo.InvariantCulture)).Append(" locked out.")
+        ' The already-formatted numbers are passed, so nothing about number formatting changes here.
+        sb.Append(UiText.T("dlg.granule.summary", used.ToString("N0", CultureInfo.InvariantCulture), t.GranuleCount.ToString("N0", CultureInfo.InvariantCulture), t.FreeGranuleCount.ToString("N0", CultureInfo.InvariantCulture), TextUtil.FormatKb(t.FreeByteCount), t.GranuleByteCount.ToString("N0", CultureInfo.InvariantCulture)))
+        ' The space before each of the next three sentences is layout, so it stays here.
+        If t.NotOnImageGranuleCount > 0 Then sb.Append(" ").Append(UiText.T("dlg.granule.notonimage", t.NotOnImageGranuleCount.ToString("N0", CultureInfo.InvariantCulture)))
+        If t.PastEndGranuleCount > 0 Then sb.Append(" ").Append(UiText.T("dlg.granule.pastend", t.PastEndGranuleCount.ToString("N0", CultureInfo.InvariantCulture)))
+        If t.LockedOutGranuleCount > 0 Then sb.Append(" ").Append(UiText.T("dlg.granule.lockedout", t.LockedOutGranuleCount.ToString("N0", CultureInfo.InvariantCulture)))
         sb.AppendLine()
-        sb.Append("Number = a file (listed at the right)   · free   B boot   D directory   - another file   x locked out   ! shared by files   ? claimed but free   u used, unclaimed   n not on the image   p past the end")
+        sb.Append(UiText.T("dlg.granule.legend"))
         Return sb.ToString()
     End Function
 
@@ -249,7 +267,7 @@ Public Class GranuleMapForm
         Next
         ' trs80-tool 5.2.0 says what a row is on this disk: a cylinder where lumps are cylinders, otherwise a lump.
         Dim rowsAreCylinders As Boolean = _map.Layout IsNot Nothing AndAlso String.Equals(_map.Layout.LumpTerm, "cylinder", StringComparison.OrdinalIgnoreCase)
-        Dim colLump As New DataGridViewTextBoxColumn() With {.HeaderText = If(rowsAreCylinders, "Cylinder", "Lump"), .Width = If(rowsAreCylinders, 72, 52), .SortMode = DataGridViewColumnSortMode.NotSortable}
+        Dim colLump As New DataGridViewTextBoxColumn() With {.HeaderText = If(rowsAreCylinders, UiText.T("dlg.granule.col.cylinder"), UiText.T("dlg.granule.col.lump")), .Width = If(rowsAreCylinders, 72, 52), .SortMode = DataGridViewColumnSortMode.NotSortable}
         colLump.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
         colLump.DefaultCellStyle.BackColor = SystemColors.Control
         _grid.Columns.Add(colLump)
@@ -289,38 +307,42 @@ Public Class GranuleMapForm
     Private Shared Function CellText(c As Trs80Tool.MapCellJson) As String
         Dim kind As String
         Select Case If(c.Kind, "")
-            Case "free" : kind = "free"
-            Case "file" : kind = "a file"
-            Case "otherFile" : kind = "another file (not one of those asked for)"
-            Case "directory" : kind = "the directory"
-            Case "boot" : kind = "the boot sector's granule"
-            Case "lockedOut" : kind = "locked out (the lockout table says it can't be used)"
-            Case "shared" : kind = "DAMAGE: two or more files claim it"
-            Case "claimedButFree" : kind = "DAMAGE: a file claims it, but the allocation table says it is free"
-            Case "unclaimed" : kind = "marked used in the allocation table, but no file claims it"
-            Case "notOnImage" : kind = "free, but the image doesn't fully hold it, so new files skip it"
-            Case "pastEnd" : kind = "free, but past the disk's proven size, so new files never get it"
+            Case "free" : kind = UiText.T("dlg.granule.kind.free")
+            Case "file" : kind = UiText.T("dlg.granule.kind.file")
+            Case "otherFile" : kind = UiText.T("dlg.granule.kind.otherfile")
+            Case "directory" : kind = UiText.T("dlg.granule.kind.directory")
+            Case "boot" : kind = UiText.T("dlg.granule.kind.boot")
+            Case "lockedOut" : kind = UiText.T("dlg.granule.kind.lockedout")
+            Case "shared" : kind = UiText.T("dlg.granule.kind.shared")
+            Case "claimedButFree" : kind = UiText.T("dlg.granule.kind.claimedbutfree")
+            Case "unclaimed" : kind = UiText.T("dlg.granule.kind.unclaimed")
+            Case "notOnImage" : kind = UiText.T("dlg.granule.kind.notonimage")
+            Case "pastEnd" : kind = UiText.T("dlg.granule.kind.pastend")
             Case Else : kind = c.Kind
         End Select
         Dim sb As New StringBuilder()
-        sb.Append("Lump ").Append(c.Lump.ToString(CultureInfo.InvariantCulture)).Append(", granule ").Append(c.Granule.ToString(CultureInfo.InvariantCulture)).Append(": ").Append(kind)
+        sb.Append(UiText.T("dlg.granule.cell", c.Lump.ToString(CultureInfo.InvariantCulture), c.Granule.ToString(CultureInfo.InvariantCulture), kind))
         If c.Owners IsNot Nothing AndAlso c.Owners.Count > 0 Then
             Dim names As New List(Of String)
             For Each o In c.Owners
                 names.Add(o.Replace("."c, "/"c))
             Next
-            sb.AppendLine().Append("Claimed by: ").Append(String.Join(", ", names))
+            sb.AppendLine().Append(UiText.T("dlg.granule.claimedby", String.Join(", ", names)))
         End If
         If c.Sectors IsNot Nothing AndAlso c.Sectors.Count > 0 Then
             Dim first As Trs80Tool.SectorPositionJson = c.Sectors(0)
             Dim last As Trs80Tool.SectorPositionJson = c.Sectors(c.Sectors.Count - 1)
-            sb.AppendLine().Append("Sectors: cylinder ").Append(first.Cylinder.ToString(CultureInfo.InvariantCulture)).Append(", side ").Append(first.Side.ToString(CultureInfo.InvariantCulture)).Append(", sector ").Append(first.Sector.ToString(CultureInfo.InvariantCulture))
+            sb.AppendLine().Append(UiText.T("dlg.granule.sectors", first.Cylinder.ToString(CultureInfo.InvariantCulture), first.Side.ToString(CultureInfo.InvariantCulture), first.Sector.ToString(CultureInfo.InvariantCulture)))
             If c.Sectors.Count > 1 Then
-                sb.Append(" to ")
-                If last.Cylinder <> first.Cylinder OrElse last.Side <> first.Side Then sb.Append("cylinder ").Append(last.Cylinder.ToString(CultureInfo.InvariantCulture)).Append(", side ").Append(last.Side.ToString(CultureInfo.InvariantCulture)).Append(", sector ")
-                sb.Append(last.Sector.ToString(CultureInfo.InvariantCulture))
+                ' Two whole alternatives, so a translation can order the words as its grammar needs:
+                ' the last sector alone when it is on the same cylinder and side, otherwise all three.
+                If last.Cylinder <> first.Cylinder OrElse last.Side <> first.Side Then
+                    sb.Append(UiText.T("dlg.granule.sectors.tofull", last.Cylinder.ToString(CultureInfo.InvariantCulture), last.Side.ToString(CultureInfo.InvariantCulture), last.Sector.ToString(CultureInfo.InvariantCulture)))
+                Else
+                    sb.Append(UiText.T("dlg.granule.sectors.to", last.Sector.ToString(CultureInfo.InvariantCulture)))
+                End If
             End If
-            sb.Append(" (").Append(c.Sectors.Count.ToString(CultureInfo.InvariantCulture)).Append(" sectors)")
+            sb.Append(UiText.T("dlg.granule.sectors.count", c.Sectors.Count.ToString(CultureInfo.InvariantCulture)))
         End If
         Return sb.ToString()
     End Function
@@ -348,7 +370,7 @@ Public Class GranuleMapForm
 
     Private Sub ShowTextMap()
         If _mapText.Length = 0 Then Return
-        Dim f As New TextReportForm("Granule map (disk map) - " & Path.GetFileName(_disk.Path), _mapText.Replace(vbCrLf, vbLf).Replace(vbLf, vbCrLf))
+        Dim f As New TextReportForm(UiText.T("dlg.granule.texttitle", Path.GetFileName(_disk.Path)), _mapText.Replace(vbCrLf, vbLf).Replace(vbLf, vbCrLf))
         f.Show(Me)
     End Sub
 End Class

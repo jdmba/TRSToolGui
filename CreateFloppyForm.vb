@@ -26,29 +26,29 @@ Public Class CreateFloppyForm
     Private ReadOnly _rbJv3 As New RadioButton() With {.Text = "JV3", .AutoSize = True}
     Private ReadOnly _rbDmk As New RadioButton() With {.Text = "DMK", .AutoSize = True, .Checked = True}
 
-    Private ReadOnly _rbT23 As New RadioButton() With {.Text = "TRSDOS 2.3 (Model I)", .AutoSize = True}
-    Private ReadOnly _rbT13 As New RadioButton() With {.Text = "TRSDOS 1.3 (Model III)", .AutoSize = True}
-    Private ReadOnly _rbLdos As New RadioButton() With {.Text = "LDOS 5.3 (Model I/III)", .AutoSize = True, .Checked = True}
-    Private ReadOnly _rbT62 As New RadioButton() With {.Text = "TRSDOS 6.2 (Model 4)", .AutoSize = True}
-    Private ReadOnly _rbLs63 As New RadioButton() With {.Text = "LS-DOS 6.3 (Model 4)", .AutoSize = True}
+    Private ReadOnly _rbT23 As New RadioButton() With {.Text = UiText.T("dos.trsdos23.m1"), .AutoSize = True}
+    Private ReadOnly _rbT13 As New RadioButton() With {.Text = UiText.T("dos.trsdos13.m3"), .AutoSize = True}
+    Private ReadOnly _rbLdos As New RadioButton() With {.Text = UiText.T("dos.ldos53.m13"), .AutoSize = True, .Checked = True}
+    Private ReadOnly _rbT62 As New RadioButton() With {.Text = UiText.T("dos.trsdos62.m4"), .AutoSize = True}
+    Private ReadOnly _rbLs63 As New RadioButton() With {.Text = UiText.T("dos.lsdos63.m4"), .AutoSize = True}
     ''' <summary>"create cpm" / "format cpm" of trs80-tool 5.2.0; left out of the dialog with an older trs80-tool.</summary>
-    Private ReadOnly _rbCpm As New RadioButton() With {.Text = "Montezuma Micro CP/M 2.2 (Model 4)", .AutoSize = True}
+    Private ReadOnly _rbCpm As New RadioButton() With {.Text = UiText.T("dos.cpm.mm22.m4"), .AutoSize = True}
     Private ReadOnly _cpmAvailable As Boolean = Program.Tool IsNot Nothing AndAlso Program.Tool.Has520
-    Private ReadOnly _chkSystem As New CheckBox() With {.Text = "System (bootable) disk from trs80-tool's bundled DOS", .AutoSize = True}
-    Private ReadOnly _chkMinimal As New CheckBox() With {.Text = "only the DOS's own files (--minimal)", .AutoSize = True, .Enabled = False}
+    Private ReadOnly _chkSystem As New CheckBox() With {.Text = UiText.T("dlg.newfloppy.system"), .AutoSize = True}
+    Private ReadOnly _chkMinimal As New CheckBox() With {.Text = UiText.T("dlg.newfloppy.minimal"), .AutoSize = True, .Enabled = False}
 
     Private ReadOnly _rbModel1 As New RadioButton() With {.Text = "I", .AutoSize = True}
     Private ReadOnly _rbModel3 As New RadioButton() With {.Text = "III", .AutoSize = True, .Checked = True}
     Private ReadOnly _rbModel4 As New RadioButton() With {.Text = "4", .AutoSize = True}
 
-    Private ReadOnly _rbSd As New RadioButton() With {.Text = "Single", .AutoSize = True}
-    Private ReadOnly _rbDd As New RadioButton() With {.Text = "Double", .AutoSize = True, .Checked = True}
+    Private ReadOnly _rbSd As New RadioButton() With {.Text = UiText.T("dlg.newfloppy.single"), .AutoSize = True}
+    Private ReadOnly _rbDd As New RadioButton() With {.Text = UiText.T("dlg.newfloppy.double"), .AutoSize = True, .Checked = True}
     Private ReadOnly _rbSs As New RadioButton() With {.Text = "1", .AutoSize = True, .Checked = True}
     Private ReadOnly _rbDs As New RadioButton() With {.Text = "2", .AutoSize = True}
     Private ReadOnly _rb35 As New RadioButton() With {.Text = "35", .AutoSize = True}
     Private ReadOnly _rb40 As New RadioButton() With {.Text = "40", .AutoSize = True, .Checked = True}
     Private ReadOnly _rb80 As New RadioButton() With {.Text = "80", .AutoSize = True}
-    Private ReadOnly _rbOther As New RadioButton() With {.Text = "Other:", .AutoSize = True}
+    Private ReadOnly _rbOther As New RadioButton() With {.Text = UiText.T("dlg.newfloppy.other"), .AutoSize = True}
     Private ReadOnly _txtTracks As New TextBox() With {.Width = 40, .Text = "40", .Enabled = False}
     Private ReadOnly _txtName As New TextBox() With {.Width = 110, .MaxLength = 8, .Text = "TRS80DSK"}
     Private ReadOnly _txtDate As New TextBox() With {.Width = 110}
@@ -113,9 +113,9 @@ Public Class CreateFloppyForm
     Public ReadOnly Property ImageTypeFilter As String
         Get
             Select Case ImageTypeExtension
-                Case "jv1" : Return "JV1 floppy image (*.jv1;*.dsk)|*.jv1;*.dsk"
-                Case "jv3" : Return "JV3 floppy image (*.jv3;*.dsk)|*.jv3;*.dsk"
-                Case Else : Return "DMK floppy image (*.dmk)|*.dmk"
+                Case "jv1" : Return UiText.T("filter.jv1")
+                Case "jv3" : Return UiText.T("filter.jv3")
+                Case Else : Return UiText.T("filter.dmk")
             End Select
         End Get
     End Property
@@ -187,7 +187,7 @@ Public Class CreateFloppyForm
     End Function
 
     Private Sub BuildUi()
-        Text = If(_formatMode, "Format Disk Image", "Create New Floppy Image")
+        Text = If(_formatMode, UiText.T("dlg.newfloppy.formattitle"), UiText.T("dlg.newfloppy.title"))
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
         StartPosition = FormStartPosition.CenterParent
@@ -196,14 +196,14 @@ Public Class CreateFloppyForm
         Dim extra As Integer = If(_cpmAvailable, 22, 0)
         ClientSize = New Size(470, 420 + extra)
 
-        Dim g1 As New GroupBox() With {.Text = "Disk image type", .Bounds = New Rectangle(10, 10, 140, 100)}
+        Dim g1 As New GroupBox() With {.Text = UiText.T("dlg.newfloppy.imagetype"), .Bounds = New Rectangle(10, 10, 140, 100)}
         _rbJv1.Location = New Point(14, 24) : _rbJv3.Location = New Point(14, 48) : _rbDmk.Location = New Point(14, 72)
         g1.Controls.AddRange(New Control() {_rbJv1, _rbJv3, _rbDmk})
 
-        Dim g2 As New GroupBox() With {.Text = "File system (DOS)", .Bounds = New Rectangle(160, 10, 300, 150 + extra)}
+        Dim g2 As New GroupBox() With {.Text = UiText.T("dlg.newfloppy.dos"), .Bounds = New Rectangle(160, 10, 300, 150 + extra)}
         _rbT23.Location = New Point(14, 22) : _rbT13.Location = New Point(14, 44) : _rbLdos.Location = New Point(14, 66)
         _rbT62.Location = New Point(14, 88) : _rbLs63.Location = New Point(14, 110)
-        Dim lblModel As New Label() With {.Text = "LDOS for Model:", .AutoSize = True, .Location = New Point(180, 68)}
+        Dim lblModel As New Label() With {.Text = UiText.T("dlg.newfloppy.ldosmodel"), .AutoSize = True, .Location = New Point(180, 68)}
         _rbModel1.Location = New Point(180, 88) : _rbModel3.Location = New Point(220, 88)
         g2.Controls.AddRange(New Control() {_rbT23, _rbT13, _rbLdos, _rbT62, _rbLs63, lblModel, _rbModel1, _rbModel3})
         If _cpmAvailable Then
@@ -214,28 +214,30 @@ Public Class CreateFloppyForm
         _chkSystem.Location = New Point(14, 170 + extra)
         _chkMinimal.Location = New Point(300, 170 + extra)
 
-        Dim g3 As New GroupBox() With {.Text = "Density", .Bounds = New Rectangle(10, 200 + extra, 140, 76)}
+        Dim g3 As New GroupBox() With {.Text = UiText.T("dlg.newfloppy.density"), .Bounds = New Rectangle(10, 200 + extra, 140, 76)}
         _rbSd.Location = New Point(14, 22) : _rbDd.Location = New Point(14, 46)
         g3.Controls.AddRange(New Control() {_rbSd, _rbDd})
 
-        Dim g4 As New GroupBox() With {.Text = "Sides", .Bounds = New Rectangle(160, 200 + extra, 100, 76)}
+        Dim g4 As New GroupBox() With {.Text = UiText.T("dlg.newfloppy.sides"), .Bounds = New Rectangle(160, 200 + extra, 100, 76)}
         _rbSs.Location = New Point(14, 22) : _rbDs.Location = New Point(14, 46)
         g4.Controls.AddRange(New Control() {_rbSs, _rbDs})
 
-        Dim g5 As New GroupBox() With {.Text = "Number of tracks (cylinders)", .Bounds = New Rectangle(270, 200 + extra, 190, 100)}
+        Dim g5 As New GroupBox() With {.Text = UiText.T("dlg.newfloppy.tracks"), .Bounds = New Rectangle(270, 200 + extra, 190, 100)}
         _rb35.Location = New Point(14, 22) : _rb40.Location = New Point(70, 22) : _rb80.Location = New Point(126, 22)
         _rbOther.Location = New Point(14, 52) : _txtTracks.Location = New Point(80, 50)
         g5.Controls.AddRange(New Control() {_rb35, _rb40, _rb80, _rbOther, _txtTracks})
 
-        Dim g6 As New GroupBox() With {.Text = "Volume information", .Bounds = New Rectangle(10, 285 + extra, 250, 90)}
-        g6.Controls.Add(New Label() With {.Text = "Name (8 chars):", .AutoSize = True, .Location = New Point(12, 26)})
+        Dim g6 As New GroupBox() With {.Text = UiText.T("dlg.newfloppy.volume"), .Bounds = New Rectangle(10, 285 + extra, 250, 90)}
+        Dim lblName As New Label() With {.Text = UiText.T("dlg.newfloppy.name"), .AutoSize = True, .Location = New Point(12, 26)}
+        g6.Controls.Add(lblName)
         _txtName.Location = New Point(120, 22)
-        g6.Controls.Add(New Label() With {.Text = "Date (YYYY-MM-DD):", .AutoSize = True, .Location = New Point(12, 56)})
+        Dim lblDate As New Label() With {.Text = UiText.T("dlg.newfloppy.date"), .AutoSize = True, .Location = New Point(12, 56)}
+        g6.Controls.Add(lblDate)
         _txtDate.Location = New Point(120, 52)
         g6.Controls.AddRange(New Control() {_txtName, _txtDate})
 
-        Dim btnOk As New Button() With {.Text = If(_formatMode, "Format", "OK"), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(290, 385 + extra, 80, 26)}
-        Dim btnCancel As New Button() With {.Text = "Cancel", .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(380, 385 + extra, 80, 26)}
+        Dim btnOk As New Button() With {.Text = If(_formatMode, UiText.T("btn.format"), UiText.T("btn.ok")), .DialogResult = DialogResult.OK, .Bounds = New Rectangle(290, 385 + extra, 80, 26)}
+        Dim btnCancel As New Button() With {.Text = UiText.T("btn.cancel"), .DialogResult = DialogResult.Cancel, .Bounds = New Rectangle(380, 385 + extra, 80, 26)}
         AddHandler btnOk.Click, AddressOf OnOk
 
         Controls.AddRange(New Control() {g1, g2, _chkSystem, _chkMinimal, g3, g4, g5, g6, btnOk, btnCancel})
@@ -245,9 +247,22 @@ Public Class CreateFloppyForm
             _chkSystem.Visible = False
             _chkMinimal.Visible = False
             _chkSystem.Checked = False
-            Dim note As New Label() With {.Text = "Erases every file on the open image and formats it as an empty data disk (the image stays a DMK).", .AutoSize = False, .Bounds = New Rectangle(10, 10, 140, 100)}
+            Dim note As New Label() With {.Text = UiText.T("dlg.newfloppy.formatnote"), .AutoSize = False, .Bounds = New Rectangle(10, 10, 140, 100)}
             Controls.Add(note)
         End If
+        ' Make room for the language in force (UiFit.vb): every call below only widens something
+        ' or moves it right, and in English none of them does anything at all.
+        UiFit.SpreadRow(10, g1, g2)
+        UiFit.SpreadRow(10, g3, g4, g5)
+        UiFit.SpreadRow(12, _chkSystem, _chkMinimal)
+        UiFit.AfterAll(lblName, 8, _txtName)
+        UiFit.AfterAll(lblDate, 8, _txtDate)
+        For Each box As GroupBox In New GroupBox() {g1, g2, g3, g4, g5, g6}
+            UiFit.GrowToFit(box)
+        Next
+        UiFit.GrowForm(Me)
+        UiFit.ButtonRow(ClientSize.Width - 10, 10, btnOk, btnCancel)
+
         AcceptButton = btnOk
         CancelButton = btnCancel
 
@@ -320,24 +335,24 @@ Public Class CreateFloppyForm
         If _rbCpm.Checked Then Return     ' nothing to check: no name, no date, and the track count is 40 or 80
         Dim nm As String = _txtName.Text.Trim()
         If nm.Length = 0 OrElse _txtDate.Text.Trim().Length = 0 Then
-            MessageBox.Show(Me, "Volume name and date are required!", "Error creating floppy image", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show(Me, UiText.T("dlg.newfloppy.needname"), UiText.T("caption.newfloppyerror"), MessageBoxButtons.OK, MessageBoxIcon.Error)
             DialogResult = DialogResult.None
             Return
         End If
         If Not System.Text.RegularExpressions.Regex.IsMatch(nm, "^[A-Za-z][A-Za-z0-9]{0,7}$") Then
-            MessageBox.Show(Me, "The volume name must be 1–8 letters and digits, starting with a letter.", "Error creating floppy image", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show(Me, UiText.T("dlg.newfloppy.badname"), UiText.T("caption.newfloppyerror"), MessageBoxButtons.OK, MessageBoxIcon.Error)
             DialogResult = DialogResult.None
             Return
         End If
         If TextUtil.ToYmd(_txtDate.Text) Is Nothing Then
-            MessageBox.Show(Me, "The date must be a valid date, preferably YYYY-MM-DD.", "Error creating floppy image", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show(Me, UiText.T("dlg.newfloppy.baddate"), UiText.T("caption.newfloppyerror"), MessageBoxButtons.OK, MessageBoxIcon.Error)
             DialogResult = DialogResult.None
             Return
         End If
         If _rbOther.Checked Then
             Dim n As Integer
             If Not Integer.TryParse(_txtTracks.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, n) OrElse n < 1 OrElse n > 255 Then
-                MessageBox.Show(Me, "Track count is not valid!", "Error creating floppy image", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show(Me, UiText.T("dlg.newfloppy.badtracks"), UiText.T("caption.newfloppyerror"), MessageBoxButtons.OK, MessageBoxIcon.Error)
                 DialogResult = DialogResult.None
                 Return
             End If

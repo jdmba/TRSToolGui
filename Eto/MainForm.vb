@@ -77,33 +77,33 @@ Public Class MainForm
         Dim ctrl As Keys = Application.Instance.CommonModifier
 
         ' ---- menu
-        Dim mFile As New ButtonMenuItem With {.Text = "&File"}
-        mFile.Items.Add(MakeItem("&New...", ctrl Or Keys.N, AddressOf OnFileNew))
-        _miNewHardDisk = MakeItem("New &hard disk image...", Keys.None, AddressOf OnFileNewHardDisk)
+        Dim mFile As New ButtonMenuItem With {.Text = UiText.T("menu.file")}
+        mFile.Items.Add(MakeItem(UiText.T("menu.file.new"), ctrl Or Keys.N, AddressOf OnFileNew))
+        _miNewHardDisk = MakeItem(UiText.T("menu.file.newhd"), Keys.None, AddressOf OnFileNewHardDisk)
         mFile.Items.Add(_miNewHardDisk)
-        mFile.Items.Add(MakeItem("&Open...", ctrl Or Keys.O, AddressOf OnFileOpen))
-        _miRecent = New ButtonMenuItem With {.Text = "Open Recent"}
+        mFile.Items.Add(MakeItem(UiText.T("menu.file.open"), ctrl Or Keys.O, AddressOf OnFileOpen))
+        _miRecent = New ButtonMenuItem With {.Text = UiText.T("menu.file.recent")}
         mFile.Items.Add(_miRecent)
         ' A Mac's File menu gets the system's own Close (the window), so this one says what it closes.
-        _miClose = MakeItem(If(HostPlatform.IsMacOS, "&Close image", "&Close"), Keys.None, AddressOf OnFileClose)
+        _miClose = MakeItem(If(HostPlatform.IsMacOS, UiText.T("menu.file.closeimage"), UiText.T("menu.file.close")), Keys.None, AddressOf OnFileClose)
         mFile.Items.Add(_miClose)
         mFile.Items.Add(New SeparatorMenuItem())
-        _miDiskProps = MakeItem("Disk &properties...", Keys.None, AddressOf OnDiskProperties)
+        _miDiskProps = MakeItem(UiText.T("menu.file.diskprops"), Keys.None, AddressOf OnDiskProperties)
         mFile.Items.Add(_miDiskProps)
-        _miSaveAs = MakeItem("Save &image as... (convert format)", Keys.None, AddressOf OnSaveImageAs)
+        _miSaveAs = MakeItem(UiText.T("menu.file.saveas"), Keys.None, AddressOf OnSaveImageAs)
         mFile.Items.Add(_miSaveAs)
         If Not HostPlatform.IsMacOS Then
             mFile.Items.Add(New SeparatorMenuItem())
-            mFile.Items.Add(MakeItem("E&xit", ctrl Or Keys.Q, Sub() Program.ExitProgram(Me)))
+            mFile.Items.Add(MakeItem(UiText.T("menu.file.exit"), ctrl Or Keys.Q, Sub() Program.ExitProgram(Me)))
         End If
 
-        Dim mEdit As New ButtonMenuItem With {.Text = "&Edit"}
-        _miCopy = MakeItem("&Copy", ctrl Or Keys.C, AddressOf OnEditCopy)
-        _miPaste = MakeItem("&Paste", ctrl Or Keys.V, AddressOf OnEditPaste)
-        _miAdd = MakeItem("&Add files...", Keys.None, AddressOf OnEditAdd)
-        _miExtract = MakeItem("&Extract...", Keys.None, AddressOf OnEditExtract)
-        _miSelectAll = MakeItem("Select &all", ctrl Or Keys.A, Sub() SelectAllRows())
-        _miInvert = MakeItem("&Invert selection", Keys.None, Sub() InvertSelection())
+        Dim mEdit As New ButtonMenuItem With {.Text = UiText.T("menu.edit")}
+        _miCopy = MakeItem(UiText.T("menu.edit.copy"), ctrl Or Keys.C, AddressOf OnEditCopy)
+        _miPaste = MakeItem(UiText.T("menu.edit.paste"), ctrl Or Keys.V, AddressOf OnEditPaste)
+        _miAdd = MakeItem(UiText.T("menu.edit.add"), Keys.None, AddressOf OnEditAdd)
+        _miExtract = MakeItem(UiText.T("menu.edit.extract"), Keys.None, AddressOf OnEditExtract)
+        _miSelectAll = MakeItem(UiText.T("menu.edit.selectall"), ctrl Or Keys.A, Sub() SelectAllRows())
+        _miInvert = MakeItem(UiText.T("menu.edit.invert"), Keys.None, Sub() InvertSelection())
         If HostPlatform.IsMacOS Then
             ' The system puts Undo, Cut, Copy, Paste, Delete and Select All into this menu (BuildMacMenuBar), and
             ' Preferences is in the application menu. What is left goes below them.
@@ -112,51 +112,52 @@ Public Class MainForm
                 mEdit.Items.Add(mi)
             Next
         Else
-            mEdit.Items.AddRange(New MenuItem() {_miCopy, _miPaste, New SeparatorMenuItem(), _miAdd, _miExtract, New SeparatorMenuItem(), _miSelectAll, _miInvert, New SeparatorMenuItem(), MakeItem("P&references...", Keys.None, AddressOf OnPreferences)})
+            mEdit.Items.AddRange(New MenuItem() {_miCopy, _miPaste, New SeparatorMenuItem(), _miAdd, _miExtract, New SeparatorMenuItem(), _miSelectAll, _miInvert, New SeparatorMenuItem(), MakeItem(UiText.T("menu.edit.prefs"), Keys.None, AddressOf OnPreferences)})
         End If
 
-        Dim mView As New ButtonMenuItem With {.Text = "&View"}
-        _miInvisible = New CheckMenuItem With {.Text = "&Invisible files"}
+        Dim mView As New ButtonMenuItem With {.Text = UiText.T("menu.view")}
+        _miInvisible = New CheckMenuItem With {.Text = UiText.T("menu.view.invisible")}
         AddHandler _miInvisible.CheckedChanged, Sub() OnViewToggle()
-        _miSystem = New CheckMenuItem With {.Text = "S&ystem files"}
+        _miSystem = New CheckMenuItem With {.Text = UiText.T("menu.view.system")}
         AddHandler _miSystem.CheckedChanged, Sub() OnViewToggle()
-        _miPartition = New ButtonMenuItem With {.Text = "&Partition"}
-        _miRefresh = MakeItem("&Refresh", Keys.F5, AddressOf OnRefresh)
+        _miPartition = New ButtonMenuItem With {.Text = UiText.T("menu.view.partition")}
+        _miRefresh = MakeItem(UiText.T("menu.view.refresh"), Keys.F5, AddressOf OnRefresh)
         mView.Items.AddRange(New MenuItem() {_miInvisible, _miSystem, _miPartition, New SeparatorMenuItem(), _miRefresh})
 
         ' ---- Disk and Tools menus: trs80-tool features beyond TRSTool
-        Dim mDisk As New ButtonMenuItem With {.Text = "&Disk"}
-        _miSectorMap = MakeItem("&Sector map...", ctrl Or Keys.M, AddressOf OnSectorMap)
-        _miDmkInfo = MakeItem("D&MK analysis...", ctrl Or Keys.D, AddressOf OnDmkInfo)
-        _miCpmFormat = MakeItem("CP/M &layout...", Keys.None, AddressOf OnCpmFormat)
-        _miGranuleMap = MakeItem("&Granule map...", Keys.None, AddressOf OnGranuleMap)
-        _miCheckRepair = MakeItem("&Check && repair...", Keys.None, AddressOf OnCheckRepair)
-        _miFormat = MakeItem("&Format...", Keys.None, AddressOf OnFormat)
-        _miTrim = MakeItem("&Trim...", Keys.None, AddressOf OnTrim)
-        _miBoot = MakeItem("&Boot in the emulator...", Keys.None, AddressOf OnBoot)
-        _miShell = MakeItem("&Open trs80-tool shell here", Keys.None, AddressOf OnShell)
+        Dim mDisk As New ButtonMenuItem With {.Text = UiText.T("menu.disk")}
+        _miSectorMap = MakeItem(UiText.T("menu.disk.sectormap"), ctrl Or Keys.M, AddressOf OnSectorMap)
+        _miDmkInfo = MakeItem(UiText.T("menu.disk.dmk"), ctrl Or Keys.D, AddressOf OnDmkInfo)
+        _miCpmFormat = MakeItem(UiText.T("menu.disk.cpm"), Keys.None, AddressOf OnCpmFormat)
+        _miGranuleMap = MakeItem(UiText.T("menu.disk.granule"), Keys.None, AddressOf OnGranuleMap)
+        _miCheckRepair = MakeItem(UiText.T("menu.disk.checkrepair"), Keys.None, AddressOf OnCheckRepair)
+        _miFormat = MakeItem(UiText.T("menu.disk.format"), Keys.None, AddressOf OnFormat)
+        _miTrim = MakeItem(UiText.T("menu.disk.trim"), Keys.None, AddressOf OnTrim)
+        _miBoot = MakeItem(UiText.T("menu.disk.boot"), Keys.None, AddressOf OnBoot)
+        _miShell = MakeItem(UiText.T("menu.disk.shell"), Keys.None, AddressOf OnShell)
         mDisk.Items.AddRange(New MenuItem() {_miSectorMap, _miDmkInfo, _miGranuleMap, _miCheckRepair, _miCpmFormat, New SeparatorMenuItem(), _miFormat, _miTrim, New SeparatorMenuItem(), _miBoot, _miShell})
 
-        Dim mTools As New ButtonMenuItem With {.Text = "&Tools"}
-        mTools.Items.Add(MakeItem("&Convert file(s)...", Keys.None, Sub() OnConvertFiles(Nothing)))
-        mTools.Items.Add(MakeItem("&Assemble...", Keys.None, AddressOf OnAssemble))
+        Dim mTools As New ButtonMenuItem With {.Text = UiText.T("menu.tools")}
+        mTools.Items.Add(MakeItem(UiText.T("menu.tools.convert"), Keys.None, Sub() OnConvertFiles(Nothing)))
+        mTools.Items.Add(MakeItem(UiText.T("menu.tools.assemble"), Keys.None, AddressOf OnAssemble))
         mTools.Items.Add(New SeparatorMenuItem())
-        mTools.Items.Add(MakeItem("&Hex dump of a file...", Keys.None, AddressOf OnHexdumpFile))
-        mTools.Items.Add(MakeItem("&Disassemble a file...", Keys.None, AddressOf OnDisasmFile))
+        mTools.Items.Add(MakeItem(UiText.T("menu.tools.hexdump"), Keys.None, AddressOf OnHexdumpFile))
+        mTools.Items.Add(MakeItem(UiText.T("menu.tools.disasm"), Keys.None, AddressOf OnDisasmFile))
         mTools.Items.Add(New SeparatorMenuItem())
-        _miRunEmpty = MakeItem("&Run the emulator without a disk...", Keys.None, AddressOf OnRunEmulatorEmpty)
+        _miRunEmpty = MakeItem(UiText.T("menu.tools.runempty"), Keys.None, AddressOf OnRunEmulatorEmpty)
         mTools.Items.Add(_miRunEmpty)
 
-        Dim mHelp As New ButtonMenuItem With {.Text = "&Help"}
-        mHelp.Items.Add(MakeItem("&Manual...", Keys.F1, Sub() ShowHelpText("Manual.txt", Program.AppName & " Manual")))
-        mHelp.Items.Add(MakeItem("&Changelog...", Keys.None, Sub() ShowHelpText("Changelog.txt", Program.AppName & " Changelog")))
-        mHelp.Items.Add(MakeItem("&License...", Keys.None, Sub() ShowHelpText("License.txt", Program.AppName & " License")))
+        Dim mHelp As New ButtonMenuItem With {.Text = UiText.T("menu.help")}
+        mHelp.Items.Add(MakeItem(UiText.T("menu.help.manual"), Keys.F1, Sub() ShowHelpText("Manual.txt", UiText.T("win.manual", Program.AppName))))
+        mHelp.Items.Add(MakeItem(UiText.T("menu.help.changelog"), Keys.None, Sub() ShowHelpText("Changelog.txt", UiText.T("win.changelog", Program.AppName))))
+        mHelp.Items.Add(MakeItem(UiText.T("menu.help.license"), Keys.None, Sub() ShowHelpText("License.txt", UiText.T("win.license", Program.AppName))))
         mHelp.Items.Add(New SeparatorMenuItem())
-        mHelp.Items.Add(MakeItem("&Engine capabilities...", Keys.None, AddressOf OnEngineInfo))
-        mHelp.Items.Add(MakeItem("trs80-tool manual (&web)", Keys.None, Sub() OpenUrl(AppInfo.ToolUrl)))
+        mHelp.Items.Add(MakeItem(UiText.T("menu.help.engine"), Keys.None, AddressOf OnEngineInfo))
+        mHelp.Items.Add(MakeItem(UiText.T("menu.help.toolweb"), Keys.None, Sub() OpenUrl(AppInfo.ToolUrl)))
+        mHelp.Items.Add(MakeItem(UiText.T("menu.help.report"), Keys.None, Sub() OpenUrl(AppInfo.IssuesUrl)))
         If Not HostPlatform.IsMacOS Then
             mHelp.Items.Add(New SeparatorMenuItem())
-            mHelp.Items.Add(MakeItem("&About " & Program.AppName & "...", Keys.None, AddressOf OnAbout))
+            mHelp.Items.Add(MakeItem(UiText.T("menu.help.about", Program.AppName), Keys.None, AddressOf OnAbout))
         End If
 
         Dim bar As MenuBar
@@ -170,39 +171,39 @@ Public Class MainForm
 
         ' ---- toolbar (text buttons: no bitmaps to maintain)
         Dim tb As New ToolBar With {.TextAlign = ToolBarTextAlign.Right}
-        tb.Items.Add(MakeButton("New", AddressOf OnFileNew))
-        tb.Items.Add(MakeButton("Open", AddressOf OnFileOpen))
-        _tbProps = MakeButton("Disk properties", AddressOf OnDiskProperties)
+        tb.Items.Add(MakeButton(UiText.T("tb.new"), AddressOf OnFileNew))
+        tb.Items.Add(MakeButton(UiText.T("tb.open"), AddressOf OnFileOpen))
+        _tbProps = MakeButton(UiText.T("tb.diskprops"), AddressOf OnDiskProperties)
         tb.Items.Add(_tbProps)
         tb.Items.Add(New SeparatorToolItem())
-        _tbCopy = MakeButton("Copy", AddressOf OnEditCopy)
-        _tbPaste = MakeButton("Paste", AddressOf OnEditPaste)
+        _tbCopy = MakeButton(UiText.T("tb.copy"), AddressOf OnEditCopy)
+        _tbPaste = MakeButton(UiText.T("tb.paste"), AddressOf OnEditPaste)
         tb.Items.Add(_tbCopy)
         tb.Items.Add(_tbPaste)
         tb.Items.Add(New SeparatorToolItem())
-        _tbAdd = MakeButton("Add", AddressOf OnEditAdd)
-        _tbExtract = MakeButton("Extract", AddressOf OnEditExtract)
-        _tbView = MakeButton("View", AddressOf OnPreview)
+        _tbAdd = MakeButton(UiText.T("tb.add"), AddressOf OnEditAdd)
+        _tbExtract = MakeButton(UiText.T("tb.extract"), AddressOf OnEditExtract)
+        _tbView = MakeButton(UiText.T("tb.view"), AddressOf OnPreview)
         tb.Items.Add(_tbAdd)
         tb.Items.Add(_tbExtract)
         tb.Items.Add(_tbView)
         tb.Items.Add(New SeparatorToolItem())
-        _tbSectors = MakeButton("Sectors", AddressOf OnSectorMap)
+        _tbSectors = MakeButton(UiText.T("tb.sectors"), AddressOf OnSectorMap)
         tb.Items.Add(_tbSectors)
         tb.Items.Add(New SeparatorToolItem())
-        tb.Items.Add(MakeButton("About", AddressOf OnAbout))
+        tb.Items.Add(MakeButton(UiText.T("tb.about"), AddressOf OnAbout))
         ToolBar = tb
 
         ' ---- file list
         _grid.AllowMultipleSelection = True
         _grid.AllowDrop = True
         _grid.GridLines = GridLines.None
-        AddColumn("Name", 130, Function(f) f.BaseName, False)
-        AddColumn("Type", 60, Function(f) f.Extension, False)
-        AddColumn("Size", 90, Function(f) TextUtil.FormatBytes(f.Size), True)
-        AddColumn("Date", 150, Function(f) f.DateDisplay, False)
-        AddColumn("Attributes", 120, AddressOf AttributeText, False)
-        AddColumn("Kind", 320, AddressOf KindText, False)
+        AddColumn(UiText.T("col.name"), 130, Function(f) f.BaseName, False)
+        AddColumn(UiText.T("col.type"), 60, Function(f) f.Extension, False)
+        AddColumn(UiText.T("col.size"), 90, Function(f) TextUtil.FormatBytes(f.Size), True)
+        AddColumn(UiText.T("col.date"), 150, Function(f) f.DateDisplay, False)
+        AddColumn(UiText.T("col.attributes"), 120, AddressOf AttributeText, False)
+        AddColumn(UiText.T("col.kind"), 320, AddressOf KindText, False)
         If s.ColumnWidths IsNot Nothing AndAlso s.ColumnWidths.Count = _grid.Columns.Count Then
             For i As Integer = 0 To _grid.Columns.Count - 1
                 If s.ColumnWidths(i) > 10 Then _grid.Columns(i).Width = s.ColumnWidths(i)
@@ -220,18 +221,18 @@ Public Class MainForm
         If HostPlatform.IsMacOS Then MapMacEditCommands()
 
         ' ---- context menu
-        _cxPreview = MakeItem("&Preview", Keys.None, AddressOf OnPreview)
-        _cxExtract = MakeItem("&Extract...", Keys.None, AddressOf OnEditExtract)
-        _cxDelete = MakeItem("&Delete", Keys.None, AddressOf OnDelete)
-        _cxRename = MakeItem("&Rename...", Keys.None, AddressOf OnRename)
-        _cxProps = MakeItem("P&roperties...", Keys.None, AddressOf OnFileProperties)
-        _cxConvert = MakeItem("Con&vert to...", Keys.None, AddressOf OnConvertDiskFile)
+        _cxPreview = MakeItem(UiText.T("cx.preview"), Keys.None, AddressOf OnPreview)
+        _cxExtract = MakeItem(UiText.T("menu.edit.extract"), Keys.None, AddressOf OnEditExtract)
+        _cxDelete = MakeItem(UiText.T("cx.delete"), Keys.None, AddressOf OnDelete)
+        _cxRename = MakeItem(UiText.T("cx.rename"), Keys.None, AddressOf OnRename)
+        _cxProps = MakeItem(UiText.T("cx.props"), Keys.None, AddressOf OnFileProperties)
+        _cxConvert = MakeItem(UiText.T("cx.convert"), Keys.None, AddressOf OnConvertDiskFile)
         Dim ctx As New ContextMenu()
         ctx.Items.AddRange(New MenuItem() {_cxPreview, New SeparatorMenuItem(), _cxExtract, _cxDelete, _cxRename, _cxConvert, New SeparatorMenuItem(), _cxProps})
         _grid.ContextMenu = ctx
 
         ' ---- status line
-        _lblStatus.Text = "Ready"
+        _lblStatus.Text = UiText.T("status.ready")
         _lblEngine.Text = ""
         Dim statusRow As New TableLayout With {.Padding = New Padding(6, 3), .Spacing = New Size(12, 0)}
         statusRow.Rows.Add(New TableRow(New TableCell(_lblStatus, True), New TableCell(_lblEngine)))
@@ -254,9 +255,9 @@ Public Class MainForm
     ''' </summary>
     Private Function BuildMacMenuBar(cmd As Keys, helpMenu As ButtonMenuItem) As MenuBar
         Dim bar As New MenuBar With {.IncludeSystemItems = MenuBarSystemItems.All}
-        bar.AboutItem = MakeItem("About " & Program.AppName, Keys.None, AddressOf OnAbout)
-        bar.ApplicationItems.Add(MakeItem("Preferences...", cmd Or Keys.Comma, AddressOf OnPreferences))
-        bar.QuitItem = MakeItem("Quit " & Program.AppName, cmd Or Keys.Q, Sub() Program.ExitProgram(Me))
+        bar.AboutItem = MakeItem(UiText.T("menu.mac.about", Program.AppName), Keys.None, AddressOf OnAbout)
+        bar.ApplicationItems.Add(MakeItem(UiText.T("menu.mac.prefs"), cmd Or Keys.Comma, AddressOf OnPreferences))
+        bar.QuitItem = MakeItem(UiText.T("menu.mac.quit", Program.AppName), cmd Or Keys.Q, Sub() Program.ExitProgram(Me))
         ' Help is the last menu on a Mac, after the Window menu the system adds.
         helpMenu.Order = 1000
         Return bar
@@ -361,17 +362,17 @@ Public Class MainForm
     Private Async Function CheckEngineAsync(askIfMissing As Boolean) As Task(Of Boolean)
         Dim tool As Trs80Tool = Program.Tool
         If String.IsNullOrEmpty(tool.ToolPath) OrElse Not File.Exists(tool.ToolPath) Then
-            _lblEngine.Text = "trs80-tool: not found"
+            _lblEngine.Text = UiText.T("status.enginenotfound")
             If askIfMissing Then
                 ' On a Mac this is also the first question of a first start (Program.Main can't ask there).
                 Dim macWhere As String = If(HostPlatform.IsMacOS, Program.ToolFoundWhereHint, "")
-                If Ui.Ask(Me, If(HostPlatform.IsMacOS, "trs80-tool was not found.", "trs80-tool was not found at the configured location.") & vbLf & vbLf &
-                    Program.ToolDownloadHint & ", then tell this program where it is." & macWhere & vbLf & vbLf &
-                    "Open Preferences now to set its location?", Program.AppName, MessageBoxType.Warning) Then OnPreferences()
+                If Ui.Ask(Me, UiText.T(If(HostPlatform.IsMacOS, "msg.enginemissing.mac", "msg.enginemissing.windows")) & vbLf & vbLf &
+                    Program.ToolDownloadHint & UiText.T("msg.enginemissing.tail") & macWhere & vbLf & vbLf &
+                    UiText.T("msg.enginemissing.ask"), Program.AppName, MessageBoxType.Warning) Then OnPreferences()
             End If
             Return False
         End If
-        SetBusy(True, "Checking trs80-tool...")
+        SetBusy(True, UiText.T("status.checkingengine"))
         Dim caps As EngineCapabilities
         Try
             caps = Await tool.ProbeAsync()
@@ -379,15 +380,15 @@ Public Class MainForm
             SetBusy(False, Nothing)
         End Try
         If caps.Version Is Nothing Then
-            _lblEngine.Text = "trs80-tool: unusable"
+            _lblEngine.Text = UiText.T("status.engineunusable")
             Dim macHint As String = Program.MacToolHint(tool.ToolPath)
-            Ui.Fail(Me, "trs80-tool could not be run or its version could not be read:" & vbLf & vbLf & String.Join(vbLf, caps.Problems) & vbLf & vbLf & "Path: " & tool.ToolPath &
+            Ui.Fail(Me, UiText.T("msg.engineunreadable", String.Join(vbLf, caps.Problems), tool.ToolPath) &
                     If(macHint.Length > 0, vbLf & vbLf & macHint, ""), Program.AppName)
             Return False
         End If
-        _lblEngine.Text = "trs80-tool " & caps.Version.ToString()
+        _lblEngine.Text = UiText.T("status.engineversion", caps.Version.ToString())
         If caps.Version < Trs80Tool.MinimumVersion Then
-            Ui.Fail(Me, "trs80-tool " & caps.Version.ToString() & " is too old. This program needs version " & Trs80Tool.MinimumVersion.ToString() & " or later, which answers every disk question as data (""disk --json"", ""help --json"")." & vbLf & vbLf & "Please download the current version from " & AppInfo.ToolUrl & " and put it where the old one was:" & vbLf & tool.ToolPath, Program.AppName)
+            Ui.Fail(Me, UiText.T("msg.enginetooold", caps.Version.ToString(), Trs80Tool.MinimumVersion.ToString(), AppInfo.ToolUrl, tool.ToolPath), Program.AppName)
             Return False
         End If
         If caps.Version > Trs80Tool.MaxTestedVersion AndAlso Program.Settings.LastNotedVersion <> caps.Version.ToString() Then
@@ -397,9 +398,9 @@ Public Class MainForm
             For Each p In caps.Problems
                 If p.Contains(" missing") Then missing.Add(p)
             Next
-            Ui.Info(Me, "trs80-tool " & caps.Version.ToString() & " is newer than the version this program was tested with (" & Trs80Tool.MaxTestedVersion.ToString() & ")." & vbLf & vbLf &
-                    If(missing.Count = 0, "It has every command this program uses, so it should work normally.", "It no longer has some commands this program uses:" & vbLf & String.Join(vbLf, missing) & vbLf & vbLf & "Those features are disabled until this program is updated.") & vbLf & vbLf &
-                    "Details: Help → Engine capabilities.", Program.AppName)
+            Ui.Info(Me, UiText.T("msg.enginenewer", caps.Version.ToString(), Trs80Tool.MaxTestedVersion.ToString()) & vbLf & vbLf &
+                    If(missing.Count = 0, UiText.T("msg.enginenewer.ok"), UiText.T("msg.enginenewer.missing", String.Join(vbLf, missing))) & vbLf & vbLf &
+                    UiText.T("msg.enginenewer.details"), Program.AppName)
         End If
         Return True
     End Function
@@ -414,19 +415,19 @@ Public Class MainForm
 
     Private Sub UpdateStatus()
         If _disk Is Nothing Then
-            _lblStatus.Text = "Ready"
+            _lblStatus.Text = UiText.T("status.ready")
             Return
         End If
         Dim parts As New List(Of String)
         If _disk.DosName.Length > 0 Then parts.Add(_disk.DosName) Else parts.Add(_disk.Description)
-        parts.Add(_rows.Count.ToString(CultureInfo.InvariantCulture) & " file(s) shown of " & _disk.VisibleFiles(True, True).Count.ToString(CultureInfo.InvariantCulture))
+        parts.Add(UiText.T("status.filesshown", _rows.Count.ToString(CultureInfo.InvariantCulture), _disk.VisibleFiles(True, True).Count.ToString(CultureInfo.InvariantCulture)))
         If _disk.FreeText.Length > 0 Then parts.Add(_disk.FreeText)
-        If _disk.WriteProtected.HasValue AndAlso _disk.WriteProtected.Value Then parts.Add("WRITE-PROTECTED")
-        If _disk.Damaged Then parts.Add("DAMAGED")
-        If _disk.ProtectedSignCount > 0 Then parts.Add("signs of copy protection")
-        If Not _disk.IsWritable Then parts.Add("read-only: " & If(_disk.ReadOnlyReason, ""))
-        If Program.Tool.CpmFormatOf(_disk.Path).Length > 0 Then parts.Add("read as CP/M layout " & Program.Tool.CpmFormatOf(_disk.Path))
-        If ConsoleRunning() Then parts.Add(_consoleWhat & " is open on this image - changes here wait until it closes")
+        If _disk.WriteProtected.HasValue AndAlso _disk.WriteProtected.Value Then parts.Add(UiText.T("status.writeprotected"))
+        If _disk.Damaged Then parts.Add(UiText.T("status.damaged"))
+        If _disk.ProtectedSignCount > 0 Then parts.Add(UiText.T("status.protectionsigns"))
+        If Not _disk.IsWritable Then parts.Add(UiText.T("status.readonly", If(_disk.ReadOnlyReason, "")))
+        If Program.Tool.CpmFormatOf(_disk.Path).Length > 0 Then parts.Add(UiText.T("status.cpmlayout", Program.Tool.CpmFormatOf(_disk.Path)))
+        If ConsoleRunning() Then parts.Add(UiText.T("status.consoleopen", _consoleWhat))
         _lblStatus.Text = String.Join("   |   ", parts)
     End Sub
 
@@ -435,10 +436,11 @@ Public Class MainForm
             Title = Program.AppName
             Return
         End If
-        Dim t As String = Program.AppName & " - " & Path.GetFileName(_disk.Path) & " - (" & If(_disk.DosName.Length > 0, _disk.DosName, _disk.Description)
-        If _disk.VolumeName.Length > 0 Then t &= " - " & _disk.VolumeName
-        If _disk.IsHardDisk AndAlso _disk.ActivePartition IsNot Nothing Then t &= " - partition " & _disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture)
-        Title = t & ")"
+        Dim inner As String = If(_disk.DosName.Length > 0, _disk.DosName, _disk.Description)
+        If _disk.VolumeName.Length > 0 Then inner = UiText.T("win.main.volume", inner, _disk.VolumeName)
+        If _disk.IsHardDisk AndAlso _disk.ActivePartition IsNot Nothing Then inner = UiText.T("title.partition", inner, _disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))
+        Dim t As String = UiText.T("win.main.open", Program.AppName, Path.GetFileName(_disk.Path), inner)
+        Title = t
     End Sub
 
     Private Sub UpdateViewChecks()
@@ -530,13 +532,13 @@ Public Class MainForm
     Private Sub RebuildRecentMenu()
         _miRecent.Items.Clear()
         If Program.Settings.Mru.Count = 0 Then
-            _miRecent.Items.Add(New ButtonMenuItem With {.Text = "(none)", .Enabled = False})
+            _miRecent.Items.Add(New ButtonMenuItem With {.Text = UiText.T("menu.file.recent.none"), .Enabled = False})
             Return
         End If
         Dim n As Integer = 1
         For Each p In Program.Settings.Mru
             Dim pathCopy As String = p
-            Dim mi As New ButtonMenuItem With {.Text = "&" & n.ToString(CultureInfo.InvariantCulture) & " " & MenuLiteral(p)}
+            Dim mi As New ButtonMenuItem With {.Text = UiText.T("menu.file.recent.item", n.ToString(CultureInfo.InvariantCulture), MenuLiteral(p))}
             AddHandler mi.Click, Async Sub()
                                      If _busy Then Return
                                      Await OpenImageAsync(pathCopy)
@@ -562,10 +564,10 @@ Public Class MainForm
         Dim caps As EngineCapabilities = Program.Tool.Capabilities
         If caps IsNot Nothing AndAlso caps.HasDiskOption("partition", "--add") Then
             If _disk.Partitions.Count > 0 Then _miPartition.Items.Add(New SeparatorMenuItem())
-            Dim miAdd As New ButtonMenuItem With {.Text = "&Add a partition...", .Enabled = Not ConsoleRunning()}
+            Dim miAdd As New ButtonMenuItem With {.Text = UiText.T("menu.view.partadd"), .Enabled = Not ConsoleRunning()}
             AddHandler miAdd.Click, Sub() OnPartitionAdd()
             _miPartition.Items.Add(miAdd)
-            Dim miDel As New ButtonMenuItem With {.Text = "&Delete this partition...", .Enabled = _disk.ActivePartition IsNot Nothing AndAlso Not ConsoleRunning()}
+            Dim miDel As New ButtonMenuItem With {.Text = UiText.T("menu.view.partdelete"), .Enabled = _disk.ActivePartition IsNot Nothing AndAlso Not ConsoleRunning()}
             AddHandler miDel.Click, Sub() OnPartitionDelete()
             _miPartition.Items.Add(miDel)
         End If
@@ -584,10 +586,10 @@ Public Class MainForm
         If _busy Then Return
         Dim dlg As New CreateHardDiskForm()
         If Not dlg.ShowOk(Me) Then Return
-        Dim target As String = Ui.PickSave(Me, "Save new hard disk image as", "HDV hard disk image (*.hdv)|*.hdv", Nothing, "hdv")
+        Dim target As String = Ui.PickSave(Me, UiText.T("caption.savenewhd"), UiText.T("filter.hdv"), Nothing, "hdv")
         If target Is Nothing Then Return
         If Not target.EndsWith(".hdv", StringComparison.OrdinalIgnoreCase) Then target &= ".hdv"
-        SetBusy(True, "Creating " & Path.GetFileName(target) & "...")
+        SetBusy(True, UiText.T("status.creating", Path.GetFileName(target)))
         Dim r As ToolResult = Nothing
         Dim failure As String = Nothing
         Try
@@ -598,12 +600,12 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, failure, "Disk Image Creation Error")
+            Ui.Fail(Me, failure, UiText.T("caption.diskcreateerror"))
             Return
         End If
         Await OpenImageAsync(target)
         ' An HDV file has no partition table: the tool prints what the DOS's hard disk driver must be told.
-        ShowToolText("New hard disk image - " & Path.GetFileName(target), r.StdOut)
+        ShowToolText(UiText.T("win.newhd", Path.GetFileName(target)), r.StdOut)
     End Sub
 
     ''' <summary>View → Partition → Add a partition: "disk IMG partition --add DOS ...".</summary>
@@ -611,7 +613,7 @@ Public Class MainForm
         If _busy OrElse _disk Is Nothing OrElse Not _disk.IsHardDisk OrElse ConsoleRunning() Then Return
         Dim dlg As New PartitionAddForm()
         If Not dlg.ShowOk(Me) Then Return
-        SetBusy(True, "Adding a partition...")
+        SetBusy(True, UiText.T("status.addingpartition"))
         Dim r As ToolResult = Nothing
         Dim failure As String = Nothing
         Try
@@ -622,11 +624,11 @@ Public Class MainForm
         SetBusy(False, Nothing)
         If failure Is Nothing AndAlso Not r.Succeeded Then failure = r.ErrorText
         If failure IsNot Nothing Then
-            Ui.Fail(Me, failure, "Add a partition")
+            Ui.Fail(Me, failure, UiText.T("caption.addpartition"))
             Return
         End If
         Await RefreshAsync()
-        ShowToolText("New partition - " & Path.GetFileName(_disk.Path), r.StdOut)
+        ShowToolText(UiText.T("win.newpartition", Path.GetFileName(_disk.Path)), r.StdOut)
     End Sub
 
     ''' <summary>View → Partition → Delete this partition: "disk IMG partition --delete N [--force]".</summary>
@@ -634,10 +636,13 @@ Public Class MainForm
         If _busy OrElse _disk Is Nothing OrElse Not _disk.IsHardDisk OrElse _disk.ActivePartition Is Nothing OrElse ConsoleRunning() Then Return
         Dim part As DiskPartition = _disk.ActivePartition
         Dim fileCount As Integer = _disk.VisibleFiles(True, False).Count
-        Dim msg As String = "Delete partition " & part.Number.ToString(CultureInfo.InvariantCulture) & If(part.DiskName.Length > 0, " (" & part.DiskName & ")", "") & " of " & Path.GetFileName(_disk.Path) & "?" & vbLf & vbLf &
-            If(fileCount = 0, "It has no files.", "Its " & fileCount.ToString(CultureInfo.InvariantCulture) & " file(s) will be erased.") & " The partitions after it get numbers one lower." & vbLf & vbLf & "This cannot be undone."
-        If Not Ui.Ask(Me, msg, "Delete partition", MessageBoxType.Warning, True) Then Return
-        SetBusy(True, "Deleting the partition...")
+        ' Two whole sentences for the heading, so a translation can order the words itself.
+        Dim msg As String = If(part.DiskName.Length > 0,
+                UiText.T("msg.delpart.named", part.Number.ToString(CultureInfo.InvariantCulture), part.DiskName, Path.GetFileName(_disk.Path)),
+                UiText.T("msg.delpart.head", part.Number.ToString(CultureInfo.InvariantCulture), Path.GetFileName(_disk.Path))) & vbLf & vbLf &
+            If(fileCount = 0, UiText.T("msg.delpart.nofiles"), UiText.T("msg.delpart.files", fileCount.ToString(CultureInfo.InvariantCulture))) & UiText.T("msg.delpart.renumber") & vbLf & vbLf & UiText.T("msg.delpart.undone")
+        If Not Ui.Ask(Me, msg, UiText.T("caption.deletepartition"), MessageBoxType.Warning, True) Then Return
+        SetBusy(True, UiText.T("status.deletingpartition"))
         Dim r As ToolResult = Nothing
         Dim failure As String = Nothing
         Try
@@ -647,7 +652,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure Is Nothing AndAlso Not r.Succeeded Then failure = r.ErrorText
-        If failure IsNot Nothing Then Ui.Fail(Me, failure, "Delete partition")
+        If failure IsNot Nothing Then Ui.Fail(Me, failure, UiText.T("caption.deletepartition"))
         Await RefreshAsync()
     End Sub
 
@@ -655,7 +660,7 @@ Public Class MainForm
 
     Private Async Function OpenImageAsync(imagePath As String) As Task
         If Not File.Exists(imagePath) Then
-            Ui.Fail(Me, "File not found:" & vbLf & imagePath, "Error Opening Virtual Disk")
+            Ui.Fail(Me, UiText.T("msg.filenotfound", imagePath), UiText.T("caption.openerror"))
             Program.Settings.RemoveMru(imagePath)
             RebuildRecentMenu()
             Return
@@ -664,10 +669,10 @@ Public Class MainForm
             If Not Await CheckEngineAsync(True) Then Return
         End If
         If HostFiles.IsGzipName(imagePath) AndAlso Not Program.Tool.Has520 Then
-            Ui.Info(Me, Path.GetFileName(imagePath) & " is a gzipped image. Opening it needs trs80-tool 5.2.0 or later; this one is " & Program.Tool.Capabilities.Version.ToString() & "." & vbLf & vbLf & "Unzip the file, or get the current trs80-tool from " & AppInfo.ToolUrl & ".", "Error Opening Virtual Disk")
+            Ui.Info(Me, UiText.T("msg.gzippedneeds520", Path.GetFileName(imagePath), Program.Tool.Capabilities.Version.ToString(), AppInfo.ToolUrl), UiText.T("caption.openerror"))
             Return
         End If
-        SetBusy(True, "Reading " & Path.GetFileName(imagePath) & "...")
+        SetBusy(True, UiText.T("status.reading", Path.GetFileName(imagePath)))
         Dim problem As String = Nothing
         Try
             Dim keepPart As Integer = If(_disk IsNot Nothing AndAlso String.Equals(_disk.Path, imagePath, HostPlatform.PathComparison) AndAlso _disk.ActivePartition IsNot Nothing, _disk.ActivePartition.Number, 0)
@@ -687,7 +692,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         UpdateEnabled()
-        If problem IsNot Nothing Then Ui.Fail(Me, problem, "Error Opening Virtual Disk")
+        If problem IsNot Nothing Then Ui.Fail(Me, problem, UiText.T("caption.openerror"))
     End Function
 
     ''' <summary>Reload the open image from disk (after a change), keeping the selection.</summary>
@@ -703,7 +708,7 @@ Public Class MainForm
         If _disk Is Nothing Then Return
         _disk.ActivePartition = part
         _disk.DosName = part.Dos
-        SetBusy(True, "Reading partition " & part.Number.ToString(CultureInfo.InvariantCulture) & "...")
+        SetBusy(True, UiText.T("status.readingpartition", part.Number.ToString(CultureInfo.InvariantCulture)))
         Dim problem As String = Nothing
         Try
             Await _disk.RefreshStatusAsync(Program.Tool)
@@ -721,14 +726,14 @@ Public Class MainForm
     Private Shared Function AttributeText(f As DiskFile) As String
         Dim attrs As String = f.AttributeLetters
         If f.Protection.Length > 0 AndAlso Not String.Equals(f.Protection, "FULL", StringComparison.OrdinalIgnoreCase) Then attrs &= If(attrs.Length > 0, " ", "") & f.Protection
-        If f.CpmUser.HasValue AndAlso f.CpmUser.Value <> 0 Then attrs &= " user " & f.CpmUser.Value.ToString(CultureInfo.InvariantCulture)
+        If f.CpmUser.HasValue AndAlso f.CpmUser.Value <> 0 Then attrs &= UiText.T("file.user", f.CpmUser.Value.ToString(CultureInfo.InvariantCulture))
         Return attrs
     End Function
 
     Private Shared Function KindText(f As DiskFile) As String
         Dim kind As String = f.Description
-        If f.Damage.Length > 0 Then kind &= "  [DAMAGED: " & f.Damage & "]"
-        If f.DecodeError.Length > 0 Then kind &= "  (" & f.DecodeError & ")"
+        If f.Damage.Length > 0 Then kind &= UiText.T("file.damaged", f.Damage)
+        If f.DecodeError.Length > 0 Then kind &= UiText.T("file.decodeerror", f.DecodeError)
         Return kind
     End Function
 
@@ -865,10 +870,8 @@ Public Class MainForm
         If _busy Then Return
         ' trs80-tool 5.2.0 opens gzipped images (game.dmk.gz, big.hdv.gz) like any other.
         Const gzImages As String = "*.dsk.gz;*.dmk.gz;*.jv1.gz;*.jv3.gz;*.hfe.gz;*.imd.gz;*.scp.gz;*.hdv.gz"
-        Dim filter As String = "Disk images (*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv;*.gz)|*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv;*.hdv1;*.hdv2;" & gzImages & "|" &
-                     "Cassettes (*.cas;*.wav)|*.cas;*.wav;*.cas.gz;*.wav.gz|DMK (*.dmk)|*.dmk;*.dmk.gz|JV1 (*.jv1)|*.jv1;*.jv1.gz|JV3 (*.jv3)|*.jv3;*.jv3.gz|HDV hard disks (*.hdv)|*.hdv;*.hdv1;*.hdv2;*.hdv.gz|" &
-                     "Gzipped images (*.gz)|" & gzImages & ";*.cas.gz;*.wav.gz|All files (*.*)|*.*"
-        Dim chosen As String = Ui.PickFile(Me, "Open virtual disk", filter)
+        Dim filter As String = UiText.T("filter.openimages", gzImages)
+        Dim chosen As String = Ui.PickFile(Me, UiText.T("caption.openvirtualdisk"), filter)
         If chosen IsNot Nothing Then Await OpenImageAsync(chosen)
     End Sub
 
@@ -892,9 +895,9 @@ Public Class MainForm
         If _busy Then Return
         Dim dlg As New CreateFloppyForm()
         If Not dlg.ShowOk(Me) Then Return
-        Dim target As String = Ui.PickSave(Me, "Save new floppy image as", dlg.ImageTypeFilter & "|All files (*.*)|*.*", Nothing, dlg.ImageTypeExtension)
+        Dim target As String = Ui.PickSave(Me, UiText.T("caption.savenewfloppy"), dlg.ImageTypeFilter & UiText.T("filter.allfilessuffix"), Nothing, dlg.ImageTypeExtension)
         If target Is Nothing Then Return
-        SetBusy(True, "Creating " & Path.GetFileName(target) & "...")
+        SetBusy(True, UiText.T("status.creating", Path.GetFileName(target)))
         Dim failure As String = Nothing
         Try
             If File.Exists(target) Then File.Delete(target)
@@ -922,7 +925,7 @@ Public Class MainForm
                     End Try
                     If convertError IsNot Nothing Then
                         ' JV1 can't hold some data-address-mark detail; trs80-tool asks for --force.
-                        If Not Ui.Ask(Me, "trs80-tool says the new disk doesn't fit the JV1 format exactly:" & vbLf & vbLf & convertError.Message & vbLf & vbLf & "Write it as JV1 anyway (--force)?", "Create New Floppy Image", MessageBoxType.Warning) Then Throw convertError
+                        If Not Ui.Ask(Me, UiText.T("msg.jv1force", convertError.Message), UiText.T("dlg.newfloppy.title"), MessageBoxType.Warning) Then Throw convertError
                         Await Program.Tool.ConvertAsync(tmpDmk, tmpOut, True)
                     End If
                     File.Copy(tmpOut, target, True)
@@ -934,7 +937,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, failure, "Disk Image Creation Error")
+            Ui.Fail(Me, failure, UiText.T("caption.diskcreateerror"))
             Return
         End If
         Await OpenImageAsync(target)
@@ -947,7 +950,7 @@ Public Class MainForm
         Dim words As List(Of String) = dlg.LabelOptionWords()
         Dim changed As Boolean = False
         Dim failure As String = Nothing
-        SetBusy(True, "Updating disk...")
+        SetBusy(True, UiText.T("status.updatingdisk"))
         Try
             If words.Count > 0 Then
                 Await Program.Tool.DiskLabelSetAsync(_disk.Path, _disk.PartitionArg, words)
@@ -962,7 +965,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, failure, "Disk Properties Error")
+            Ui.Fail(Me, failure, UiText.T("caption.diskpropserror"))
             Await RefreshAsync()
             Return
         End If
@@ -973,18 +976,18 @@ Public Class MainForm
     Private Async Sub OnSaveImageAs()
         If _busy OrElse _disk Is Nothing OrElse _disk.IsHardDisk OrElse _disk.IsCassette Then Return
         Dim startName As String = Path.Combine(Path.GetDirectoryName(_disk.Path), Path.GetFileNameWithoutExtension(HostFiles.WithoutGzipSuffix(_disk.Path)))
-        Dim target As String = Ui.PickSave(Me, "Save image as (trs80-tool convert)", "DMK floppy image (*.dmk)|*.dmk|JV3 floppy image (*.jv3)|*.jv3|JV1 floppy image (*.jv1)|*.jv1|HFE floppy image (*.hfe)|*.hfe|IMD floppy image (*.imd)|*.imd", startName)
+        Dim target As String = Ui.PickSave(Me, UiText.T("caption.saveimageastitle"), UiText.T("filter.saveimageas"), startName)
         If target Is Nothing Then Return
         Dim ext As String = Path.GetExtension(target).ToLowerInvariant()
         If ext = ".dsk" OrElse ext.Length = 0 Then
-            Ui.Warn(Me, "End the name with .dmk, .jv3, .jv1, .hfe or .imd. trs80-tool needs the extension to know which format to write (.dsk doesn't say).", "Save image as")
+            Ui.Warn(Me, UiText.T("msg.saveas.needext.eto"), UiText.T("caption.saveimageas"))
             Return
         End If
         If String.Equals(Path.GetFullPath(target), _disk.Path, HostPlatform.PathComparison) Then
-            Ui.Warn(Me, "That is the open image itself; choose another name.", "Save image as")
+            Ui.Warn(Me, UiText.T("msg.saveas.sameimage"), UiText.T("caption.saveimageas"))
             Return
         End If
-        SetBusy(True, "Converting to " & Path.GetFileName(target) & "...")
+        SetBusy(True, UiText.T("status.convertingto", Path.GetFileName(target)))
         Dim failure As String = Nothing
         Dim needsForce As ToolException = Nothing
         Try
@@ -998,8 +1001,8 @@ Public Class MainForm
         If needsForce IsNot Nothing Then
             ' e.g. "JV1 can't hold everything on this disk ... Use --force to write it anyway."
             SetBusy(False, Nothing)
-            If Not Ui.Ask(Me, "trs80-tool says the image doesn't fit this format exactly:" & vbLf & vbLf & needsForce.Message & vbLf & vbLf & "Write it anyway (--force)?", "Save image as", MessageBoxType.Warning) Then Return
-            SetBusy(True, "Converting to " & Path.GetFileName(target) & "...")
+            If Not Ui.Ask(Me, UiText.T("msg.saveas.force", needsForce.Message), UiText.T("caption.saveimageas"), MessageBoxType.Warning) Then Return
+            SetBusy(True, UiText.T("status.convertingto", Path.GetFileName(target)))
             Try
                 Await Program.Tool.ConvertAsync(_disk.Path, target, True)
             Catch ex As Exception
@@ -1008,10 +1011,10 @@ Public Class MainForm
         End If
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, failure, "Save image as")
+            Ui.Fail(Me, failure, UiText.T("caption.saveimageas"))
             Return
         End If
-        If Ui.Ask(Me, "Written: " & target & vbLf & vbLf & "Open the new image now?", "Save image as") Then Await OpenImageAsync(target)
+        If Ui.Ask(Me, UiText.T("msg.saveas.written", target), UiText.T("caption.saveimageas")) Then Await OpenImageAsync(target)
     End Sub
 
     ' =================================================================== Disk menu (trs80-tool features beyond TRSTool)
@@ -1019,7 +1022,7 @@ Public Class MainForm
     Private Sub OnSectorMap()
         If _busy OrElse _disk Is Nothing Then Return
         If _disk.IsHardDisk OrElse _disk.IsCassette Then
-            Ui.Info(Me, "trs80-tool's sector map works on floppy images only.", "Sector map")
+            Ui.Info(Me, UiText.T("msg.sectormap.floppyonly"), UiText.T("caption.sectormap"))
             Return
         End If
         Dim f As New SectorMapForm(_disk)
@@ -1030,7 +1033,7 @@ Public Class MainForm
     Private Async Sub OnDmkInfo()
         If _busy OrElse _disk Is Nothing Then Return
         If _disk.IsHardDisk OrElse _disk.IsCassette Then
-            Ui.Info(Me, "The DMK analysis works on floppy images.", "DMK analysis")
+            Ui.Info(Me, UiText.T("msg.dmk.floppyonly"), UiText.T("caption.dmkanalysis"))
             Return
         End If
         Dim f As New DiskInfoForm(_disk.Path)
@@ -1054,7 +1057,7 @@ Public Class MainForm
     Private Async Sub OnFormat()
         If _busy OrElse _disk Is Nothing OrElse Not _disk.IsWritable OrElse _disk.IsHardDisk Then Return
         If HostFiles.ImageExtension(_disk.Path) <> ".dmk" Then
-            Ui.Info(Me, "trs80-tool's format makes a DMK image, so it only formats images named *.dmk. Use File → Save image as to make a DMK copy first, then format that.", "Format")
+            Ui.Info(Me, UiText.T("msg.format.dmkonly"), UiText.T("caption.format"))
             Return
         End If
         Dim cyl As Integer = If(_disk.Geometry IsNot Nothing, _disk.Geometry.CylinderCount, 0)
@@ -1063,9 +1066,12 @@ Public Class MainForm
         Dim dlg As New CreateFloppyForm(True, _disk.DosName, cyl, sides, density)
         If Not dlg.ShowOk(Me) Then Return
         Dim fileCount As Integer = _disk.VisibleFiles(True, True).Count
-        Dim msg As String = "Format erases " & If(fileCount = 1, "the 1 file", "all " & fileCount.ToString(CultureInfo.InvariantCulture) & " files") & " on " & Path.GetFileName(_disk.Path) & " and formats it as an empty " & If(dlg.IsCpm, "Montezuma Micro CP/M", dlg.DosName) & " data disk." & vbLf & vbLf & "This cannot be undone. Go ahead?"
-        If Not Ui.Ask(Me, msg, "Format Disk Image", MessageBoxType.Warning, True) Then Return
-        SetBusy(True, "Formatting...")
+        Dim msg As String = UiText.T("msg.format.confirm",
+            If(fileCount = 1, UiText.T("msg.format.onefile"), UiText.T("msg.format.manyfiles", fileCount.ToString(CultureInfo.InvariantCulture))),
+            Path.GetFileName(_disk.Path),
+            If(dlg.IsCpm, UiText.T("dos.cpm.montezuma"), dlg.DosName))
+        If Not Ui.Ask(Me, msg, UiText.T("dlg.newfloppy.formattitle"), MessageBoxType.Warning, True) Then Return
+        SetBusy(True, UiText.T("status.formatting"))
         Dim r As ToolResult = Nothing
         Dim failure As String = Nothing
         Try
@@ -1077,7 +1083,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure Is Nothing AndAlso Not r.Succeeded Then failure = r.ErrorText
-        If failure IsNot Nothing Then Ui.Fail(Me, failure, "Format Disk Image")
+        If failure IsNot Nothing Then Ui.Fail(Me, failure, UiText.T("dlg.newfloppy.formattitle"))
         Await RefreshAsync()
     End Sub
 
@@ -1085,7 +1091,7 @@ Public Class MainForm
         If _busy OrElse _disk Is Nothing OrElse _disk.IsHardDisk Then Return
         Dim dlg As New TrimForm(_disk)
         If Not dlg.ShowOk(Me) Then Return
-        SetBusy(True, "Trimming...")
+        SetBusy(True, UiText.T("status.trimming"))
         Dim r As ToolResult = Nothing
         Dim failure As String = Nothing
         Try
@@ -1095,11 +1101,11 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, failure, "Trim")
+            Ui.Fail(Me, failure, UiText.T("btn.trim"))
         ElseIf Not r.Succeeded Then
-            Ui.Warn(Me, r.ErrorText, "Trim")
+            Ui.Warn(Me, r.ErrorText, UiText.T("btn.trim"))
         Else
-            Ui.Info(Me, r.StdOut.Trim(), "Trim")
+            Ui.Info(Me, r.StdOut.Trim(), UiText.T("btn.trim"))
         End If
         Await RefreshAsync()
     End Sub
@@ -1108,7 +1114,7 @@ Public Class MainForm
         If _busy OrElse _disk Is Nothing OrElse _disk.IsHardDisk OrElse ConsoleRunning() Then Return
         Dim dlg As New BootForm(_disk)
         If Not dlg.ShowOk(Me) Then Return
-        StartConsole(dlg.RunWords(_disk.Path), "The emulator")
+        StartConsole(dlg.RunWords(_disk.Path), UiText.T("console.emulator"))
     End Sub
 
     ''' <summary>Tools -> Run the emulator without a disk: "trs80-tool run --model N" in its own console.</summary>
@@ -1116,14 +1122,14 @@ Public Class MainForm
         If _busy OrElse ConsoleRunning() Then Return
         Dim dlg As New RunModelForm()
         If Not dlg.ShowOk(Me) Then Return
-        StartConsole(New List(Of String) From {"run", "--model", dlg.Model.ToString(CultureInfo.InvariantCulture)}, "The emulator")
+        StartConsole(New List(Of String) From {"run", "--model", dlg.Model.ToString(CultureInfo.InvariantCulture)}, UiText.T("console.emulator"))
     End Sub
 
     Private Sub OnShell()
         If _busy OrElse _disk Is Nothing OrElse ConsoleRunning() Then Return
         ' "disk IMAGE [--partition P] [--cpm-format NAME]": the shell reads the image the way this window does.
         Dim words As List(Of String) = Program.Tool.DiskWords(_disk.Path, _disk.PartitionArg)
-        StartConsole(words, "The trs80-tool shell")
+        StartConsole(words, UiText.T("console.shell"))
     End Sub
 
     ''' <summary>
@@ -1135,7 +1141,7 @@ Public Class MainForm
         Dim imagePath As String = _disk.Path
         Dim before As String = Program.Tool.CpmFormatOf(imagePath)
         Dim layouts As String
-        SetBusy(True, "Asking trs80-tool for its CP/M layouts...")
+        SetBusy(True, UiText.T("status.askingcpmlayouts"))
         Try
             layouts = Await Program.Tool.CpmFormatHelpAsync(imagePath)
         Catch ex As Exception
@@ -1150,7 +1156,7 @@ Public Class MainForm
         If chosen.Length > 0 Then
             ' Ask trs80-tool whether the disk can be read that way before the window is reloaded with it.
             Dim problem As String = Nothing
-            SetBusy(True, "Reading " & Path.GetFileName(imagePath) & " as " & chosen & "...")
+            SetBusy(True, UiText.T("status.readingas", Path.GetFileName(imagePath), chosen))
             Try
                 Dim info As Trs80Tool.InfoJson = Await Program.Tool.InfoJsonAsync(imagePath)
                 problem = info.Error
@@ -1162,7 +1168,7 @@ Public Class MainForm
                 Program.Tool.SetCpmFormat(imagePath, before)
                 ' An unknown name is answered with the whole list again, which the window just showed: keep the first line.
                 If problem.Length > 600 AndAlso problem.IndexOf(ControlChars.Lf) > 0 Then problem = problem.Substring(0, problem.IndexOf(ControlChars.Lf)).Trim()
-                Ui.Warn(Me, "trs80-tool can't read this disk as """ & chosen & """:" & vbLf & vbLf & problem & vbLf & vbLf & "The disk is still read as before.", "CP/M layout")
+                Ui.Warn(Me, UiText.T("msg.cpm.cantread", chosen, problem), UiText.T("dlg.cpm.title"))
                 Return
             End If
         End If
@@ -1223,7 +1229,7 @@ Public Class MainForm
         If sel.Count <> 1 Then Return
         Dim f As DiskFile = sel(0)
         Dim host As String = Path.Combine(Program.NewTempDir(), TextUtil.HostNameFromTrs(f.TrsName, False))
-        SetBusy(True, "Extracting " & f.SlashName & "...")
+        SetBusy(True, UiText.T("status.extractingfile", f.SlashName))
         Dim failure As String = Nothing
         Try
             Await Program.Tool.DiskExtractAsAsync(_disk.Path, _disk.PartitionArg, f.TrsName, host)
@@ -1232,7 +1238,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, "Could not extract " & f.SlashName & ": " & failure, "Convert")
+            Ui.Fail(Me, UiText.T("msg.convert.cantextract", f.SlashName, failure), UiText.T("caption.convert"))
             Return
         End If
         OnConvertFiles(New String() {host})
@@ -1242,16 +1248,16 @@ Public Class MainForm
         If produced Is Nothing OrElse _disk Is Nothing OrElse Not _disk.IsWritable OrElse Not File.Exists(produced) Then Return
         Dim ext As String = Path.GetExtension(produced).ToLowerInvariant()
         If ext = ".dmk" OrElse ext = ".jv1" OrElse ext = ".jv3" OrElse ext = ".hfe" OrElse ext = ".imd" OrElse ext = ".wav" Then Return
-        If Ui.Ask(Me, "Add " & Path.GetFileName(produced) & " to " & Path.GetFileName(_disk.Path) & "?", Program.AppName) Then
+        If Ui.Ask(Me, UiText.T("msg.offeradd", Path.GetFileName(produced), Path.GetFileName(_disk.Path)), Program.AppName) Then
             Await AddHostFilesAsync(New String() {produced})
         End If
     End Function
 
     Private Async Sub OnHexdumpFile()
         If _busy Then Return
-        Dim chosen As String = Ui.PickFile(Me, "Hex dump of a file (trs80-tool hexdump)", "All files (*.*)|*.*")
+        Dim chosen As String = Ui.PickFile(Me, UiText.T("caption.hexdumpfile"), UiText.T("filter.anyfile"))
         If chosen Is Nothing Then Return
-        SetBusy(True, "Running hexdump...")
+        SetBusy(True, UiText.T("status.hexdumping"))
         Dim text As String
         Try
             text = Await Program.Tool.HexdumpAsync(chosen, False)
@@ -1259,18 +1265,18 @@ Public Class MainForm
             text = "(" & ex.Message & ")"
         End Try
         SetBusy(False, Nothing)
-        Dim f As New TextReportForm("hexdump - " & Path.GetFileName(chosen), text)
+        Dim f As New TextReportForm(UiText.T("win.hexdump", Path.GetFileName(chosen)), text)
         f.ShowOwned(Me)
     End Sub
 
     Private Async Sub OnDisasmFile()
         If _busy Then Return
-        Dim chosen As String = Ui.PickFile(Me, "Disassemble a file (trs80-tool disasm)", "TRS-80 programs (*.cmd;*.sys;*.3bn;*.rom;*.bin;*.cas)|*.cmd;*.sys;*.3bn;*.rom;*.bin;*.cas|All files (*.*)|*.*")
+        Dim chosen As String = Ui.PickFile(Me, UiText.T("caption.disasmfile"), UiText.T("filter.trs80programs"))
         If chosen Is Nothing Then Return
         Dim opt As New DisasmOptionsForm(Program.Settings.DisasmOptionWords())
         If Not opt.ShowOk(Me) Then Return
         Dim words As List(Of String) = opt.OptionWords()
-        SetBusy(True, "Disassembling...")
+        SetBusy(True, UiText.T("status.disassembling"))
         Dim text As String
         Try
             text = Await Program.Tool.DisasmAsync(chosen, words)
@@ -1278,7 +1284,7 @@ Public Class MainForm
             text = "(" & ex.Message & ")"
         End Try
         SetBusy(False, Nothing)
-        Dim f As New TextReportForm("disasm - " & Path.GetFileName(chosen), text)
+        Dim f As New TextReportForm(UiText.T("win.disasm", Path.GetFileName(chosen)), text)
         f.ShowOwned(Me)
     End Sub
 
@@ -1307,24 +1313,24 @@ Public Class MainForm
         ElseIf newPath Is Nothing Then
             Program.Tool.ToolPath = ""
             Program.Tool.Capabilities = Nothing
-            _lblEngine.Text = "trs80-tool: not found"
+            _lblEngine.Text = UiText.T("status.enginenotfound")
         End If
         FillList(SelectedNames())
     End Sub
 
     Private Sub OnAbout()
         Ui.Info(Me, Program.AppName & " " & Program.ReleaseVersion & vbLf &
-                "Release date: " & Program.ReleaseDate & vbLf &
-                "Build: " & Program.AppVersion & " (Eto.Forms, " & Application.Instance.Platform.ID & ")" & vbLf &
-                "By " & Program.AppAuthors & vbLf &
-                "Free software under the MIT License (Help > License)." & vbLf &
-                "Download: " & AppInfo.DownloadUrl & vbLf & vbLf &
-                "A front end for Lawrence Kesteloot's trs80-tool, reproducing the workflow of Matthew Reed's TRSTools (1.14)." & vbLf & vbLf &
-                "Engine: " & If(Program.Tool.Capabilities IsNot Nothing AndAlso Program.Tool.Capabilities.Version IsNot Nothing, "trs80-tool " & Program.Tool.Capabilities.VersionText, "trs80-tool not found") & vbLf &
-                "Engine path: " & If(Program.Tool.ToolPath, "") & vbLf & vbLf &
-                "trs80-tool: " & AppInfo.ToolUrl & "  (MIT licence, © Lawrence Kesteloot)" & vbLf &
-                "TRSTools was © 2009-2021 Matthew Reed; TRSToolGui is modelled on it (Help > License has the details).",
-                "About " & Program.AppName)
+                UiText.T("about.releasedate", Program.ReleaseDate) & vbLf &
+                UiText.T("about.build.eto", Program.AppVersion, Application.Instance.Platform.ID) & vbLf &
+                UiText.T("about.by", Program.AppAuthors) & vbLf &
+                UiText.T("about.license") & vbLf &
+                UiText.T("about.download", AppInfo.DownloadUrl) & vbLf & vbLf &
+                UiText.T("about.what.eto") & vbLf & vbLf &
+                UiText.T("about.engine", If(Program.Tool.Capabilities IsNot Nothing AndAlso Program.Tool.Capabilities.Version IsNot Nothing, UiText.T("status.engineversion", Program.Tool.Capabilities.VersionText), UiText.T("about.enginenotfound"))) & vbLf &
+                UiText.T("about.enginepath", If(Program.Tool.ToolPath, "")) & vbLf & vbLf &
+                UiText.T("about.toolcredit", AppInfo.ToolUrl) & vbLf &
+                UiText.T("about.trstoolscredit"),
+                UiText.T("menu.mac.about", Program.AppName))
     End Sub
 
     ''' <summary>Help > Manual / Changelog / License: an embedded text file in the report window (Copy / Save / Close).</summary>
@@ -1360,7 +1366,7 @@ Public Class MainForm
         If Not dlg.ShowOk(Me) Then Return
         Dim changed As Boolean = False
         Dim failure As String = Nothing
-        SetBusy(True, "Updating " & f.SlashName & "...")
+        SetBusy(True, UiText.T("status.updatingfile", f.SlashName))
         Try
             Dim attribWords As List(Of String) = dlg.AttribOptionWords()
             If attribWords.Count > 0 Then
@@ -1376,7 +1382,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, failure, "File Properties Error")
+            Ui.Fail(Me, failure, UiText.T("caption.filepropserror"))
             Await RefreshAsync()
             Return
         End If
@@ -1388,11 +1394,11 @@ Public Class MainForm
         Dim sel As List(Of DiskFile) = SelectedFiles()
         If sel.Count <> 1 Then Return
         Dim f As DiskFile = sel(0)
-        Dim dlg As New RenameForm("Rename File", "Filename:", f.SlashName, Nothing)
+        Dim dlg As New RenameForm(UiText.T("dlg.renamefile.title"), UiText.T("dlg.renamefile.prompt"), f.SlashName, Nothing)
         If Not dlg.ShowOk(Me) Then Return
         Dim newName As String = TextUtil.NormalizeTrsName(dlg.ResultName)
         If newName Is Nothing OrElse String.Equals(newName, f.TrsName, StringComparison.OrdinalIgnoreCase) Then Return
-        SetBusy(True, "Renaming...")
+        SetBusy(True, UiText.T("status.renaming"))
         Dim failure As String = Nothing
         Try
             Await Program.Tool.DiskRenameAsync(_disk.Path, _disk.PartitionArg, f.TrsName, newName)
@@ -1401,7 +1407,7 @@ Public Class MainForm
         End Try
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
-            Ui.Fail(Me, "Error renaming file: " & failure, "Rename error")
+            Ui.Fail(Me, UiText.T("msg.renamefailed", failure), UiText.T("caption.renameerror"))
             Return
         End If
         Await RefreshAsync()
@@ -1413,14 +1419,14 @@ Public Class MainForm
         Dim sel As List(Of DiskFile) = SelectedFiles()
         If sel.Count = 0 Then Return
         If Program.Settings.ConfirmDelete Then
-            Dim msg As String = If(sel.Count = 1, "Are you sure you want to delete this file?" & vbLf & vbLf & sel(0).SlashName, "Are you sure you want to delete these " & sel.Count.ToString(CultureInfo.InvariantCulture) & " files?")
-            If Not Ui.Ask(Me, msg, "Confirm File Delete", MessageBoxType.Warning, True) Then Return
+            Dim msg As String = If(sel.Count = 1, UiText.T("msg.delete.one", sel(0).SlashName), UiText.T("msg.delete.many", sel.Count.ToString(CultureInfo.InvariantCulture)))
+            If Not Ui.Ask(Me, msg, UiText.T("caption.confirmdelete"), MessageBoxType.Warning, True) Then Return
         End If
         Dim names As New List(Of String)
         For Each f In sel
             names.Add(f.TrsName)
         Next
-        SetBusy(True, "Deleting...")
+        SetBusy(True, UiText.T("status.deleting"))
         Dim failure As String = Nothing
         Try
             Await Program.Tool.DiskKillAsync(_disk.Path, _disk.PartitionArg, names)
@@ -1428,7 +1434,7 @@ Public Class MainForm
             failure = ex.Message
         End Try
         SetBusy(False, Nothing)
-        If failure IsNot Nothing Then Ui.Fail(Me, "Error deleting file: " & failure, "Delete error")
+        If failure IsNot Nothing Then Ui.Fail(Me, UiText.T("msg.deletefailed", failure), UiText.T("caption.deleteerror"))
         Await RefreshAsync()
     End Sub
 
@@ -1438,8 +1444,8 @@ Public Class MainForm
         If _busy OrElse _disk Is Nothing OrElse Not _disk.IsWritable Then Return
         Dim names As String()
         Using dlg As New OpenFileDialog()
-            dlg.Title = "Select files to add"
-            Ui.SetFilters(dlg, "All files (*.*)|*.*")
+            dlg.Title = UiText.T("caption.selectfilestoadd")
+            Ui.SetFilters(dlg, UiText.T("filter.anyfile"))
             dlg.MultiSelect = True
             dlg.CheckFileExists = True
             If dlg.ShowDialog(Me) <> DialogResult.Ok Then Return
@@ -1455,7 +1461,7 @@ Public Class MainForm
             If File.Exists(p) Then paths.Add(p)
         Next
         If paths.Count = 0 Then
-            _lblStatus.Text = "There are no files on the clipboard to paste."
+            _lblStatus.Text = UiText.T("status.nopaste")
             Return
         End If
         Await AddHostFilesAsync(paths)
@@ -1497,7 +1503,7 @@ Public Class MainForm
     ''' </summary>
     Private Async Function AddHostFilesAsync(hostPaths As IEnumerable(Of String)) As Task
         If _disk Is Nothing OrElse Not _disk.IsWritable Then
-            Ui.Fail(Me, "The disk image cannot be written to." & If(_disk IsNot Nothing AndAlso _disk.ReadOnlyReason IsNot Nothing, vbLf & vbLf & _disk.ReadOnlyReason, ""), "File Write Error")
+            Ui.Fail(Me, UiText.T("msg.write.cannot") & If(_disk IsNot Nothing AndAlso _disk.ReadOnlyReason IsNot Nothing, vbLf & vbLf & _disk.ReadOnlyReason, ""), UiText.T("caption.filewriteerror"))
             Return
         End If
         Dim s As Settings = Program.Settings
@@ -1509,7 +1515,7 @@ Public Class MainForm
             Dim fi As New FileInfo(hostPath)
             If Not fi.Exists Then Continue For
             If fi.Length > 10L * 1024 * 1024 Then
-                Ui.Info(Me, "Skipping " & fi.Name & ": larger than 10 MB.", Program.AppName)
+                Ui.Info(Me, UiText.T("msg.add.toolarge", fi.Name), Program.AppName)
                 Continue For
             End If
 
@@ -1528,7 +1534,7 @@ Public Class MainForm
                         sourcePath = HostFiles.CopyUnderPlainName(fi.FullName, Program.NewTempDir())
                     End If
                 Catch ex As Exception
-                    Ui.Warn(Me, "Skipping " & fi.Name & ": " & If(s.UnzipGzOnAdd, "it could not be unzipped (", "it could not be copied (") & ex.Message & ").", Program.AppName)
+                    Ui.Warn(Me, UiText.T("msg.add.gzfailed", fi.Name, If(s.UnzipGzOnAdd, UiText.T("msg.add.gzunzipfailed"), UiText.T("msg.add.gzcopyfailed")), ex.Message), Program.AppName)
                     Continue For
                 End Try
             End If
@@ -1538,16 +1544,16 @@ Public Class MainForm
             Dim hostUpper As String = sourceName.ToUpperInvariant()
             Dim needsRename As Boolean = trsName.Length = 0 OrElse Not String.Equals(trsName, hostUpper, StringComparison.Ordinal)
             If needsRename Then
-                Dim dlg As New RenameForm("Rename File", "New filename:", If(trsName.Length = 0, "", trsName.Replace(".", "/")), sourceName & vbLf & "is not a valid TRS-80 filename.")
+                Dim dlg As New RenameForm(UiText.T("dlg.renamefile.title"), UiText.T("dlg.renamefile.newprompt"), If(trsName.Length = 0, "", trsName.Replace(".", "/")), UiText.T("msg.add.invalidname", sourceName))
                 If Not dlg.ShowOk(Me) Then Continue For
                 trsName = TextUtil.NormalizeTrsName(dlg.ResultName)
                 If trsName Is Nothing Then
-                    Ui.Warn(Me, """" & dlg.ResultName & """ is not a valid TRS-80 filename. Skipping " & fi.Name & ".", Program.AppName)
+                    Ui.Warn(Me, UiText.T("msg.add.badnameskip", dlg.ResultName, fi.Name), Program.AppName)
                     Continue For
                 End If
             End If
             If pendingNames.Contains(trsName) Then
-                Ui.Warn(Me, "Two of the files would both be " & trsName.Replace(".", "/") & " on the disk. Skipping " & fi.Name & ".", Program.AppName)
+                Ui.Warn(Me, UiText.T("msg.add.duplicate", trsName.Replace(".", "/"), fi.Name), Program.AppName)
                 Continue For
             End If
 
@@ -1592,7 +1598,7 @@ Public Class MainForm
 
         If items.Count = 0 Then Return
 
-        SetBusy(True, "Adding " & items.Count.ToString(CultureInfo.InvariantCulture) & " file(s)...")
+        SetBusy(True, UiText.T("status.adding", items.Count.ToString(CultureInfo.InvariantCulture)))
         Dim result As ToolResult = Nothing
         Dim failure As String = Nothing
         Dim dateNote As String = Nothing
@@ -1626,16 +1632,16 @@ Public Class MainForm
         SetBusy(False, Nothing)
         If failure IsNot Nothing Then
             ' trs80-tool's exit status says why: TRSTool's own wording for the two cases it had.
-            Dim heading As String = "Error storing file(s): "
-            If failureKind = ToolFailure.DiskFull Then heading = "Not enough free space to store " & If(items.Count = 1, "this file.", "these files.")
-            If failureKind = ToolFailure.WriteProtected Then heading = "The image is write-protected (Disk properties has the flag)."
-            Ui.Fail(Me, heading & vbLf & vbLf & failure & vbLf & vbLf & "Nothing was written to the disk.", "File Storing Error")
+            Dim heading As String = UiText.T("msg.store.error")
+            If failureKind = ToolFailure.DiskFull Then heading = If(items.Count = 1, UiText.T("msg.store.diskfull.one"), UiText.T("msg.store.diskfull.many"))
+            If failureKind = ToolFailure.WriteProtected Then heading = UiText.T("msg.store.writeprotected")
+            Ui.Fail(Me, heading & vbLf & vbLf & failure & vbLf & vbLf & UiText.T("msg.store.nothingwritten"), UiText.T("caption.storeerror"))
             Await RefreshAsync()
             Return
         End If
         ' Surface the tool's warnings (e.g. the DOS couldn't store the date), once.
         Dim warn As New List(Of String)
-        If dateNote IsNot Nothing Then warn.Add("The files were added without dates: " & dateNote)
+        If dateNote IsNot Nothing Then warn.Add(UiText.T("msg.add.nodates", dateNote))
         If result.Disk IsNot Nothing Then
             For Each w In result.Disk.AllWarnings()
                 If Not warn.Contains(w) Then warn.Add(w)
@@ -1647,7 +1653,7 @@ Public Class MainForm
             added.Add(If(it.AsName, TextUtil.TrsNameFromHost(Path.GetFileName(it.HostPath))))
         Next
         ReselectNames(added)
-        If warn.Count > 0 Then Ui.Info(Me, String.Join(vbLf, warn), "trs80-tool notes")
+        If warn.Count > 0 Then Ui.Info(Me, String.Join(vbLf, warn), UiText.T("caption.toolnotes"))
     End Function
 
     ' =================================================================== extracting (Extract / Copy)
@@ -1662,7 +1668,7 @@ Public Class MainForm
         Try
             If Not Directory.Exists(targetDir) Then Directory.CreateDirectory(targetDir)
         Catch ex As Exception
-            Ui.Fail(Me, ex.Message, "File Extraction Error")
+            Ui.Fail(Me, ex.Message, UiText.T("caption.extracterror"))
             Return
         End Try
         Program.Settings.ExtractDirectory = targetDir
@@ -1690,10 +1696,10 @@ Public Class MainForm
                 File.Copy(src, dest, True)
                 written += 1
             Catch ex As Exception
-                Ui.Fail(Me, "Error extracting file: " & ex.Message, "File Extraction Error")
+                Ui.Fail(Me, UiText.T("msg.extractfailed", ex.Message), UiText.T("caption.extracterror"))
             End Try
         Next
-        _lblStatus.Text = written.ToString(CultureInfo.InvariantCulture) & " file(s) extracted to " & targetDir
+        _lblStatus.Text = UiText.T("status.extracted", written.ToString(CultureInfo.InvariantCulture), targetDir)
     End Sub
 
     Private Async Sub OnEditCopy()
@@ -1704,7 +1710,7 @@ Public Class MainForm
         If staged Is Nothing OrElse staged.Count = 0 Then Return
         Try
             Ui.CopyFilesToClipboard(staged)
-            _lblStatus.Text = staged.Count.ToString(CultureInfo.InvariantCulture) & " file(s) copied to the clipboard"
+            _lblStatus.Text = UiText.T("status.copied", staged.Count.ToString(CultureInfo.InvariantCulture))
         Catch ex As Exception
             Ui.Fail(Me, ex.Message, Program.AppName)
         End Try
@@ -1721,7 +1727,7 @@ Public Class MainForm
         For Each f In files
             names.Add(If(options.NeedsTopLevelExtract, f.FullName, f.TrsName))
         Next
-        SetBusy(True, "Extracting " & files.Count.ToString(CultureInfo.InvariantCulture) & " file(s)...")
+        SetBusy(True, UiText.T("status.extracting", files.Count.ToString(CultureInfo.InvariantCulture)))
         Dim failure As String = Nothing
         Try
             If options.NeedsTopLevelExtract Then
@@ -1735,7 +1741,7 @@ Public Class MainForm
         End Try
         If failure IsNot Nothing Then
             SetBusy(False, Nothing)
-            Ui.Fail(Me, "Error extracting file(s): " & failure, "File Extraction Error")
+            Ui.Fail(Me, UiText.T("msg.extractfailedmulti", failure), UiText.T("caption.extracterror"))
             Return Nothing
         End If
         Dim result As New List(Of String)

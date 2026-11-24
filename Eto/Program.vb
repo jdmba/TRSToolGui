@@ -40,6 +40,9 @@ Public Module Program
         End If
 
         Settings = Settings.Load()
+        ' The language goes in before anything reaches the screen, because text already built is not
+        ' revisited. An empty setting, which is what a new installation has, leaves English in force.
+        If Not String.IsNullOrEmpty(Settings.Language) Then UiText.Use(Settings.Language)
         Dim toolPath As String = Trs80Tool.Locate(Settings.ToolPath)
         ' On a Mac nothing can be asked before the application is running; there the main window asks, once
         ' it is on the screen (MainForm.CheckEngineAsync).
@@ -83,15 +86,15 @@ Public Module Program
     ''' <summary>Where to get trs80-tool, worded for the system the program runs on.</summary>
     Public ReadOnly Property ToolDownloadHint As String
         Get
-            Dim which As String = If(HostPlatform.IsWindows, """trs80-tool for Windows 10+""", If(HostPlatform.IsMacOS, "the macOS download", "the Linux download"))
-            Return "Download it from " & AppInfo.ToolUrl & " (" & which & ")"
+            Dim which As String = If(HostPlatform.IsWindows, UiText.T("msg.tooldownload.windows"), If(HostPlatform.IsMacOS, UiText.T("msg.tooldownload.mac"), UiText.T("msg.tooldownload.linux")))
+            Return UiText.T("msg.tooldownload", AppInfo.ToolUrl, which)
         End Get
     End Property
 
     ''' <summary>The file filter for locating trs80-tool: it has no extension outside Windows.</summary>
     Public ReadOnly Property ToolFileFilter As String
         Get
-            Return If(HostPlatform.IsWindows, "Programs (*.exe;*.cmd;*.bat)|*.exe;*.cmd;*.bat|All files (*.*)|*.*", "All files|*")
+            Return If(HostPlatform.IsWindows, UiText.T("filter.programs"), UiText.T("filter.allfiles"))
         End Get
     End Property
 
@@ -99,12 +102,10 @@ Public Module Program
     Public ReadOnly Property ToolFoundWhereHint As String
         Get
             If HostPlatform.IsWindows Then Return ""
-            If Not HostPlatform.IsMacOS Then Return " A copy beside TRSToolGui, or one on the PATH, is found without asking."
-            Dim hint As String = " A copy in the folder that TRSToolGui.app is in, or one in /usr/local/bin or /opt/homebrew/bin, is found without asking."
+            If Not HostPlatform.IsMacOS Then Return UiText.T("msg.toolfound.unix")
+            Dim hint As String = UiText.T("msg.toolfound.mac")
             If HostPlatform.IsMacTranslocated Then
-                hint &= vbLf & vbLf & "macOS is running TRSToolGui from a temporary copy of its folder, because the app has not been moved since it was " &
-                    "unzipped. A trs80-tool beside the app can't be seen from there. To have it found: quit, drag TRSToolGui.app to another folder " &
-                    "(Applications, for one) in Finder, put trs80-tool beside it, and start it again."
+                hint &= vbLf & vbLf & UiText.T("msg.toolfound.translocated")
             End If
             Return hint
         End Get
@@ -117,30 +118,29 @@ Public Module Program
     Public Function MacToolHint(toolPath As String) As String
         If Not HostPlatform.IsMacOS Then Return ""
         Dim quoted As String = "'" & If(toolPath, "trs80-tool").Replace("'", "'\''") & "'"
-        Return "On a Mac, a trs80-tool that was downloaded with a browser has to be made runnable and allowed once. " &
-            "Open Terminal and enter these two lines, then start TRSToolGui again:" & vbLf & vbLf &
+        ' The two command lines are what the user types, so they stay here.
+        Return UiText.T("msg.mactoolhint.intro") & vbLf & vbLf &
             "chmod +x " & quoted & vbLf &
             "xattr -d com.apple.quarantine " & quoted & vbLf & vbLf &
-            "(If the second line answers ""No such xattr"", the file was already allowed.)"
+            UiText.T("msg.mactoolhint.note")
     End Function
 
     Private Function AskForTool() As String
-        Ui.Info(Nothing, "TRSToolGui needs trs80-tool, which was not found." & vbLf & vbLf &
+        Ui.Info(Nothing, UiText.T("msg.toolmissing.head") & vbLf & vbLf &
             ToolDownloadHint & "." & ToolFoundWhereHint & vbLf & vbLf &
-            "Click OK, then choose " & Trs80Tool.DefaultExeName & ". Its location is saved in:" & vbLf & Settings.FilePath, AppName)
-        Dim chosen As String = Ui.PickFile(Nothing, "Locate trs80-tool", ToolFileFilter)
+            UiText.T("msg.toolmissing.choose", Trs80Tool.DefaultExeName) & vbLf & Settings.FilePath, AppName)
+        Dim chosen As String = Ui.PickFile(Nothing, UiText.T("dlg.prefs.picktool"), ToolFileFilter)
         If chosen Is Nothing OrElse Not File.Exists(chosen) Then Return Nothing
         Settings.ToolPath = chosen
         If Not Settings.Save() Then
-            Ui.Warn(Nothing, "The trs80-tool location could not be saved to" & vbLf & Settings.FilePath & vbLf & vbLf &
-                "The location will be used for this session only.", AppName)
+            Ui.Warn(Nothing, UiText.T("msg.toolsavefailed", Settings.FilePath, UiText.T("msg.toolsavefailed.session")), AppName)
         End If
         Return Settings.ToolPath
     End Function
 
     Public Function ReadHelpText(name As String) As String
         Using st As Stream = GetType(Program).Assembly.GetManifestResourceStream("TRSToolGui." & name)
-            If st Is Nothing Then Return "(" & name & " is missing from this build.)"
+            If st Is Nothing Then Return UiText.T("msg.helpmissing", name)
             Using sr As New StreamReader(st, System.Text.Encoding.UTF8)
                 Return sr.ReadToEnd()
             End Using

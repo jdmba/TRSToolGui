@@ -1,6 +1,31 @@
 TRSToolGui — Changelog
 ======================
 
+v1.6 — November 23, 2026
+  The program's own text can be French. Preferences has a Language list with English and
+    Francais in it; the choice takes effect the next time the program starts. A new installation
+    starts in English and stays there until you pick something else, whatever the system's own
+    language is set to.
+  One table of text serves all three programs, so the Windows, Linux and Mac versions are
+    translated by this one release.
+  What stays in English whichever language you pick: the DMK analysis and the other disk
+    analysis reports, which are forensic notes full of names that must not be translated;
+    anything trs80-tool itself prints; the manual; and this changelog.
+  Every window was taught to make room for longer words. A label that reaches the box beside it
+    pushes the box along, a note that no longer fits on one line gets another, a button grows to
+    its text, and a column widens to its heading. In English none of it moves: the text is the
+    text each window was drawn around. The one deliberate exception is the sector map's Close
+    button, which used to sit sixteen pixels past the right edge of the window and was clipped.
+    It is now inside the window.
+  Two keyboard letters in the English menus changed, because each of them answered to two items
+    and had since v1.0. Edit > Add files... is now Alt+D, so that Select all keeps Alt+A as it
+    does in every Windows program; and the file list's right-click Rename... is now Alt+M, the
+    letter Explorer uses, so that Properties keeps Alt+R.
+  Help > Report a problem (web) opens the issues page, where every report belongs.
+  The French is a first translation and has not been through a reviewer who knows both the
+    language and TRS-80 floppies. A word that reads wrongly is worth an issue.
+  Nothing else is changed in the Windows, Linux and Mac programs.
+
 v1.5 — November 22, 2026
   DMK analysis: on a NEWDOS/80 disk the Summary now has "PDRIVE from the media", the PDRIVE
     settings worked out from the disk itself (density, sides, sectors, directory and GAT)
