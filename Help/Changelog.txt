@@ -1,6 +1,21 @@
 TRSToolGui — Changelog
 ======================
 
+v1.7.1 — November 24, 2026
+  Opening a disk image from the Finder works. In v1.7 it did not: double-clicking an image
+    answered "TRSToolGui cannot open files in the TRS-80 floppy disk image format". That is
+    macOS's own message, not the program's, and it is the proof that the file types v1.7
+    declared are right, because the wording inside the quotation marks is taken from the
+    declaration itself. What was wrong was the moment the program began listening. macOS puts
+    in its own handler for the open-document event inside the step that finishes launching an
+    application, so anything a program registers before that is thrown away a moment later.
+    The program now registers again at the one point where it survives, when the system says
+    it is about to finish launching, and keeps the earlier registration for the case where
+    the program is already running and the Finder sends the event to it. Which registration
+    took effect is written to TRSToolGui-open.log beside TRSToolGui.cfg.
+  Nothing else is changed. The Windows and Linux programs are v1.7 built again under the new
+    version number.
+
 v1.7 — November 24, 2026
   The program has an icon of its own, a TRS-80 diskette, in place of the blank sheet Windows
     gives a program that brings none. Windows shows it on the file, on a shortcut and in the

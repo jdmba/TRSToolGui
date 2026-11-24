@@ -1,4 +1,3 @@
-@echo off
 rem release.bat -- build the TRSToolGui download zips. Needs the .NET 10 SDK. Everything builds on Windows.
 rem Four zips are left in this folder:
 rem   TRSToolGui-vX.Y.zip               Windows (described below)
@@ -17,10 +16,10 @@ rem trs80-tool is NOT bundled: on first start the GUI asks where it is and saves
 rem answer in TRSToolGui.cfg next to TRSToolGui.exe.
 setlocal
 cd /d "%~dp0"
-set ZIPNAME=TRSToolGui-v1.7.zip
-set LINUXZIP=TRSToolGui-v1.7-linux-x64.zip
-set MACZIP=TRSToolGui-v1.7-macos-arm64.zip
-set MACX64ZIP=TRSToolGui-v1.7-macos-x64.zip
+set ZIPNAME=TRSToolGui-v1.7.1.zip
+set LINUXZIP=TRSToolGui-v1.7.1-linux-x64.zip
+set MACZIP=TRSToolGui-v1.7.1-macos-arm64.zip
+set MACX64ZIP=TRSToolGui-v1.7.1-macos-x64.zip
 set STAGE=%TEMP%\TRSToolGui-release
 set LSTAGE=%TEMP%\TRSToolGui-release-linux
 set MSTAGE=%TEMP%\TRSToolGui-release-mac
