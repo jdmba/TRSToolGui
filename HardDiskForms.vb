@@ -33,6 +33,7 @@ Public Class CreateHardDiskForm
     Private ReadOnly _lblName As New Label() With {.Text = UiText.T("dlg.newhd.name"), .AutoSize = True}
 
     Public Sub New()
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.newhd.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
@@ -148,6 +149,7 @@ Public Class PartitionAddForm
     Private ReadOnly _lblModel As New Label() With {.Text = UiText.T("dlg.partadd.model"), .AutoSize = True}
 
     Public Sub New()
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.partadd.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False

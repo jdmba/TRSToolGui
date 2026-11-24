@@ -50,6 +50,7 @@ Public Class GranuleMapForm
         Color.FromArgb(200, 220, 150), Color.FromArgb(190, 200, 235), Color.FromArgb(235, 205, 185), Color.FromArgb(180, 225, 230)}
 
     Public Sub New(disk As DiskImage)
+        Icon = Program.WindowIcon
         _disk = disk
         Dim shown As String = UiText.T("dlg.granule.title", Path.GetFileName(disk.Path))
         If disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing Then shown = UiText.T("title.partition", shown, disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))

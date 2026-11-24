@@ -16,7 +16,7 @@
     <OptionExplicit>On</OptionExplicit>
     <OptionInfer>On</OptionInfer>
     <Nullable>disable</Nullable>
-    <Version>1.6.0</Version>
+    <Version>1.7.0</Version>
     <Product>TRSToolGui</Product>
     <Authors>Ira Goldklang and Claude AI</Authors>
     <Company>Ira Goldklang and Claude AI</Company>
@@ -32,6 +32,16 @@
          The Linux build uses the GTK 3 that Linux has. -->
     <SkipGtkInstall>True</SkipGtkInstall>
   </PropertyGroup>
+  <!-- MacOpenDocuments.vb talks to NSAppleEventManager through the MonoMac bindings that come with
+       Eto.Platform.Mac64, so it is in the Mac build and no other, and TRSMAC is what lets Program.vb
+       call it without naming it on a system where it does not exist. -->
+  <PropertyGroup Condition="'$(TrsMac)' == 'true'">
+    <DefineConstants Condition="'$(DefineConstants)' == ''">TRSMAC=True</DefineConstants>
+    <DefineConstants Condition="'$(DefineConstants)' != ''">$(DefineConstants),TRSMAC=True</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TrsMac)' != 'true'">
+    <Compile Remove="MacOpenDocuments.vb" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\TRSToolGui.Core.vbproj" />
     <PackageReference Include="Eto.Forms" Version="2.11.0" />
@@ -49,6 +59,9 @@
     <EmbeddedResource Include="..\Help\Manual.txt" LogicalName="TRSToolGui.Manual.txt" />
     <EmbeddedResource Include="..\Help\Changelog.txt" LogicalName="TRSToolGui.Changelog.txt" />
     <EmbeddedResource Include="..\Help\License.txt" LogicalName="TRSToolGui.License.txt" />
+    <!-- The window icon. A Mac takes the application's icon from Icon.icns in the bundle instead,
+         but the window asks for this one on every system and GTK is the one that shows it. -->
+    <EmbeddedResource Include="Icon.png" LogicalName="TRSToolGui.Icon.png" />
   </ItemGroup>
 
   <!-- macOS: the Eto.Platform.Mac64 package wraps the published program in TRSToolGui.app. It is told the
@@ -80,6 +93,38 @@
 	<string>12.0</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>TRS-80 floppy disk image</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>dmk</string>
+				<string>jv1</string>
+				<string>jv3</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Floppy disk image</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>dsk</string>
+				<string>hfe</string>
+				<string>imd</string>
+				<string>scp</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+		</dict>
+	</array>
 </dict>
 </plist>]]></TrsInfoPlist>
   </PropertyGroup>

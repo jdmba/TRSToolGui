@@ -30,6 +30,7 @@ Public Class CpmFormatForm
     ''' <param name="layoutsText">What "disk IMAGE help cpm-format" printed.</param>
     ''' <param name="current">The layout in force for the image, or "" when trs80-tool decides.</param>
     Public Sub New(layoutsText As String, current As String)
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.cpm.title")
         FormBorderStyle = FormBorderStyle.Sizable
         MinimizeBox = False

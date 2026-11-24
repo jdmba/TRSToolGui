@@ -1,6 +1,26 @@
 TRSToolGui — Changelog
 ======================
 
+v1.7 — November 24, 2026
+  The program has an icon of its own, a TRS-80 diskette, in place of the blank sheet Windows
+    gives a program that brings none. Windows shows it on the file, on a shortcut and in the
+    Start menu, and every window of the program now carries it in its title bar and on the task
+    bar button. The Mac application takes the same picture, in place of the drawn diskette of
+    v1.4, and the Linux window asks for it too.
+  On a Mac you can open a disk image from the Finder. Double-click a .dmk, .jv1, .jv3, .dsk,
+    .hfe, .imd or .scp file once TRSToolGui is the program it opens with, and the image opens in
+    the window; before this the Finder answered "TRSToolGui cannot open files of this type" and
+    there was nothing to be done about it. Two things were missing and both are in: the bundle
+    now tells macOS which kinds of file the program handles, and the program now listens for the
+    open-document event the Finder sends, which is the only way a Mac passes a file to a program
+    that is already running. Cassette images, .cas and .wav, are deliberately not claimed: the
+    program opens them when you ask it to, but it does not put itself forward as the program
+    that owns them.
+  Every open-document event a Mac sends is written to TRSToolGui-open.log, beside
+    TRSToolGui.cfg, whether or not the image then opens. If opening from the Finder does not
+    work for you, that file says how far it got and is worth attaching to a report.
+  Nothing else is changed in the Windows, Linux and Mac programs.
+
 v1.6 — November 23, 2026
   The program's own text can be French. Preferences has a Language list with English and
     Francais in it; the choice takes effect the next time the program starts. A new installation

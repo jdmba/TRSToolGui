@@ -42,6 +42,7 @@ Public Class ConvertFileForm
 
     ''' <param name="initialInputs">Files to start with (e.g. one staged from the open disk), or Nothing.</param>
     Public Sub New(initialInputs As IEnumerable(Of String))
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.convert.title")
         StartPosition = FormStartPosition.CenterParent
         Size = New Size(720, 560)
@@ -255,6 +256,7 @@ Public Class AssembleForm
     Private _outputPath As String = Nothing
 
     Public Sub New()
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.asm.title")
         StartPosition = FormStartPosition.CenterParent
         Size = New Size(720, 500)

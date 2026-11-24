@@ -29,6 +29,30 @@ Public Module Ui
         Return Lf(text).Replace(vbLf, Environment.NewLine)
     End Function
 
+    ''' <summary>
+    ''' The program's icon, read once from the copy of Icon.png embedded in this assembly. A Mac takes
+    ''' the application's icon from Icon.icns in the bundle and ignores this; GTK is the one that shows
+    ''' it, on the window and in the task bar. Nothing is as it was if the resource cannot be read:
+    ''' the window simply has no icon, which is what it had before.
+    ''' </summary>
+    Public ReadOnly Property AppIcon As Icon
+        Get
+            If _appIcon Is Nothing AndAlso Not _appIconTried Then
+                _appIconTried = True
+                Try
+                    Using st As Stream = GetType(Ui).Assembly.GetManifestResourceStream("TRSToolGui.Icon.png")
+                        If st IsNot Nothing Then _appIcon = New Icon(1.0F, New Bitmap(st))
+                    End Using
+                Catch
+                End Try
+            End If
+            Return _appIcon
+        End Get
+    End Property
+
+    Private _appIcon As Icon
+    Private _appIconTried As Boolean
+
     Public Function Mono(Optional size As Single = 10.0F) As Font
         Return Fonts.Monospace(size)
     End Function
@@ -289,6 +313,7 @@ Public Class OkCancelDialog
 
     Public Sub New(title As String)
         Me.Title = title
+        Icon = Ui.AppIcon
         Resizable = False
         Padding = New Padding(Ui.Margin)
         AddHandler OkButton.Click, Sub()
@@ -327,6 +352,10 @@ End Class
 ''' </summary>
 Public Class ToolWindow
     Inherits Form
+
+    Public Sub New()
+        Icon = Ui.AppIcon
+    End Sub
 
     Public Sub ShowOwned(parent As Window)
         Try

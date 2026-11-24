@@ -17,10 +17,10 @@ rem trs80-tool is NOT bundled: on first start the GUI asks where it is and saves
 rem answer in TRSToolGui.cfg next to TRSToolGui.exe.
 setlocal
 cd /d "%~dp0"
-set ZIPNAME=TRSToolGui-v1.6.zip
-set LINUXZIP=TRSToolGui-v1.6-linux-x64.zip
-set MACZIP=TRSToolGui-v1.6-macos-arm64.zip
-set MACX64ZIP=TRSToolGui-v1.6-macos-x64.zip
+set ZIPNAME=TRSToolGui-v1.7.zip
+set LINUXZIP=TRSToolGui-v1.7-linux-x64.zip
+set MACZIP=TRSToolGui-v1.7-macos-arm64.zip
+set MACX64ZIP=TRSToolGui-v1.7-macos-x64.zip
 set STAGE=%TEMP%\TRSToolGui-release
 set LSTAGE=%TEMP%\TRSToolGui-release-linux
 set MSTAGE=%TEMP%\TRSToolGui-release-mac
@@ -84,11 +84,13 @@ if exist "Eto\obj" rd /s /q "Eto\obj"
 copy /y Help\License.txt "%STAGE%\" >nul || exit /b 1
 copy /y *.vb "%STAGE%\Source\" >nul || exit /b 1
 copy /y TRSToolGui.vbproj "%STAGE%\Source\" >nul || exit /b 1
+copy /y TRSToolGui.ico "%STAGE%\Source\" >nul || exit /b 1
 copy /y Core\*.vb "%STAGE%\Source\Core\" >nul || exit /b 1
 copy /y Core\TRSToolGui.Core.vbproj "%STAGE%\Source\Core\" >nul || exit /b 1
 copy /y Eto\*.vb "%STAGE%\Source\Eto\" >nul || exit /b 1
 copy /y Eto\TRSToolGui.Eto.vbproj "%STAGE%\Source\Eto\" >nul || exit /b 1
 copy /y Eto\Icon.icns "%STAGE%\Source\Eto\" >nul || exit /b 1
+copy /y Eto\Icon.png "%STAGE%\Source\Eto\" >nul || exit /b 1
 copy /y release.bat "%STAGE%\Source\" >nul || exit /b 1
 copy /y unixzip.ps1 "%STAGE%\Source\" >nul || exit /b 1
 copy /y Help\*.txt "%STAGE%\Source\Help\" >nul || exit /b 1

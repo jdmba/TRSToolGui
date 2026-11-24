@@ -30,6 +30,7 @@ Public Class DiskInfoForm
     Private ReadOnly _status As New Label()
 
     Public Sub New(imagePath As String)
+        Icon = Program.WindowIcon
         _path = imagePath
         BuildUi()
     End Sub

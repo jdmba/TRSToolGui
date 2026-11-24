@@ -30,6 +30,7 @@ Public Class ExtractForm
     Private ReadOnly _chkUcsd As New CheckBox() With {.Text = UiText.T("dlg.extract.ucsd"), .AutoSize = True}
 
     Public Sub New(selectedCount As Integer)
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.extract.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
@@ -152,6 +153,7 @@ Public Class PreferencesForm
     Private ReadOnly _txtDisasm As New TextBox() With {.Width = 446}
 
     Public Sub New()
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.prefs.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
@@ -305,6 +307,7 @@ Public Class RenameForm
 
     ''' <param name="message">Optional explanation shown above the box (e.g. "x is not a valid TRS-80 filename.").</param>
     Public Sub New(title As String, prompt As String, initial As String, message As String)
+        Icon = Program.WindowIcon
         Text = title
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
@@ -360,6 +363,7 @@ Public Class ReplaceForm
     Private ReadOnly _chkAll As New CheckBox() With {.Text = UiText.T("dlg.replace.all"), .AutoSize = True}
 
     Public Sub New(existing As DiskFile, newName As String, newSize As Long, newDate As DateTime)
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.replace.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
@@ -403,6 +407,7 @@ Public Class EngineInfoForm
     Public Property ReprobeRequested As Boolean = False
 
     Public Sub New(tool As Trs80Tool)
+        Icon = Program.WindowIcon
         _tool = tool
         Text = UiText.T("dlg.engine.title")
         StartPosition = FormStartPosition.CenterParent

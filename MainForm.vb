@@ -69,7 +69,7 @@ Public Class MainForm
         If s.WindowMaximized Then WindowState = FormWindowState.Maximized
         KeyPreview = True
         AllowDrop = True
-        Icon = SystemIcons.Application
+        Icon = Program.WindowIcon
 
         ' ---- menu
         Dim mFile As New ToolStripMenuItem(UiText.T("menu.file"))
@@ -1039,7 +1039,7 @@ Public Class MainForm
         If _busy OrElse ConsoleRunning() Then Return
         Dim choices As String() = {UiText.T("word.model1.levelii"), UiText.T("word.model3"), UiText.T("word.model4")}
         Dim model As Integer = 3
-        Using dlg As New Form() With {.Text = UiText.T("dlg.runmodel.title"), .FormBorderStyle = FormBorderStyle.FixedDialog, .StartPosition = FormStartPosition.CenterParent, .ClientSize = New Size(320, 110), .MaximizeBox = False, .MinimizeBox = False, .ShowInTaskbar = False}
+        Using dlg As New Form() With {.Text = UiText.T("dlg.runmodel.title"), .FormBorderStyle = FormBorderStyle.FixedDialog, .StartPosition = FormStartPosition.CenterParent, .ClientSize = New Size(320, 110), .MaximizeBox = False, .MinimizeBox = False, .ShowInTaskbar = False, .Icon = Program.WindowIcon}
             dlg.Controls.Add(New Label() With {.AutoSize = True, .Location = New Point(12, 14), .Text = UiText.T("dlg.runmodel.machine")})
             Dim cmb As New ComboBox() With {.DropDownStyle = ComboBoxStyle.DropDownList, .Location = New Point(12, 36), .Width = 296}
             cmb.Items.AddRange(choices)

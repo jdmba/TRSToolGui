@@ -14,7 +14,10 @@
     <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
     <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
     <ApplicationVisualStyles>true</ApplicationVisualStyles>
-    <Version>1.6.0</Version>
+    <Version>1.7.0</Version>
+    <!-- The icon Explorer, a shortcut and the Start menu show. Program.WindowIcon reads the
+         embedded copy below for the windows themselves. -->
+    <ApplicationIcon>TRSToolGui.ico</ApplicationIcon>
     <Product>TRSToolGui</Product>
     <Authors>Ira Goldklang and Claude AI</Authors>
     <Company>Ira Goldklang and Claude AI</Company>
@@ -36,6 +39,7 @@
     <EmbeddedResource Include="Help\Manual.txt" LogicalName="TRSToolGui.Manual.txt" />
     <EmbeddedResource Include="Help\Changelog.txt" LogicalName="TRSToolGui.Changelog.txt" />
     <EmbeddedResource Include="Help\License.txt" LogicalName="TRSToolGui.License.txt" />
+    <EmbeddedResource Include="TRSToolGui.ico" LogicalName="TRSToolGui.Icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <Import Include="System.Drawing" />

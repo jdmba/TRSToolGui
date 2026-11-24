@@ -47,6 +47,7 @@ Public Class SectorMapForm
     Private Shared ReadOnly MonoFont As New Font(HostPlatform.MonospaceFontName, 9.0F)
 
     Public Sub New(disk As DiskImage)
+        Icon = Program.WindowIcon
         _disk = disk
         BuildUi()
     End Sub

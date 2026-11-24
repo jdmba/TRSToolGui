@@ -8,7 +8,7 @@ that version can't do. It runs on Windows, from version 1.3 on Linux, and from v
 Mac. This manual describes the Windows program; the sections ON LINUX and ON THE MAC at the end
 list what differs there.
 
-TRSToolGui 1.6 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
+TRSToolGui 1.7 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
 refused at startup with a message saying so. With trs80-tool 5.2.0 or later, Montezuma Micro CP/M
 disks (and the other CP/M layouts trs80-tool knows) can be changed too: Add, Delete, Rename and
 the two CP/M attributes work on them, and File > New makes them. CP/M keeps no file dates, so
@@ -426,7 +426,7 @@ ON LINUX
   TRSToolGui for Linux (x64) is the same program with its windows built on Eto.Forms, which
   uses GTK 3. Every menu, dialog and window above is there. What differs:
 
-  Starting it          Unzip TRSToolGui-v1.6-linux-x64.zip, make the file runnable once with
+  Starting it          Unzip TRSToolGui-v1.7-linux-x64.zip, make the file runnable once with
                        "chmod +x TRSToolGui", and start it:  ./TRSToolGui [image file]
                        It needs GTK 3, which desktop Linux has, and nothing else: .NET is inside
                        the file.
@@ -461,8 +461,8 @@ ON THE MAC
   written it had not yet been run on a Mac, so expect rough edges and please report them. What
   differs from the rest of this manual:
 
-  Which download       TRSToolGui-v1.6-macos-arm64.zip for a Mac with Apple Silicon (M1 and later),
-                       TRSToolGui-v1.6-macos-x64.zip for a Mac with an Intel processor. It needs
+  Which download       TRSToolGui-v1.7-macos-arm64.zip for a Mac with Apple Silicon (M1 and later),
+                       TRSToolGui-v1.7-macos-x64.zip for a Mac with an Intel processor. It needs
                        macOS 14 or later and nothing else: .NET is inside the app.
   Installing it        Double-click the zip to unpack it, then drag TRSToolGui.app to Applications
                        or to any folder you like. Move it before the first start: macOS runs a
@@ -482,6 +482,16 @@ ON THE MAC
                        TRSToolGui looks where Preferences says, then in the folder TRSToolGui.app
                        is in, then on the PATH, then in /opt/homebrew/bin, /usr/local/bin, ~/bin
                        and ~/.local/bin, and asks only when none of those has it.
+  From the Finder      Double-click a disk image and it opens in TRSToolGui, once the Finder has
+                       been told that is the program for it: select the file, Cmd+I, pick
+                       TRSToolGui under "Open with", and Change All if you want every image of
+                       that kind to follow. The kinds the app offers itself for are .dmk, .jv1,
+                       .jv3, .dsk, .hfe, .imd and .scp. Cassette images, .cas and .wav, are left
+                       alone on purpose: File > Open still opens them, but a program that reads
+                       TRS-80 cassettes has no business claiming every .wav on your Mac.
+                       Every file the Finder hands over is noted in TRSToolGui-open.log, beside
+                       TRSToolGui.cfg, whether or not it then opens. If a double-click does
+                       nothing, that file is what to look at and what to attach to a report.
   Menus                About, Preferences (Cmd+,) and Quit (Cmd+Q) are in the TRSToolGui menu, and
                        there is a Window menu. Shortcuts use Cmd where this manual says Ctrl.
                        File > Close image closes the disk image; File > Close (Cmd+W) closes the

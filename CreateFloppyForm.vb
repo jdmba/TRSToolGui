@@ -64,6 +64,7 @@ Public Class CreateFloppyForm
     ''' controls from the open disk (0/Nothing = leave the defaults).
     ''' </summary>
     Public Sub New(formatMode As Boolean, currentDos As String, cylinders As Integer, sides As Integer, density As String)
+        Icon = Program.WindowIcon
         _formatMode = formatMode
         _txtDate.Text = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
         BuildUi()

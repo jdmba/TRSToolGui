@@ -24,6 +24,26 @@ Public Module Program
     Public Settings As Settings
     Public Tool As Trs80Tool
 
+    ''' <summary>
+    ''' The program's own icon, read once from the copy of TRSToolGui.ico embedded in this assembly.
+    ''' Every window sets it, so the title bar, the taskbar button and Alt+Tab show the diskette
+    ''' instead of the generic Windows Forms icon. The executable carries the same file as its Win32
+    ''' icon (ApplicationIcon in TRSToolGui.vbproj), which is what Explorer and a shortcut show.
+    ''' A missing or unreadable resource falls back to what the program used before, so a window
+    ''' always has an icon.
+    ''' </summary>
+    Public ReadOnly WindowIcon As Icon = LoadWindowIcon()
+
+    Private Function LoadWindowIcon() As Icon
+        Try
+            Using st As Stream = GetType(Program).Assembly.GetManifestResourceStream("TRSToolGui.Icon.ico")
+                If st IsNot Nothing Then Return New Icon(st)
+            End Using
+        Catch
+        End Try
+        Return SystemIcons.Application
+    End Function
+
     ''' <summary>Per-run temporary folder for drag-out/copy/viewer files; deleted at exit.</summary>
     Public ReadOnly TempRoot As String = Path.Combine(Path.GetTempPath(), "TRSToolGui", Guid.NewGuid().ToString("N").Substring(0, 8))
 

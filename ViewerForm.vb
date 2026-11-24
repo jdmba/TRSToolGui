@@ -63,6 +63,7 @@ Public Class ViewerForm
     Private Shared ReadOnly PropFont As New Font(HostPlatform.SerifFontName, 11.0F)
 
     Public Sub New(disk As DiskImage, file As DiskFile)
+        Icon = Program.WindowIcon
         _disk = disk
         _file = file
         BuildUi()
@@ -574,6 +575,7 @@ Public Class DisasmOptionsForm
     Private ReadOnly _chkSaveDefault As New CheckBox() With {.Text = UiText.T("dlg.disasm.savedefault"), .AutoSize = True}
 
     Public Sub New(current As IEnumerable(Of String))
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.disasm.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
@@ -690,6 +692,7 @@ Public Class BasicDialectForm
     Private ReadOnly _rb4 As New RadioButton() With {.Text = UiText.T("dlg.basicdialect.m4"), .AutoSize = True, .Location = New Point(14, 66)}
 
     Public Sub New(current As String)
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.basicdialect.title")
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False

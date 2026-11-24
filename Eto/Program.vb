@@ -32,6 +32,11 @@ Public Module Program
         Dim app As New Application(Eto.Platform.Detect)
         If HostPlatform.IsMacOS Then
             app.Name = AppName
+#If TRSMAC Then
+            ' The Finder's open-document event is delivered as soon as the run loop starts, so the
+            ' listener goes in before Run. MacOpenDocuments.vb is in the Mac build and no other.
+            MacOpenDocuments.Listen()
+#End If
             ' On a Mac the program ends inside Quit: Run never comes back, so the Finally below is not reached
             ' there. The same work is done when the application says it is about to end.
             AddHandler app.Terminating, Sub(sender, e)
@@ -64,6 +69,38 @@ Public Module Program
             ShutDown()
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Where a window says how to open a file the system has asked for. A Mac never passes an opened
+    ''' document on the command line; it sends an Apple event that can arrive either side of the main
+    ''' window appearing, so whichever is ready first wins: the window sets this when it is shown and
+    ''' takes anything already waiting, and an event after that goes straight here.
+    ''' </summary>
+    Public Opener As Action(Of String)
+
+    Private _waitingToOpen As String
+
+    ''' <summary>Open this file, now if a window is ready for it and otherwise as soon as one is.</summary>
+    Public Sub AskToOpen(path As String)
+        If String.IsNullOrEmpty(path) Then Return
+        Dim ready As Action(Of String) = Opener
+        If ready Is Nothing Then
+            _waitingToOpen = path
+            Return
+        End If
+        Try
+            Application.Instance.AsyncInvoke(Sub() ready(path))
+        Catch
+            _waitingToOpen = path
+        End Try
+    End Sub
+
+    ''' <summary>The file that arrived before any window was ready, if there was one. Taken only once.</summary>
+    Public Function TakeWaitingToOpen() As String
+        Dim path As String = _waitingToOpen
+        _waitingToOpen = Nothing
+        Return path
+    End Function
 
     ''' <summary>The work at the end of a run, done once: stop the background trs80-tool, save the settings, remove the temp folder.</summary>
     Private Sub ShutDown()

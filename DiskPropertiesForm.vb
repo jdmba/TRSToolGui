@@ -35,6 +35,7 @@ Public Class DiskPropertiesForm
     Private _wpOriginal As Boolean
 
     Public Sub New(disk As DiskImage)
+        Icon = Program.WindowIcon
         _disk = disk
         BuildUi()
     End Sub

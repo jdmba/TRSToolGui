@@ -66,6 +66,7 @@ Public Class MainForm
 
     Private Sub BuildUi()
         Title = Program.AppName
+        Icon = Ui.AppIcon
         Dim s As Settings = Program.Settings
         _requestedSize = New Size(Math.Max(480, s.WindowWidth), Math.Max(300, s.WindowHeight))
         ClientSize = _requestedSize
@@ -323,9 +324,27 @@ Public Class MainForm
             _sizeDelta = New Size(_requestedSize.Width - ClientSize.Width, _requestedSize.Height - ClientSize.Height)
             _sizeKnown = True
         End If
+        ' Before the first await, so that an open-document event arriving during it is not lost.
+        Program.Opener = AddressOf OpenFromSystem
         Try
             Await CheckEngineAsync(True)
             If _startFile IsNot Nothing Then Await OpenImageAsync(_startFile)
+            Dim waiting As String = Program.TakeWaitingToOpen()
+            If waiting IsNot Nothing Then Await OpenImageAsync(waiting)
+        Catch ex As Exception
+            Ui.Fail(Me, ex.Message, Program.AppName)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Open a file the system handed the program while it was already running: on a Mac, an image
+    ''' opened from the Finder. The window comes forward first, because the Finder gave the program
+    ''' the file and not necessarily the screen.
+    ''' </summary>
+    Private Async Sub OpenFromSystem(path As String)
+        Try
+            BringToFront()
+            Await OpenImageAsync(path)
         Catch ex As Exception
             Ui.Fail(Me, ex.Message, Program.AppName)
         End Try

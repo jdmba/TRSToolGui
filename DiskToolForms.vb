@@ -43,6 +43,7 @@ Public Class TextReportForm
     ''' <param name="filterLabel">Label for the filter box, or Nothing for no filter row.</param>
     ''' <param name="refresher">Called with the filter text; returns the new report text.</param>
     Public Sub New(title As String, text As String, filterLabel As String, refresher As Func(Of String, Task(Of String)))
+        Icon = Program.WindowIcon
         _baseTitle = title
         _refresher = refresher
         Me.Text = title
@@ -157,6 +158,7 @@ Public Class CheckRepairForm
     Private _changed As Boolean = False
 
     Public Sub New(disk As DiskImage)
+        Icon = Program.WindowIcon
         _disk = disk
         Dim shown As String = UiText.T("dlg.checkrepair.title", Path.GetFileName(disk.Path))
         If disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing Then shown = UiText.T("title.partition", shown, disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))
@@ -276,6 +278,7 @@ Public Class TrimForm
     Private ReadOnly _chkForce As New CheckBox() With {.Text = UiText.T("dlg.trim.force") & " " & UiText.T("dlg.trim.forcenote"), .AutoSize = True}
 
     Public Sub New(disk As DiskImage)
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.trim.title", Path.GetFileName(disk.Path))
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False
@@ -333,6 +336,7 @@ Public Class BootForm
     Private ReadOnly _txtPrinter As New TextBox() With {.Width = 360}
 
     Public Sub New(disk As DiskImage)
+        Icon = Program.WindowIcon
         Text = UiText.T("dlg.boot.title", Path.GetFileName(disk.Path))
         FormBorderStyle = FormBorderStyle.FixedDialog
         MaximizeBox = False : MinimizeBox = False

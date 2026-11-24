@@ -46,6 +46,7 @@ Public Class FilePropertiesForm
     Private Shared ReadOnly Trsdos6Names As String() = {"FULL", "REMOVE", "RENAME", "WRITE", "UPDATE", "READ", "EXEC", "NO_ACCESS"}
 
     Public Sub New(disk As DiskImage, file As DiskFile)
+        Icon = Program.WindowIcon
         _disk = disk
         _file = file
         BuildUi()
