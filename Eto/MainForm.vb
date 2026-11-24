@@ -36,6 +36,7 @@ Public Class MainForm
     Private _miPartition, _miRefresh, _miRecent, _miSaveAs, _miNewHardDisk As ButtonMenuItem
     Private _miInvisible, _miSystem As CheckMenuItem
     Private _miSectorMap, _miGranuleMap, _miCheckRepair, _miFormat, _miTrim, _miBoot, _miShell, _miDmkInfo, _miRunEmpty, _miCpmFormat As ButtonMenuItem
+    Private _miImport As ButtonMenuItem
     Private _cxPreview, _cxExtract, _cxDelete, _cxRename, _cxProps, _cxConvert As ButtonMenuItem
     Private _tbProps, _tbCopy, _tbPaste, _tbAdd, _tbExtract, _tbView, _tbSectors As ButtonToolItem
     ' Mac only: the system's own Edit > Copy, Paste and Delete act on the file list through these.
@@ -136,7 +137,8 @@ Public Class MainForm
         _miTrim = MakeItem(UiText.T("menu.disk.trim"), Keys.None, AddressOf OnTrim)
         _miBoot = MakeItem(UiText.T("menu.disk.boot"), Keys.None, AddressOf OnBoot)
         _miShell = MakeItem(UiText.T("menu.disk.shell"), Keys.None, AddressOf OnShell)
-        mDisk.Items.AddRange(New MenuItem() {_miSectorMap, _miDmkInfo, _miGranuleMap, _miCheckRepair, _miCpmFormat, New SeparatorMenuItem(), _miFormat, _miTrim, New SeparatorMenuItem(), _miBoot, _miShell})
+        _miImport = MakeItem(UiText.T("menu.disk.import"), Keys.None, AddressOf OnImport)
+        mDisk.Items.AddRange(New MenuItem() {_miSectorMap, _miDmkInfo, _miGranuleMap, _miCheckRepair, _miCpmFormat, New SeparatorMenuItem(), _miImport, _miFormat, _miTrim, New SeparatorMenuItem(), _miBoot, _miShell})
 
         Dim mTools As New ButtonMenuItem With {.Text = UiText.T("menu.tools")}
         mTools.Items.Add(MakeItem(UiText.T("menu.tools.convert"), Keys.None, Sub() OnConvertFiles(Nothing)))
@@ -512,6 +514,9 @@ Public Class MainForm
         _miCheckRepair.Enabled = isOpen AndAlso Not _disk.IsCassette AndAlso EngineHasDisk("check")
         _miFormat.Enabled = floppy AndAlso writable AndAlso EngineHasDisk("format")
         _miTrim.Enabled = floppy AndAlso Not ConsoleRunning() AndAlso EngineHasDisk("trim")
+        ' "disk import" is trs80-tool 5.3.0's; CanImport tests the version as well as the probe, because
+        ' up to 5.2.0 "import" was an alias of "add" (see Trs80Tool.CanImport).
+        _miImport.Enabled = isOpen AndAlso writable AndAlso Not ConsoleRunning() AndAlso Program.Tool.CanImport
         _miBoot.Enabled = floppy AndAlso Not ConsoleRunning() AndAlso EngineHasTop("run")
         _miShell.Enabled = isOpen AndAlso Not _disk.IsCassette AndAlso Not ConsoleRunning()
         _miRunEmpty.Enabled = Not ConsoleRunning() AndAlso EngineHasTop("run")
@@ -1105,6 +1110,20 @@ Public Class MainForm
         If failure IsNot Nothing Then Ui.Fail(Me, failure, UiText.T("dlg.newfloppy.formattitle"))
         Await RefreshAsync()
     End Sub
+    ''' <summary>
+    ''' Disk → Import from another image: the window runs "disk import" (and its "--dry-run" previews)
+    ''' itself; refresh here if anything was saved.
+    ''' </summary>
+    Private Async Sub OnImport()
+        If _busy OrElse _disk Is Nothing OrElse Not _disk.IsWritable Then Return
+        Dim dlg As New ImportForm(_disk)
+        dlg.ShowModal(Me)
+        If Not dlg.Changed Then Return
+        Await RefreshAsync()
+        _lblStatus.Text = If(dlg.Copied > 0,
+                             UiText.T("msg.import.done", dlg.Copied.ToString(CultureInfo.InvariantCulture)),
+                             UiText.T("msg.import.nothing"))
+    End Sub
 
     Private Async Sub OnTrim()
         If _busy OrElse _disk Is Nothing OrElse _disk.IsHardDisk Then Return
@@ -1616,6 +1635,14 @@ Public Class MainForm
         Next
 
         If items.Count = 0 Then Return
+        ' trs80-tool 5.3.0: with more than one file, let the tool skip one it can't add and add the rest,
+        ' instead of the whole run adding nothing. Without it 5.3.0 also puts "use --keep-going to add the
+        ' others" in the error, which is a command-line flag nobody can type in a window.
+        If items.Count > 1 AndAlso Program.Tool.CanKeepGoing Then
+            For Each it In items
+                it.KeepGoing = True
+            Next
+        End If
 
         SetBusy(True, UiText.T("status.adding", items.Count.ToString(CultureInfo.InvariantCulture)))
         Dim result As ToolResult = Nothing
@@ -1661,6 +1688,9 @@ Public Class MainForm
         ' Surface the tool's warnings (e.g. the DOS couldn't store the date), once.
         Dim warn As New List(Of String)
         If dateNote IsNot Nothing Then warn.Add(UiText.T("msg.add.nodates", dateNote))
+        ' With --keep-going the run can succeed having left files out; the tool says which and why.
+        Dim skippedNote As String = SkippedAddNote(result, items.Count)
+        If skippedNote IsNot Nothing Then warn.Add(skippedNote)
         If result.Disk IsNot Nothing Then
             For Each w In result.Disk.AllWarnings()
                 If Not warn.Contains(w) Then warn.Add(w)
@@ -1673,6 +1703,29 @@ Public Class MainForm
         Next
         ReselectNames(added)
         If warn.Count > 0 Then Ui.Info(Me, String.Join(vbLf, warn), UiText.T("caption.toolnotes"))
+    End Function
+
+    ''' <summary>
+    ''' What "add --keep-going" left out, as one block of text, or Nothing when every file went in. The
+    ''' "skipped" list is trs80-tool 5.3.0's; an older tool has no such field and this returns Nothing.
+    ''' </summary>
+    Private Shared Function SkippedAddNote(result As ToolResult, wanted As Integer) As String
+        If result Is Nothing OrElse result.Disk Is Nothing OrElse result.Disk.Commands Is Nothing Then Return Nothing
+        Dim added As Integer = 0
+        Dim lines As New List(Of String)
+        For Each c In result.Disk.Commands
+            If Not String.Equals(c.Name, "add", StringComparison.OrdinalIgnoreCase) Then Continue For
+            Dim res As Trs80Tool.AddResultJson = c.GetResult(Of Trs80Tool.AddResultJson)()
+            If res Is Nothing Then Continue For
+            If res.Files IsNot Nothing Then added += res.Files.Count
+            If res.Skipped Is Nothing Then Continue For
+            For Each sk In res.Skipped
+                lines.Add("    " & Path.GetFileName(If(sk.Host, "")) & ": " & If(sk.Problem, ""))
+            Next
+        Next
+        If lines.Count = 0 Then Return Nothing
+        Return UiText.T("msg.add.partial", added.ToString(CultureInfo.InvariantCulture),
+                        wanted.ToString(CultureInfo.InvariantCulture)) & vbLf & String.Join(vbLf, lines)
     End Function
 
     ' =================================================================== extracting (Extract / Copy)

@@ -293,3 +293,179 @@ Public Class BootForm
         Return w
     End Function
 End Class
+
+''' <summary>
+''' Disk → Import from another image: "disk IMG import SOURCE [PATTERN...]", new in trs80-tool 5.3.0.
+''' The same window as the Windows program's (DiskToolForms.vb), built on Eto. The engine copies the files,
+''' so each keeps its own date and its system and hidden flags and BASIC is converted between Model III and
+''' Model 4 where the two disks differ. Preview is the same command with --dry-run.
+''' </summary>
+Public Class ImportForm
+    Inherits Dialog
+
+    Private ReadOnly _disk As DiskImage
+    Private ReadOnly _txt As TextArea
+    Private ReadOnly _txtSource As New TextBox With {.ReadOnly = True, .Text = UiText.T("dlg.import.nosource"), .Width = 460}
+    Private ReadOnly _btnBrowse As Button
+    Private ReadOnly _rbAll, _rbNames As RadioButton
+    Private ReadOnly _txtNames As New TextBox With {.Width = 240, .Enabled = False}
+    Private ReadOnly _chkOverwrite As New CheckBox With {.Text = UiText.T("dlg.import.overwrite")}
+    Private ReadOnly _chkKeepGoing As New CheckBox With {.Text = UiText.T("dlg.import.keepgoing"), .Checked = True}
+    Private ReadOnly _chkBinary As New CheckBox With {.Text = UiText.T("dlg.import.binary")}
+    Private ReadOnly _chkSystem As New CheckBox With {.Text = UiText.T("dlg.import.system")}
+    Private ReadOnly _chkInvisible As New CheckBox With {.Text = UiText.T("dlg.import.invisible")}
+    Private ReadOnly _txtDate As New TextBox With {.Width = 120}
+    Private ReadOnly _btnPreview As New Button With {.Text = UiText.T("btn.previewimport")}
+    Private ReadOnly _btnImport As New Button With {.Text = UiText.T("btn.import")}
+    Private ReadOnly _btnClose As New Button With {.Text = UiText.T("btn.close")}
+    Private _source As String = Nothing
+    Private _changed As Boolean = False
+    Private _copied As Integer = 0
+
+    Public Sub New(disk As DiskImage)
+        _disk = disk
+        Dim shown As String = UiText.T("dlg.import.title", Path.GetFileName(disk.Path))
+        If disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing Then shown = UiText.T("title.partition", shown, disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))
+        Title = shown
+        Resizable = True
+        ClientSize = New Size(900, 640)
+        MinimumSize = New Size(620, 460)
+        Padding = New Padding(Ui.Margin)
+        _txt = Ui.ReportBox("")
+        _btnBrowse = Ui.Btn(UiText.T("btn.browse"), AddressOf PickSource)
+        _rbAll = New RadioButton With {.Text = UiText.T("dlg.import.whichall"), .Checked = True}
+        _rbNames = New RadioButton(_rbAll) With {.Text = UiText.T("dlg.import.whichnames")}
+
+        ' trs80-tool 5.2.0 has no --keep-going; the box says so by being off and disabled.
+        If Not Program.Tool.CanKeepGoing Then
+            _chkKeepGoing.Checked = False
+            _chkKeepGoing.Enabled = False
+        End If
+
+        AddHandler _rbNames.CheckedChanged, Sub() _txtNames.Enabled = _rbNames.Checked
+        AddHandler _btnPreview.Click, Async Sub() Await RunAsync(True)
+        AddHandler _btnImport.Click, Async Sub() Await RunAsync(False)
+        AddHandler _btnClose.Click, Sub() Close()
+
+        Content = Ui.Down(_txt,
+                          Ui.Lbl(UiText.T("dlg.import.intro")),
+                          Ui.Lbl(UiText.T("dlg.import.keeps"), True),
+                          Ui.Across(Ui.Lbl(UiText.T("dlg.import.source")), _txtSource, _btnBrowse),
+                          _rbAll,
+                          Ui.Across(_rbNames, _txtNames),
+                          Ui.Lbl(UiText.T("dlg.import.nameshint"), True),
+                          _chkOverwrite, _chkKeepGoing, _chkBinary, _chkSystem, _chkInvisible,
+                          Ui.Across(Ui.Lbl(UiText.T("dlg.import.usedate")), _txtDate),
+                          _txt,
+                          Ui.Across(_btnPreview, _btnImport, Nothing, _btnClose))
+        AbortButton = _btnClose
+        UpdateEnabled()
+    End Sub
+
+    ''' <summary>True once a run saved the image, so MainForm knows to refresh.</summary>
+    Public ReadOnly Property Changed As Boolean
+        Get
+            Return _changed
+        End Get
+    End Property
+
+    ''' <summary>How many files the last real run copied, for the status line.</summary>
+    Public ReadOnly Property Copied As Integer
+        Get
+            Return _copied
+        End Get
+    End Property
+
+    Private Sub UpdateEnabled()
+        Dim ready As Boolean = Not String.IsNullOrEmpty(_source)
+        _btnPreview.Enabled = ready
+        _btnImport.Enabled = ready
+    End Sub
+
+    Private Sub PickSource()
+        Dim chosen As String = Ui.PickFile(Me, UiText.T("dlg.import.source"), UiText.T("filter.mountimages"))
+        If String.IsNullOrEmpty(chosen) Then Return
+        chosen = Path.GetFullPath(chosen)
+        ' The engine refuses to add an image to itself; it cannot know that this is the same disk by another
+        ' spelling, so the obvious case is caught here before the command is built.
+        If String.Equals(chosen, Path.GetFullPath(_disk.Path), HostPlatform.PathComparison) Then
+            Ui.Warn(Me, UiText.T("msg.import.samefile"), UiText.T("btn.import"))
+            Return
+        End If
+        _source = chosen
+        _txtSource.Text = chosen
+        UpdateEnabled()
+    End Sub
+
+    Private Sub SetBusy(busy As Boolean)
+        _btnPreview.Enabled = Not busy AndAlso Not String.IsNullOrEmpty(_source)
+        _btnImport.Enabled = _btnPreview.Enabled
+        _btnBrowse.Enabled = Not busy
+    End Sub
+
+    Private Sub Append(header As String, body As String)
+        Dim sb As New StringBuilder(_txt.Text)
+        If sb.Length > 0 Then sb.Append(vbLf)
+        sb.Append("==== " & header & " ====" & vbLf)
+        sb.Append(Ui.Lf(body).TrimEnd() & vbLf)
+        _txt.Text = sb.ToString()
+        Try
+            _txt.CaretIndex = _txt.Text.Length
+        Catch
+        End Try
+    End Sub
+
+    ''' <summary>The request, or Nothing with a message when the window is not filled in properly.</summary>
+    Private Function BuildRequest() As Trs80Tool.ImportRequest
+        If String.IsNullOrEmpty(_source) Then
+            Ui.Info(Me, UiText.T("msg.import.nosource"), UiText.T("btn.import"))
+            Return Nothing
+        End If
+        Dim req As New Trs80Tool.ImportRequest With {
+            .SourceImage = _source,
+            .Overwrite = Ui.IsOn(_chkOverwrite),
+            .Binary = Ui.IsOn(_chkBinary),
+            .System = Ui.IsOn(_chkSystem),
+            .Invisible = Ui.IsOn(_chkInvisible),
+            .KeepGoing = _chkKeepGoing.Enabled AndAlso Ui.IsOn(_chkKeepGoing)}
+        If _rbNames.Checked Then
+            For Each part In _txtNames.Text.Split(New Char() {" "c, ControlChars.Tab, ";"c, ","c}, StringSplitOptions.RemoveEmptyEntries)
+                req.Names.Add(part)
+            Next
+            If req.Names.Count = 0 Then
+                Ui.Info(Me, UiText.T("msg.import.nonames"), UiText.T("btn.import"))
+                Return Nothing
+            End If
+        End If
+        Dim typed As String = _txtDate.Text.Trim()
+        If typed.Length > 0 Then
+            Dim parsed As Date
+            If Not Date.TryParseExact(typed, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, parsed) Then
+                Ui.Warn(Me, UiText.T("msg.import.baddate"), UiText.T("btn.import"))
+                Return Nothing
+            End If
+            req.DateYmd = typed
+        End If
+        Return req
+    End Function
+
+    Private Async Function RunAsync(dryRun As Boolean) As Task
+        Dim req As Trs80Tool.ImportRequest = BuildRequest()
+        If req Is Nothing Then Return
+        SetBusy(True)
+        Try
+            Dim r As ToolResult = Await Program.Tool.DiskImportAsync(_disk.Path, _disk.PartitionArg, req, dryRun)
+            Dim header As String = "disk " & If(dryRun, "--dry-run ", "") & String.Join(" ", req.ToWords())
+            Append(header, If(r.Succeeded, r.StdOut, r.ErrorText))
+            If Not dryRun AndAlso r.Succeeded Then
+                If r.Disk IsNot Nothing AndAlso r.Disk.Saved IsNot Nothing Then _changed = True
+                Dim res As Trs80Tool.ImportResultJson = If(r.Disk Is Nothing, Nothing, r.Disk.ResultOf(Of Trs80Tool.ImportResultJson)("import"))
+                _copied = If(res Is Nothing OrElse res.Files Is Nothing, 0, res.Files.Count)
+            End If
+        Catch ex As Exception
+            Append("disk import", ex.Message)
+        Finally
+            SetBusy(False)
+        End Try
+    End Function
+End Class

@@ -430,3 +430,227 @@ Public Class BootForm
         Return w
     End Function
 End Class
+
+' ---------------------------------------------------------------- Import from another image
+
+''' <summary>
+''' Disk → Import from another image: "disk IMG import SOURCE [PATTERN...]", new in trs80-tool 5.3.0.
+''' The engine reads the other image and copies the files, so each one keeps its own date and its system
+''' and hidden flags and BASIC is converted between Model III and Model 4 where the two disks differ —
+''' none of which the extract-to-a-temp-file-and-add-it path behind Copy, Paste and drag can do.
+''' Which files to copy is left to the engine's own DOS wildcard matching (5.3.0 made those rules the same
+''' on the host and on a disk), so this window collects a source, patterns and options and nothing more.
+''' Preview is the same command with --dry-run: it writes nothing and prints what would happen.
+''' </summary>
+Public Class ImportForm
+    Inherits Form
+
+    Private ReadOnly _disk As DiskImage
+    Private ReadOnly _txt As New TextBox()
+    Private ReadOnly _lblSource As New Label() With {.Text = UiText.T("dlg.import.source"), .AutoSize = True}
+    Private ReadOnly _txtSource As New TextBox() With {.ReadOnly = True, .Text = UiText.T("dlg.import.nosource"), .BackColor = SystemColors.Control}
+    Private ReadOnly _btnBrowse As New Button() With {.Text = UiText.T("btn.browse")}
+    Private ReadOnly _rbAll As New RadioButton() With {.Text = UiText.T("dlg.import.whichall"), .AutoSize = True, .Checked = True}
+    Private ReadOnly _rbNames As New RadioButton() With {.Text = UiText.T("dlg.import.whichnames"), .AutoSize = True}
+    Private ReadOnly _txtNames As New TextBox() With {.Width = 240, .Enabled = False}
+    Private ReadOnly _lblHint As New Label() With {.Text = UiText.T("dlg.import.nameshint"), .AutoSize = False, .ForeColor = SystemColors.GrayText}
+    Private ReadOnly _chkOverwrite As New CheckBox() With {.Text = UiText.T("dlg.import.overwrite"), .AutoSize = True}
+    Private ReadOnly _chkKeepGoing As New CheckBox() With {.Text = UiText.T("dlg.import.keepgoing"), .AutoSize = True, .Checked = True}
+    Private ReadOnly _chkBinary As New CheckBox() With {.Text = UiText.T("dlg.import.binary"), .AutoSize = True}
+    Private ReadOnly _chkSystem As New CheckBox() With {.Text = UiText.T("dlg.import.system"), .AutoSize = True}
+    Private ReadOnly _chkInvisible As New CheckBox() With {.Text = UiText.T("dlg.import.invisible"), .AutoSize = True}
+    Private ReadOnly _lblDate As New Label() With {.Text = UiText.T("dlg.import.usedate"), .AutoSize = True}
+    Private ReadOnly _txtDate As New TextBox() With {.Width = 110}
+    Private ReadOnly _btnPreview As New Button() With {.Text = UiText.T("btn.previewimport")}
+    Private ReadOnly _btnImport As New Button() With {.Text = UiText.T("btn.import")}
+    Private ReadOnly _btnClose As New Button() With {.Text = UiText.T("btn.close")}
+    Private _source As String = Nothing
+    Private _changed As Boolean = False
+    Private _copied As Integer = 0
+
+    Public Sub New(disk As DiskImage)
+        Icon = Program.WindowIcon
+        _disk = disk
+        Dim shown As String = UiText.T("dlg.import.title", Path.GetFileName(disk.Path))
+        If disk.IsHardDisk AndAlso disk.ActivePartition IsNot Nothing Then shown = UiText.T("title.partition", shown, disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))
+        Text = shown
+        StartPosition = FormStartPosition.CenterParent
+        Size = New Size(880, 640)
+        MinimumSize = New Size(620, 460)
+        ShowInTaskbar = False
+        With _txt
+            .Multiline = True
+            .ReadOnly = True
+            .ScrollBars = ScrollBars.Both
+            .WordWrap = False
+            .Font = New Font(HostPlatform.MonospaceFontName, 9.5F)
+            .Dock = DockStyle.Fill
+            .BackColor = SystemColors.Window
+        End With
+
+        ' trs80-tool 5.2.0 has no --keep-going; the box says so by being off and disabled.
+        If Not Program.Tool.CanKeepGoing Then
+            _chkKeepGoing.Checked = False
+            _chkKeepGoing.Enabled = False
+        End If
+
+        Dim top As New Panel() With {.Dock = DockStyle.Top, .Height = 282}
+        Dim lblIntro As New Label() With {.Text = UiText.T("dlg.import.intro"), .AutoSize = True, .Location = New Point(10, 10)}
+        Dim lblKeeps As New Label() With {.Text = UiText.T("dlg.import.keeps"), .AutoSize = False, .ForeColor = SystemColors.GrayText,
+                                          .Location = New Point(10, 32), .Size = New Size(840, 34)}
+        _lblSource.Location = New Point(10, 76)
+        _txtSource.Location = New Point(UiFit.After(_lblSource, _txtSource), 73)
+        _txtSource.Width = 520
+        _btnBrowse.Bounds = New Rectangle(_txtSource.Right + 8, 72, 90, 25)
+        _rbAll.Location = New Point(12, 110)
+        _rbNames.Location = New Point(12, 136)
+        _txtNames.Location = New Point(UiFit.After(_rbNames, _txtNames), 134)
+        _lblHint.Location = New Point(30, 160)
+        _lblHint.Size = New Size(820, 32)
+        _chkOverwrite.Location = New Point(12, 198)
+        _chkKeepGoing.Location = New Point(12, 220)
+        _chkBinary.Location = New Point(12, 242)
+        _lblDate.Location = New Point(430, 198)
+        _txtDate.Location = New Point(430, 218)
+        _chkSystem.Location = New Point(430, 242)
+        _chkInvisible.Location = New Point(430, 264)
+        top.Controls.AddRange(New Control() {lblIntro, lblKeeps, _lblSource, _txtSource, _btnBrowse, _rbAll, _rbNames,
+                                             _txtNames, _lblHint, _chkOverwrite, _chkKeepGoing, _chkBinary,
+                                             _lblDate, _txtDate, _chkSystem, _chkInvisible})
+
+        Dim bar As New Panel() With {.Dock = DockStyle.Bottom, .Height = 40}
+        _btnPreview.Bounds = New Rectangle(8, 7, 110, 26)
+        _btnImport.Bounds = New Rectangle(126, 7, 110, 26)
+        _btnClose.Bounds = New Rectangle(bar.Width - 96, 7, 80, 26)
+        _btnClose.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        bar.Controls.AddRange(New Control() {_btnPreview, _btnImport, _btnClose})
+
+        AddHandler _btnBrowse.Click, Sub() PickSource()
+        AddHandler _rbNames.CheckedChanged, Sub() _txtNames.Enabled = _rbNames.Checked
+        AddHandler _btnPreview.Click, Async Sub() Await RunAsync(True)
+        AddHandler _btnImport.Click, Async Sub() Await RunAsync(False)
+        AddHandler _btnClose.Click, Sub() Close()
+
+        Controls.Add(_txt)
+        Controls.Add(top)
+        Controls.Add(bar)
+        CancelButton = _btnClose
+
+        ' Make room for the language in force (UiFit.vb); in English nothing here moves.
+        UiFit.ButtonRowLeft(8, 8, _btnPreview, _btnImport)
+        _btnPreview.Top = 7 : _btnImport.Top = 7
+        UiFit.FitButton(_btnClose)
+        _btnClose.Left = ClientSize.Width - _btnClose.Width - 16
+        UpdateEnabled()
+    End Sub
+
+    ''' <summary>True once a run saved the image, so MainForm knows to refresh.</summary>
+    Public ReadOnly Property Changed As Boolean
+        Get
+            Return _changed
+        End Get
+    End Property
+
+    ''' <summary>How many files the last real run copied, for the status line.</summary>
+    Public ReadOnly Property Copied As Integer
+        Get
+            Return _copied
+        End Get
+    End Property
+
+    Private Sub UpdateEnabled()
+        Dim ready As Boolean = Not String.IsNullOrEmpty(_source)
+        _btnPreview.Enabled = ready
+        _btnImport.Enabled = ready
+    End Sub
+
+    Private Sub PickSource()
+        Using dlg As New OpenFileDialog()
+            dlg.Title = UiText.T("dlg.import.source")
+            dlg.Filter = UiText.T("filter.mountimages")
+            dlg.CheckFileExists = True
+            If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
+            Dim chosen As String = Path.GetFullPath(dlg.FileName)
+            ' The engine refuses to add an image to itself; it cannot know that this is the same disk by
+            ' another spelling, so the obvious case is caught here before the command is built.
+            If String.Equals(chosen, Path.GetFullPath(_disk.Path), HostPlatform.PathComparison) Then
+                MessageBox.Show(Me, UiText.T("msg.import.samefile"), UiText.T("btn.import"), MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+            _source = chosen
+            _txtSource.Text = chosen
+            UpdateEnabled()
+        End Using
+    End Sub
+
+    Private Sub SetBusy(busy As Boolean)
+        UseWaitCursor = busy
+        _btnPreview.Enabled = Not busy AndAlso Not String.IsNullOrEmpty(_source)
+        _btnImport.Enabled = _btnPreview.Enabled
+        _btnBrowse.Enabled = Not busy
+    End Sub
+
+    Private Sub Append(header As String, body As String)
+        Dim sb As New StringBuilder(_txt.Text)
+        If sb.Length > 0 Then sb.AppendLine()
+        sb.AppendLine("==== " & header & " ====")
+        sb.AppendLine(If(body, "").Replace(vbCrLf, vbLf).Replace(vbCr, vbLf).Replace(vbLf, vbCrLf).TrimEnd())
+        _txt.Text = sb.ToString()
+        _txt.Select(_txt.Text.Length, 0)
+        _txt.ScrollToCaret()
+    End Sub
+
+    ''' <summary>The request, or Nothing with a message box when the window is not filled in properly.</summary>
+    Private Function BuildRequest() As Trs80Tool.ImportRequest
+        If String.IsNullOrEmpty(_source) Then
+            MessageBox.Show(Me, UiText.T("msg.import.nosource"), UiText.T("btn.import"), MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return Nothing
+        End If
+        Dim req As New Trs80Tool.ImportRequest With {
+            .SourceImage = _source,
+            .Overwrite = _chkOverwrite.Checked,
+            .Binary = _chkBinary.Checked,
+            .System = _chkSystem.Checked,
+            .Invisible = _chkInvisible.Checked,
+            .KeepGoing = _chkKeepGoing.Enabled AndAlso _chkKeepGoing.Checked}
+        If _rbNames.Checked Then
+            For Each part In _txtNames.Text.Split(New Char() {" "c, ControlChars.Tab, ";"c, ","c}, StringSplitOptions.RemoveEmptyEntries)
+                req.Names.Add(part)
+            Next
+            If req.Names.Count = 0 Then
+                MessageBox.Show(Me, UiText.T("msg.import.nonames"), UiText.T("btn.import"), MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return Nothing
+            End If
+        End If
+        Dim typed As String = _txtDate.Text.Trim()
+        If typed.Length > 0 Then
+            Dim parsed As Date
+            If Not Date.TryParseExact(typed, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, parsed) Then
+                MessageBox.Show(Me, UiText.T("msg.import.baddate"), UiText.T("btn.import"), MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return Nothing
+            End If
+            req.DateYmd = typed
+        End If
+        Return req
+    End Function
+
+    Private Async Function RunAsync(dryRun As Boolean) As Task
+        Dim req As Trs80Tool.ImportRequest = BuildRequest()
+        If req Is Nothing Then Return
+        SetBusy(True)
+        Try
+            Dim r As ToolResult = Await Program.Tool.DiskImportAsync(_disk.Path, _disk.PartitionArg, req, dryRun)
+            Dim header As String = "disk " & If(dryRun, "--dry-run ", "") & String.Join(" ", req.ToWords())
+            Append(header, If(r.Succeeded, r.StdOut, r.ErrorText))
+            If Not dryRun AndAlso r.Succeeded Then
+                If r.Disk IsNot Nothing AndAlso r.Disk.Saved IsNot Nothing Then _changed = True
+                Dim res As Trs80Tool.ImportResultJson = If(r.Disk Is Nothing, Nothing, r.Disk.ResultOf(Of Trs80Tool.ImportResultJson)("import"))
+                _copied = If(res Is Nothing OrElse res.Files Is Nothing, 0, res.Files.Count)
+            End If
+        Catch ex As Exception
+            Append("disk import", ex.Message)
+        Finally
+            SetBusy(False)
+        End Try
+    End Function
+End Class

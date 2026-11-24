@@ -1,6 +1,31 @@
 TRSToolGui — Changelog
 ======================
 
+v1.8 — November 24, 2026
+  Disk > Import from another image copies files straight out of another floppy, hard disk,
+    cassette or WAV image onto the open one. It needs trs80-tool 5.3.0, which added the
+    command this is built on; with an older trs80-tool the menu item is greyed out. This is
+    worth having over Copy and Paste because trs80-tool does the copying rather than the
+    program: each file arrives with its own date and its system and hidden attributes, and a
+    BASIC program is converted between Model III and Model 4 tokens when the two disks run
+    different BASICs. Copy and Paste, and dragging between two windows, write the file out to
+    a temporary Windows file and add it back, which keeps none of that. Either every file is
+    copied or none is, unless you leave "Skip a file that can't be copied" on, which is the
+    default. Preview runs the same command as a dry run: it writes nothing and prints what it
+    would copy, rename and skip.
+  Adding several files no longer fails as a whole because of one of them. With trs80-tool
+    5.3.0 a file that cannot be added — no room for it, or a name already on the disk that you
+    chose not to replace — is skipped and the rest still go in, and the program then says how
+    many were added and why each of the others was left out. With an older trs80-tool it
+    behaves as before: one file that will not fit means nothing is written.
+  trs80-tool 5.3.0 is the version this release was built against. Two of its changes needed
+    nothing here and are worth knowing about anyway: wildcards now follow the same DOS rules
+    on Windows files as on files on a disk, so a name written the way the archive writes them,
+    with brackets in it, is matched as the plain name it is; and trs80-tool will not add a disk
+    image to itself even when a wildcard picks it up.
+  The French is unchanged except for the new window and its messages, which have had no
+    reviewer yet. Corrections are welcome as issues at the address under Help.
+
 v1.7.1 — November 24, 2026
   Opening a disk image from the Finder works. In v1.7 it did not: double-clicking an image
     answered "TRSToolGui cannot open files in the TRS-80 floppy disk image format". That is

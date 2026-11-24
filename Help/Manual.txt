@@ -8,7 +8,7 @@ that version can't do. It runs on Windows, from version 1.3 on Linux, and from v
 Mac. This manual describes the Windows program; the sections ON LINUX and ON THE MAC at the end
 list what differs there.
 
-TRSToolGui 1.7.1 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
+TRSToolGui 1.8 needs trs80-tool 5.1.0 or later (https://www.my-trs-80.com/tool/). An older one is
 refused at startup with a message saying so. With trs80-tool 5.2.0 or later, Montezuma Micro CP/M
 disks (and the other CP/M layouts trs80-tool knows) can be changed too: Add, Delete, Rename and
 the two CP/M attributes work on them, and File > New makes them. CP/M keeps no file dates, so
@@ -123,8 +123,10 @@ EDIT
 
   Add files...
       Adds Windows files to the open image. The GUI checks each name against the DOS's rules and
-      offers a rename; trs80-tool refuses the whole add if there is no room on the disk, and
-      nothing is written. If the disk already has a file with
+      offers a rename. With trs80-tool 5.3.0 and more than one file, a file that cannot be added
+      is skipped and the others still go in; the window then says how many were added and why
+      each of the rest was left out. With an older trs80-tool one file that will not fit means
+      nothing is written at all. If the disk already has a file with
       that name, the "Confirm File Replace" window shows both files and asks:
         Yes / No             Replace this file, or skip it.
         Do this for all      Use the same answer for the rest of the files.
@@ -262,6 +264,37 @@ DISK
       press "Use this layout". The disk is then read and written that way in every window, and in
       the trs80-tool shell, until TRSToolGui closes. The status bar says so. "Let trs80-tool
       decide" goes back. A name the disk can't be read with is refused and nothing changes.
+
+  Import from another image...
+      Copies files from another floppy, hard disk, cassette or WAV image onto the open one.
+      Needs trs80-tool 5.3.0; the menu item is greyed out with an older one. trs80-tool does the
+      copying, which is why each file arrives with its own date and its system and hidden
+      attributes, and why a BASIC program is converted between Model III and Model 4 tokens when
+      the two disks run different BASICs. A program in a CAS or WAV file is converted the way
+      Add files... would convert it.
+      Copy from            The image to copy out of (Browse...). It cannot be the open image.
+      Every file except the system files
+                           The default. A wildcard never matches a system file.
+      Only these names or patterns
+                           Names or wildcards separated by spaces, for example *.BAS NOTES/TXT.
+                           Name a system file to copy it. * and ? follow the DOS rules: *.* also
+                           matches a name with no extension, and *. matches only those.
+      Replace a file of the same name that is already on this disk
+                           Without it, a name already on the disk is an error (--overwrite).
+      Skip a file that can't be copied and copy the rest
+                           On by default (--keep-going). Off, nothing is copied unless every
+                           file can be. A disk that cannot be written at all still stops
+                           everything either way.
+      Copy every file byte for byte, BASIC included
+                           Turns off the BASIC conversion (--binary).
+      Make the copies system files / Hide the copies from directory listings
+                           Adds the attribute to every copy (--system, --invisible). A file that
+                           already has it keeps it either way.
+      Record this date on the copies instead of their own
+                           YYYY-MM-DD, or leave it empty to keep each file's own date (--date).
+      Preview (dry run)    Runs the same command with --dry-run: it writes nothing and prints
+                           what it would copy, rename and skip.
+      Import               Does it, and the main window reads the image again afterwards.
 
   Format...
       Erases every file on the open image and formats it as an empty data disk. DMK images
@@ -426,7 +459,7 @@ ON LINUX
   TRSToolGui for Linux (x64) is the same program with its windows built on Eto.Forms, which
   uses GTK 3. Every menu, dialog and window above is there. What differs:
 
-  Starting it          Unzip TRSToolGui-v1.7.1-linux-x64.zip, make the file runnable once with
+  Starting it          Unzip TRSToolGui-v1.8-linux-x64.zip, make the file runnable once with
                        "chmod +x TRSToolGui", and start it:  ./TRSToolGui [image file]
                        It needs GTK 3, which desktop Linux has, and nothing else: .NET is inside
                        the file.
@@ -461,8 +494,8 @@ ON THE MAC
   written it had not yet been run on a Mac, so expect rough edges and please report them. What
   differs from the rest of this manual:
 
-  Which download       TRSToolGui-v1.7.1-macos-arm64.zip for a Mac with Apple Silicon (M1 and later),
-                       TRSToolGui-v1.7.1-macos-x64.zip for a Mac with an Intel processor. It needs
+  Which download       TRSToolGui-v1.8-macos-arm64.zip for a Mac with Apple Silicon (M1 and later),
+                       TRSToolGui-v1.8-macos-x64.zip for a Mac with an Intel processor. It needs
                        macOS 14 or later and nothing else: .NET is inside the app.
   Installing it        Double-click the zip to unpack it, then drag TRSToolGui.app to Applications
                        or to any folder you like. Move it before the first start: macOS runs a

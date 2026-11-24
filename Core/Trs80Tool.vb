@@ -199,12 +199,18 @@ Public Class Trs80Tool
 
     ' ---- version policy (update when a new trs80-tool is tested) ----
     Public Shared ReadOnly MinimumVersion As New Version(5, 1, 0)
-    Public Shared ReadOnly MaxTestedVersion As New Version(5, 2, 0)
+    Public Shared ReadOnly MaxTestedVersion As New Version(5, 3, 0)
     ''' <summary>
     ''' The first trs80-tool that writes CP/M disks (and makes them with "create cpm"), reads and writes gzipped
     ''' files, and maps hard disk partitions. "help --json" doesn't list any of the three, so the GUI goes by this.
     ''' </summary>
     Public Shared ReadOnly Version520 As New Version(5, 2, 0)
+    ''' <summary>
+    ''' The first trs80-tool whose "disk" command has "import" (copy files from another floppy, hard disk,
+    ''' CAS or WAV image onto the open disk) and "--keep-going" on "add". Both are in "help --json", so the
+    ''' GUI asks the probe as well: see CanImport and CanKeepGoing.
+    ''' </summary>
+    Public Shared ReadOnly Version530 As New Version(5, 3, 0)
 
     ''' <summary>The name trs80-tool is released under on this system: trs80-tool.exe on Windows, trs80-tool elsewhere.</summary>
     Public Shared ReadOnly Property DefaultExeName As String
@@ -220,7 +226,39 @@ Public Class Trs80Tool
         End Get
     End Property
 
-    ' Top-level commands and disk sub-commands this GUI relies on (for the capability probe).
+    ''' <summary>True when the probed trs80-tool is 5.3.0 or later (False before the probe has run).</summary>
+    Public ReadOnly Property Has530 As Boolean
+        Get
+            Return Capabilities IsNot Nothing AndAlso Capabilities.AtLeast(Version530)
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' True when "disk import" copies files from another image. Both halves of the test matter. Up to
+    ''' 5.2.0 "import" was an ALIAS of "add", so on a 5.2.0 tool "import OTHER.DMK" means "add OTHER.DMK"
+    ''' and would store the source image as a file on the open disk. ToolCapabilities fills DiskCommands
+    ''' from the command NAMES in "help --json" and never from their aliases, so HasDisk("import") is
+    ''' already False there; the version test is what keeps that safe if the probe ever learns aliases.
+    ''' </summary>
+    Public ReadOnly Property CanImport As Boolean
+        Get
+            Return Has530 AndAlso Capabilities.HasDisk("import")
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' True when "add" (and "import") take "--keep-going": skip a file that can't be added, with a warning,
+    ''' and add the rest, instead of adding nothing. New in 5.3.0.
+    ''' </summary>
+    Public ReadOnly Property CanKeepGoing As Boolean
+        Get
+            Return Capabilities IsNot Nothing AndAlso Capabilities.HasDiskOption("add", "--keep-going")
+        End Get
+    End Property
+
+    ' Top-level commands and disk sub-commands this GUI relies on (for the capability probe). "import" is
+    ' deliberately absent: it arrived in 5.3.0 and the minimum this GUI needs is 5.1.0, so demanding it would
+    ' report "disk command missing: import" on a perfectly good 5.1.0 or 5.2.0 tool. CanImport gates it instead.
     Public Shared ReadOnly ExpectedTopLevel As String() = {"dir", "info", "convert", "extract", "disk", "sectors", "hexdump", "disasm", "asm", "run", "mcp", "help"}
     Public Shared ReadOnly ExpectedDisk As String() = {"dir", "extract", "list", "add", "kill", "rename", "attrib", "label", "protect", "info", "partition", "free", "map", "check", "repair", "create", "format", "trim", "boot"}
 
@@ -1323,6 +1361,61 @@ Public Class Trs80Tool
         Public Property Listing As List(Of String)
     End Class
 
+    ''' <summary>One file "disk add" put on the disk.</summary>
+    Public Class AddedFileJson
+        ''' <summary>The host path it came from, as given.</summary>
+        Public Property Host As String
+        ''' <summary>Its name on the disk, written "HELLO.BAS".</summary>
+        Public Property Name As String
+        ''' <summary>Its size on the disk in bytes, after any conversion.</summary>
+        Public Property Size As Long
+        Public Property Replaced As Boolean
+        ''' <summary>What the conversion did, as the tool words it. For people.</summary>
+        Public Property Conversions As List(Of String)
+    End Class
+
+    ''' <summary>A host file that "disk add --keep-going" left out.</summary>
+    Public Class SkippedHostFileJson
+        Public Property Host As String
+        ''' <summary>Why it wasn't added, as the tool words it. For people.</summary>
+        Public Property Problem As String
+    End Class
+
+    ''' <summary>
+    ''' The result of "disk add". "Skipped" is always empty without "--keep-going", and the field itself
+    ''' only exists in trs80-tool 5.3.0 and later, so it comes back Nothing from an older tool.
+    ''' </summary>
+    Public Class AddResultJson
+        Public Property Files As List(Of AddedFileJson)
+        Public Property Skipped As List(Of SkippedHostFileJson)
+    End Class
+
+    ''' <summary>One file "disk import" copied onto the disk (trs80-tool 5.3.0).</summary>
+    Public Class ImportedFileJson
+        ''' <summary>Its name in the image it came from: "HELLO.BAS", or "HARDA/HELLO.BAS" from a partition.</summary>
+        Public Property [From] As String
+        ''' <summary>Its name on the disk, written "HELLO.BAS".</summary>
+        Public Property Name As String
+        Public Property Size As Long
+        Public Property Replaced As Boolean
+        ''' <summary>What the conversion did ("Converted HELLO.BAS from Model III to Model 4 BASIC tokens.").</summary>
+        Public Property Conversions As List(Of String)
+    End Class
+
+    ''' <summary>A file "disk import --keep-going" left out.</summary>
+    Public Class SkippedFileJson
+        Public Property [From] As String
+        Public Property Problem As String
+    End Class
+
+    ''' <summary>The result of "disk import". "Skipped" is always empty without "--keep-going".</summary>
+    Public Class ImportResultJson
+        ''' <summary>The image the files were copied from, as given.</summary>
+        Public Property Source As String
+        Public Property Files As List(Of ImportedFileJson)
+        Public Property Skipped As List(Of SkippedFileJson)
+    End Class
+
     ''' <summary>One granule of "disk map".</summary>
     Public Class MapCellJson
         Public Property Lump As Integer
@@ -2055,6 +2148,11 @@ Public Class Trs80Tool
         Public Property DateYmd As String
         Public Property Invisible As Boolean
         Public Property System As Boolean
+        ''' <summary>
+        ''' True = "--keep-going": a file that can't be added is skipped with a warning and the rest are
+        ''' added, instead of the whole command adding nothing. trs80-tool 5.3.0 and later (CanKeepGoing).
+        ''' </summary>
+        Public Property KeepGoing As Boolean
 
         Public Function ToWords() As List(Of String)
             Dim w As New List(Of String) From {"add", HostPath}
@@ -2074,6 +2172,7 @@ Public Class Trs80Tool
             End If
             If Invisible Then w.Add("--invisible")
             If System Then w.Add("--system")
+            If KeepGoing Then w.Add("--keep-going")
             Return w
         End Function
     End Class
@@ -2107,6 +2206,61 @@ Public Class Trs80Tool
             End If
         Next
         Return Await DiskChainAsync(imagePath, partition, cmds)
+    End Function
+
+    ''' <summary>
+    ''' One run of "disk import": the image to copy files from, which of its files, and how. A file keeps its
+    ''' own date and its system and hidden flags, and BASIC is converted between Model III and Model 4 when
+    ''' the two disks differ, none of which the GUI's own extract-and-add path can do.
+    ''' </summary>
+    Public Class ImportRequest
+        ''' <summary>The floppy, hard disk, CAS or WAV image to copy from.</summary>
+        Public Property SourceImage As String
+        ''' <summary>
+        ''' Names or wildcards in the source image. Empty = every file but the system files; a wildcard never
+        ''' matches a system file, so a system file has to be named.
+        ''' </summary>
+        Public Property Names As New List(Of String)
+        ''' <summary>TRS-80 (or CP/M) name to force with --as. The tool refuses it for more than one file.</summary>
+        Public Property AsName As String
+        Public Property Overwrite As Boolean
+        ''' <summary>True = copy every file byte for byte, BASIC included (--binary).</summary>
+        Public Property Binary As Boolean
+        Public Property System As Boolean
+        Public Property Invisible As Boolean
+        ''' <summary>Date to record instead of each file's own (YYYY-MM-DD), or Nothing to keep theirs.</summary>
+        Public Property DateYmd As String
+        ''' <summary>True = skip a file that can't be copied and copy the rest (--keep-going).</summary>
+        Public Property KeepGoing As Boolean
+
+        Public Function ToWords() As List(Of String)
+            Dim w As New List(Of String) From {"import", SourceImage}
+            If Names IsNot Nothing Then w.AddRange(Names)
+            If Not String.IsNullOrEmpty(AsName) Then
+                w.Add("--as")
+                w.Add(AsName)
+            End If
+            If Binary Then w.Add("--binary")
+            If Overwrite Then w.Add("--overwrite")
+            If System Then w.Add("--system")
+            If Invisible Then w.Add("--invisible")
+            If Not String.IsNullOrEmpty(DateYmd) Then
+                w.Add("--date")
+                w.Add(DateYmd)
+            End If
+            If KeepGoing Then w.Add("--keep-going")
+            Return w
+        End Function
+    End Class
+
+    ''' <summary>
+    ''' disk IMAGE import SOURCE [NAME...] [options] - copy files from another image onto the open disk.
+    ''' Only call it when CanImport is True: on trs80-tool 5.2.0 and earlier "import" is an alias of "add"
+    ''' and would store the source image itself on the disk.
+    ''' </summary>
+    Public Async Function DiskImportAsync(imagePath As String, partition As String, request As ImportRequest,
+                                          Optional dryRun As Boolean = False) As Task(Of ToolResult)
+        Return Await DiskChainAsync(imagePath, partition, One(request.ToWords().ToArray()), dryRun)
     End Function
 
 End Class
