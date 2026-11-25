@@ -61,6 +61,9 @@ Public Class TextReportForm
             .Dock = DockStyle.Fill
             .BackColor = SystemColors.Window
         End With
+        ' Ctrl with the wheel, or Ctrl with + - and 0, for a report that is too small to read
+        ' comfortably on a high-resolution screen.
+        UiFit.EnableTextZoom(_txt)
         Dim panel As New Panel() With {.Dock = DockStyle.Bottom, .Height = 40}
         Dim btnCopy As New Button() With {.Text = UiText.T("btn.copyclipboard"), .Bounds = New Rectangle(8, 7, 130, 26)}
         AddHandler btnCopy.Click, Sub()
@@ -176,6 +179,9 @@ Public Class CheckRepairForm
             .Dock = DockStyle.Fill
             .BackColor = SystemColors.Window
         End With
+        ' Ctrl with the wheel, or Ctrl with + - and 0, for a report that is too small to read
+        ' comfortably on a high-resolution screen.
+        UiFit.EnableTextZoom(_txt)
         Dim opts As New Panel() With {.Dock = DockStyle.Bottom, .Height = 84}
         _chkFree.Location = New Point(10, 8)
         _chkSizes.Location = New Point(10, 32)
@@ -487,6 +493,9 @@ Public Class ImportForm
             .Dock = DockStyle.Fill
             .BackColor = SystemColors.Window
         End With
+        ' Ctrl with the wheel, or Ctrl with + - and 0, for a report that is too small to read
+        ' comfortably on a high-resolution screen.
+        UiFit.EnableTextZoom(_txt)
 
         ' trs80-tool 5.2.0 has no --keep-going; the box says so by being off and disabled.
         If Not Program.Tool.CanKeepGoing Then

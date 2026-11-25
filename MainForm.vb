@@ -494,7 +494,7 @@ Public Class MainForm
         Dim body As String = If(text, "").Replace(vbCrLf, vbLf).Replace(vbCr, vbLf).Replace(vbLf, vbCrLf).Trim()
         If body.Length = 0 Then Return
         Dim f As New TextReportForm(title, body)
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Sub
 
     ''' <summary>File → New hard disk image: "disk NEW.hdv create [DOS] --cylinders N --heads N [--partitions N] ...".</summary>
@@ -956,7 +956,7 @@ Public Class MainForm
             Return
         End If
         Dim f As New SectorMapForm(_disk)
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Sub
 
     ''' <summary>Disk -> DMK analysis: the GUI's own reading of the DMK (DmkAnalyzer.vb / DosIdentifier.vb / DiskInfoForm.vb).</summary>
@@ -967,7 +967,7 @@ Public Class MainForm
             Return
         End If
         Dim f As New DiskInfoForm(_disk.Path)
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
         Await f.LoadAsync()
     End Sub
 
@@ -989,13 +989,13 @@ Public Class MainForm
         Dim f As New TextReportForm(title, DmkHexDump.Dump(imagePath, DmkHexDump.DefaultSpec),
                                     UiText.T("lbl.trackhex.tracks"),
                                     Function(spec As String) Task.Run(Function() DmkHexDump.Dump(imagePath, spec)))
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Sub
 
     Private Sub OnGranuleMap()
         If _busy OrElse _disk Is Nothing Then Return
         Dim f As New GranuleMapForm(_disk)
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Sub
 
     Private Async Sub OnCheckRepair()
@@ -1257,7 +1257,7 @@ Public Class MainForm
                 SetBusy(False, Nothing)
             End Try
             Dim f As New TextReportForm(UiText.T("win.hexdump", Path.GetFileName(ofd.FileName)), text)
-            f.Show(Me)
+            UiFit.ShowOver(f, Me)
         End Using
     End Sub
 
@@ -1282,7 +1282,7 @@ Public Class MainForm
                 SetBusy(False, Nothing)
             End Try
             Dim f As New TextReportForm(UiText.T("win.disasm", Path.GetFileName(ofd.FileName)), text)
-            f.Show(Me)
+            UiFit.ShowOver(f, Me)
         End Using
     End Sub
 
@@ -1339,7 +1339,7 @@ Public Class MainForm
     ''' <summary>Help > Manual / Changelog / License: an embedded text file in the report window (Copy / Save / Close).</summary>
     Private Sub ShowHelpText(resourceName As String, title As String)
         Dim f As New TextReportForm(title, Program.ReadHelpText(resourceName))
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Sub
 
     Private Async Sub OnEngineInfo()
@@ -1361,7 +1361,7 @@ Public Class MainForm
         If sel.Count = 0 Then Return
         Dim f As DiskFile = sel(0)
         Dim v As New ViewerForm(_disk, f)
-        v.Show(Me)
+        UiFit.ShowOver(v, Me)
     End Sub
 
     Private Async Sub OnFileProperties()

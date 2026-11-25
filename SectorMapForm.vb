@@ -251,7 +251,7 @@ Public Class SectorMapForm
     Private Sub ShowProtection()
         If _info Is Nothing Then Return
         Dim f As New TextReportForm(UiText.T("dlg.sectormap.prot.title", Path.GetFileName(_disk.Path)), ProtectionReport())
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Sub
 
     Private Sub FillGrid()
@@ -438,7 +438,7 @@ Public Class SectorMapForm
         Dim body As String = If(r.Succeeded, r.StdOut, r.ErrorText)
         If badOnly AndAlso body.Trim().Length = 0 Then body = UiText.T("dlg.sectormap.nobadtext")
         Dim f As New TextReportForm(If(badOnly, "sectors --bad", "sectors") & " - " & Path.GetFileName(_disk.Path), body)
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Function
 
     Private Async Function SaveReportAsync() As Task

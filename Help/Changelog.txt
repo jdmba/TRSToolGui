@@ -1,6 +1,23 @@
 TRSToolGui — Changelog
 ======================
 
+v1.8.2 — November 25, 2026
+  A window opened from the main one can no longer appear off the screen. Every window in the
+    Windows version asked to be centred on the window that opened it, but Windows Forms honours
+    that request only for windows that have to be answered before you can carry on. The report
+    and map windows are not those, so the request was quietly ignored and Windows placed them
+    where it pleased. On a desktop with more than one monitor that could be off the edge of the
+    screen entirely, and if a monitor sits to the left of the main one, somewhere that could not
+    be reached at all — the program looked as though it had done nothing. Each of these windows
+    is now placed over the one that opened it and pulled back inside the screen that one is on.
+    Reported by Pascal Holdry, who thought it was his own setup; it was not.
+  Reports can be made bigger. Hold Ctrl and turn the mouse wheel in any report window to change
+    the text size, or use Ctrl with + and - and Ctrl with 0 to put it back. It works in the
+    track hex dump, the DMK analysis report, the sector and granule reports, check and repair,
+    and import. The font stays monospaced, because every one of those reports lines its columns
+    up by character width. Also asked for by Pascal Holdry, who was reading them at a size meant
+    for a smaller screen than his.
+
 v1.8.1 — November 25, 2026
   A disk whose directory cannot be read now says so. Until now an image that opened but whose
     directory trs80-tool could not make sense of looked exactly like an empty disk: an empty

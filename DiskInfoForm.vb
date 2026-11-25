@@ -106,6 +106,8 @@ Public Class DiskInfoForm
             .WordWrap = False
             .Font = New Font(HostPlatform.MonospaceFontName, 9.0F)
         End With
+        ' The analysis report is the longest text this program shows: let Ctrl and the wheel size it.
+        UiFit.EnableTextZoom(_txtReport)
         tpReport.Controls.Add(_txtReport)
         _tabs.TabPages.AddRange(New TabPage() {tpSummary, tpTracks, tpReport})
 

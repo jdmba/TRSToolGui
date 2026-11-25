@@ -372,6 +372,6 @@ Public Class GranuleMapForm
     Private Sub ShowTextMap()
         If _mapText.Length = 0 Then Return
         Dim f As New TextReportForm(UiText.T("dlg.granule.texttitle", Path.GetFileName(_disk.Path)), _mapText.Replace(vbCrLf, vbLf).Replace(vbLf, vbCrLf))
-        f.Show(Me)
+        UiFit.ShowOver(f, Me)
     End Sub
 End Class

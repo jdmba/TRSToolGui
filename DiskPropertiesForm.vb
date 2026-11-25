@@ -213,7 +213,7 @@ Public Class DiskPropertiesForm
         Dim btnDmk As New Button() With {.Text = UiText.T("btn.dmkanalysis"), .Bounds = New Rectangle(106, y, 110, 26), .Enabled = Not _disk.IsHardDisk AndAlso Not _disk.IsCassette}
         AddHandler btnDmk.Click, Async Sub()
                                      Dim f As New DiskInfoForm(_disk.Path)
-                                     f.Show(Me)
+                                     UiFit.ShowOver(f, Me)
                                      Await f.LoadAsync()
                                  End Sub
         Controls.Add(btnDmk)

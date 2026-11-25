@@ -238,9 +238,52 @@ Public Module Ui
     End Function
 
     ''' <summary>A read-only text box for a report: monospaced, no wrapping, LF line ends.</summary>
+    ''' <summary>Smallest and largest a report goes: below 6 nothing is readable, above 36 a line fills the window.</summary>
+    Private Const MinReportPoints As Single = 6.0F
+    Private Const MaxReportPoints As Single = 36.0F
+
+    ''' <summary>
+    ''' A read-only monospaced box for a report, with Ctrl and the wheel (and Ctrl with + - and 0)
+    ''' to change its size. Every report box in this program is made here, so they all get it.
+    ''' On a high-resolution screen the 9 or 10 point these are drawn in is very small, and
+    ''' copying the text into a word processor to read it is a poor answer. Asked for by Pascal
+    ''' Holdry, 25 November 2026. Only the size changes and the family is kept, because these
+    ''' reports line their columns up by character width.
+    ''' </summary>
     Public Function ReportBox(text As String, Optional size As Single = 10.0F) As TextArea
-        Return New TextArea With {.ReadOnly = True, .Wrap = False, .Font = Mono(size), .Text = Lf(text)}
+        Dim box As New TextArea With {.ReadOnly = True, .Wrap = False, .Font = Mono(size), .Text = Lf(text)}
+        Dim original As Single = size
+        AddHandler box.MouseWheel,
+            Sub(sender As Object, e As MouseEventArgs)
+                If (e.Modifiers And Keys.Control) = 0 Then Return
+                If e.Delta.Height = 0 Then Return
+                ZoomReport(box, If(e.Delta.Height > 0, 1.0F, -1.0F))
+                e.Handled = True
+            End Sub
+        AddHandler box.KeyDown,
+            Sub(sender As Object, e As KeyEventArgs)
+                If (e.Modifiers And Keys.Control) = 0 Then Return
+                Select Case e.Key
+                    Case Keys.Equal, Keys.Add
+                        ZoomReport(box, 1.0F) : e.Handled = True
+                    Case Keys.Minus, Keys.Subtract
+                        ZoomReport(box, -1.0F) : e.Handled = True
+                    Case Keys.D0, Keys.Keypad0
+                        SetReportSize(box, original) : e.Handled = True
+                End Select
+            End Sub
+        Return box
     End Function
+
+    Private Sub ZoomReport(box As TextArea, points As Single)
+        SetReportSize(box, box.Font.Size + points)
+    End Sub
+
+    Private Sub SetReportSize(box As TextArea, points As Single)
+        Dim want As Single = Math.Max(MinReportPoints, Math.Min(MaxReportPoints, points))
+        If Math.Abs(want - box.Font.Size) < 0.01F Then Return
+        box.Font = Mono(want)
+    End Sub
 
     Public Function IsOn(box As CheckBox) As Boolean
         Return box.Checked.HasValue AndAlso box.Checked.Value

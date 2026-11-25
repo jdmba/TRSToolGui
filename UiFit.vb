@@ -264,4 +264,99 @@ Friend Module UiFit
         Next
     End Sub
 
+    ' ================================================================= placing a window
+
+    ''' <summary>
+    ''' Show a window over the one that opened it, and make sure it lands on a screen.
+    '''
+    ''' Every window in this program sets StartPosition = CenterParent, but Windows Forms honours
+    ''' that ONLY for ShowDialog. A modeless Show() ignores it and falls back to the cascade
+    ''' position, which on a desktop with more than one monitor can put the window partly or
+    ''' wholly off the screen - and at a negative X when a monitor sits to the left of the main
+    ''' one, where it cannot be reached at all. MainForm never suffered from this because it
+    ''' checks its remembered position against the screens before using it; no window opened
+    ''' from it did that, which is why the main window looked fine and a report window went
+    ''' missing. Reported by Pascal Holdry, 25 November 2026.
+    '''
+    ''' So the placing is done here instead: centre on the owner, then pull the window back
+    ''' inside the working area of the screen the owner is on. A window bigger than that screen
+    ''' is left at its top left rather than being shrunk, because its own minimum size is its
+    ''' business and a window that runs off the bottom but can be dragged beats one that cannot.
+    ''' </summary>
+    Friend Sub ShowOver(f As Form, owner As Form)
+        If f Is Nothing Then Return
+        If owner Is Nothing OrElse owner.IsDisposed Then
+            f.Show()
+            Return
+        End If
+        Try
+            Dim area As Rectangle = Screen.FromControl(owner).WorkingArea
+            Dim w As Integer = f.Width
+            Dim h As Integer = f.Height
+            Dim x As Integer = owner.Left + (owner.Width - w) \ 2
+            Dim y As Integer = owner.Top + (owner.Height - h) \ 2
+            ' Right and bottom first, then left and top, so the top left corner always wins:
+            ' it is the corner that carries the title bar the user needs in order to drag it.
+            If x + w > area.Right Then x = area.Right - w
+            If y + h > area.Bottom Then y = area.Bottom - h
+            If x < area.Left Then x = area.Left
+            If y < area.Top Then y = area.Top
+            f.StartPosition = FormStartPosition.Manual
+            f.Location = New Point(x, y)
+        Catch
+            ' Any trouble reading the screens, and the window still has to appear somewhere sane.
+            f.StartPosition = FormStartPosition.CenterScreen
+        End Try
+        f.Show(owner)
+    End Sub
+
+    ' ================================================================= reading a report
+
+    ''' <summary>Smallest and largest the reports go: below 6 nothing is readable, above 36 a line fills the window.</summary>
+    Private Const MinPoints As Single = 6.0F
+    Private Const MaxPoints As Single = 36.0F
+
+    ''' <summary>
+    ''' Let Ctrl with the mouse wheel, and Ctrl with + - and 0, change the size of a monospaced
+    ''' report box. On a high-resolution screen the 9.5 point the reports are drawn in is very
+    ''' small, and copying the text into a word processor to read it is a poor answer. Asked for
+    ''' by Pascal Holdry, 25 November 2026.
+    '''
+    ''' Only the size changes and the family is kept, because every one of these reports lines
+    ''' its columns up by character width and a proportional font would ruin all of them.
+    ''' </summary>
+    Friend Sub EnableTextZoom(box As TextBoxBase)
+        If box Is Nothing Then Return
+        Dim original As Single = box.Font.Size
+        AddHandler box.MouseWheel,
+            Sub(sender As Object, e As MouseEventArgs)
+                If (Control.ModifierKeys And Keys.Control) = 0 Then Return
+                ZoomBy(box, If(e.Delta > 0, 1.0F, -1.0F))
+            End Sub
+        AddHandler box.KeyDown,
+            Sub(sender As Object, e As KeyEventArgs)
+                If Not e.Control Then Return
+                Select Case e.KeyCode
+                    Case Keys.Oemplus, Keys.Add
+                        ZoomBy(box, 1.0F) : e.Handled = True : e.SuppressKeyPress = True
+                    Case Keys.OemMinus, Keys.Subtract
+                        ZoomBy(box, -1.0F) : e.Handled = True : e.SuppressKeyPress = True
+                    Case Keys.D0, Keys.NumPad0
+                        SetSize(box, original) : e.Handled = True : e.SuppressKeyPress = True
+                End Select
+            End Sub
+    End Sub
+
+    Private Sub ZoomBy(box As TextBoxBase, points As Single)
+        SetSize(box, box.Font.Size + points)
+    End Sub
+
+    Private Sub SetSize(box As TextBoxBase, points As Single)
+        Dim want As Single = Math.Max(MinPoints, Math.Min(MaxPoints, points))
+        If Math.Abs(want - box.Font.Size) < 0.01F Then Return
+        Dim old As Font = box.Font
+        box.Font = New Font(old.FontFamily, want, old.Style)
+        old.Dispose()
+    End Sub
+
 End Module

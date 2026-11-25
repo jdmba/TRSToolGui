@@ -16,7 +16,7 @@ Public Module AppInfo
     ''' <summary>Build stamp, date-based (v26MMDD); it moves with every code change.</summary>
     Public Const AppVersion As String = "v261125"
     ''' <summary>The release number shown in Help > About.</summary>
-    Public Const ReleaseVersion As String = "v1.8.1"
+    Public Const ReleaseVersion As String = "v1.8.2"
     ''' <summary>The date of that release, with a matching entry in Help\Changelog.txt.</summary>
     Public Const ReleaseDate As String = "November 25, 2026"
     Public Const AppAuthors As String = "Ira Goldklang and Claude AI"
