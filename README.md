@@ -4,9 +4,9 @@ A front end for Lawrence Kesteloot's [trs80-tool](https://www.my-trs-80.com/tool
 
 Open a TRS-80 disk image (DMK, JV1, JV3, DSK, HFE, IMD, SCP, HDV, gzipped or not) and work with it the way TRSTools did: list, view, extract, add, delete and rename files, change attributes, passwords, the disk name and the date, and create new floppy and hard disk images. trs80-tool does all the disk work; TRSToolGui asks it for everything as data (`disk --json`), so each trs80-tool update flows straight through. At startup the GUI asks trs80-tool what it can do (`help --json`) and greys out anything that version can't do. One trs80-tool is kept running in the background, so nothing waits on a program start.
 
-It also exposes trs80-tool features TRSTools never had: a sector map, a granule map, signs of copy protection, imaging artifacts, check and repair, trim, format, hard disk partitions, boot in the emulator, disassembly and assembly. It adds its own read-only analysis of DMK images: the DOS, model and version from the disk's own bytes, copy-protection signs, damage versus imaging artifacts, and tail tracks.
+It also exposes trs80-tool features TRSTools never had: a sector map, a granule map, signs of copy protection, imaging artifacts, check and repair, trim, format, hard disk partitions, boot in the emulator, disassembly and assembly. It adds two things of its own, both read-only and both reading the DMK file directly: an analysis of the image (the DOS, model and version from the disk's own bytes, copy-protection signs, damage versus imaging artifacts, and tail tracks), and a hexadecimal listing of chosen tracks (Disk > Track hex dump), sector by sector with the IDAM table decoded, for reading or for handing to something that will not take a `.dmk`.
 
-**TRSToolGui 1.8 needs trs80-tool 5.1.0 or later.** With trs80-tool 5.2.0 it also changes and creates Montezuma Micro CP/M disks, lets you name the layout of a CP/M disk, opens gzipped images, and maps hard disk partitions. With trs80-tool 5.3.0 it copies files straight from one image to another (Disk > Import from another image), and a file that cannot be added no longer stops the rest of a multi-file add.
+**TRSToolGui 1.8.1 needs trs80-tool 5.1.0 or later.** With trs80-tool 5.2.0 it also changes and creates Montezuma Micro CP/M disks, lets you name the layout of a CP/M disk, opens gzipped images, and maps hard disk partitions. With trs80-tool 5.3.0 it copies files straight from one image to another (Disk > Import from another image), and a file that cannot be added no longer stops the rest of a multi-file add.
 
 TRSToolGui runs on Windows, on Linux (x64) from version 1.3, and on the Mac from version 1.4. The Mac version is new: it was built on Windows without a Mac to try it on, so reports from Mac users are wanted.
 
@@ -16,7 +16,7 @@ From version 1.6 the program's own menus, buttons and dialogs can be French: Pre
 
 Get the zip for your system from [Releases](../../releases).
 
-**Windows:** `TRSToolGui-v1.8.zip` holds:
+**Windows:** `TRSToolGui-v1.8.1.zip` holds:
 
 | Folder | What |
 |---|---|
@@ -24,9 +24,9 @@ Get the zip for your system from [Releases](../../releases).
 | `No .NET needed\TRSToolGui.exe` | Self-contained, runs on Windows 10 and later. |
 | `Source\` | This repository's source. |
 
-**Linux (x64):** `TRSToolGui-v1.8-linux-x64.zip` holds one self-contained file, `TRSToolGui`, with the license and the manual. Make it runnable once with `chmod +x TRSToolGui`, then run `./TRSToolGui`. It needs GTK 3, which desktop Linux has.
+**Linux (x64):** `TRSToolGui-v1.8.1-linux-x64.zip` holds one self-contained file, `TRSToolGui`, with the license and the manual. Make it runnable once with `chmod +x TRSToolGui`, then run `./TRSToolGui`. It needs GTK 3, which desktop Linux has.
 
-**Mac:** `TRSToolGui-v1.8-macos-arm64.zip` is for a Mac with Apple Silicon (M1 and later), `TRSToolGui-v1.8-macos-x64.zip` for a Mac with an Intel processor. Each holds `TRSToolGui.app`, the license and the manual. It needs macOS 14 or later. Unzip it and drag `TRSToolGui.app` to Applications before you start it. The app is not signed with an Apple developer certificate, so the first start is refused: open System Settings > Privacy & Security and click Open Anyway, or run `xattr -dr com.apple.quarantine /Applications/TRSToolGui.app` in Terminal. A trs80-tool downloaded with a browser needs `xattr -d com.apple.quarantine trs80-tool` once.
+**Mac:** `TRSToolGui-v1.8.1-macos-arm64.zip` is for a Mac with Apple Silicon (M1 and later), `TRSToolGui-v1.8.1-macos-x64.zip` for a Mac with an Intel processor. Each holds `TRSToolGui.app`, the license and the manual. It needs macOS 14 or later. Unzip it and drag `TRSToolGui.app` to Applications before you start it. The app is not signed with an Apple developer certificate, so the first start is refused: open System Settings > Privacy & Security and click Open Anyway, or run `xattr -dr com.apple.quarantine /Applications/TRSToolGui.app` in Terminal. A trs80-tool downloaded with a browser needs `xattr -d com.apple.quarantine trs80-tool` once.
 
 **trs80-tool is not included.** Download the one for your system from <https://www.my-trs-80.com/tool/>. On Windows, TRSToolGui asks on first start where it is and remembers the answer in `TRSToolGui.cfg` next to `TRSToolGui.exe`. On Linux it looks beside itself and on the PATH first, and keeps its settings in `~/.config/TRSToolGui/TRSToolGui.cfg`. On a Mac it looks in the folder `TRSToolGui.app` is in, on the PATH, and in `/opt/homebrew/bin` and `/usr/local/bin`, and keeps its settings in `~/Library/Application Support/TRSToolGui/TRSToolGui.cfg`.
 

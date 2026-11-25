@@ -38,6 +38,7 @@ Public Class MainForm
     Private _miInvisible, _miSystem, _miPartition, _miRefresh As ToolStripMenuItem
     Private _miRecent, _miSaveAs, _miNewHardDisk As ToolStripMenuItem
     Private _miSectorMap, _miGranuleMap, _miCheckRepair, _miFormat, _miTrim, _miBoot, _miShell, _miDmkInfo, _miRunEmpty, _miCpmFormat As ToolStripMenuItem
+    Private _miTrackHex As ToolStripMenuItem
     Private _miImport As ToolStripMenuItem
     Private _cxPreview, _cxExtract, _cxDelete, _cxRename, _cxProps, _cxConvert As ToolStripMenuItem
     Private _tbProps, _tbCopy, _tbPaste, _tbAdd, _tbExtract, _tbView, _tbSectors As ToolStripButton
@@ -111,6 +112,7 @@ Public Class MainForm
         Dim mDisk As New ToolStripMenuItem(UiText.T("menu.disk"))
         _miSectorMap = MakeItem(UiText.T("menu.disk.sectormap"), Keys.Control Or Keys.M, AddressOf OnSectorMap)
         _miDmkInfo = MakeItem(UiText.T("menu.disk.dmk"), Keys.Control Or Keys.D, AddressOf OnDmkInfo)
+        _miTrackHex = MakeItem(UiText.T("menu.disk.trackhex"), Keys.None, AddressOf OnTrackHex)
         _miCpmFormat = MakeItem(UiText.T("menu.disk.cpm"), Keys.None, AddressOf OnCpmFormat)
         _miGranuleMap = MakeItem(UiText.T("menu.disk.granule"), Keys.None, AddressOf OnGranuleMap)
         _miCheckRepair = MakeItem(UiText.T("menu.disk.checkrepair"), Keys.None, AddressOf OnCheckRepair)
@@ -119,7 +121,7 @@ Public Class MainForm
         _miBoot = MakeItem(UiText.T("menu.disk.boot"), Keys.None, AddressOf OnBoot)
         _miShell = MakeItem(UiText.T("menu.disk.shell"), Keys.None, AddressOf OnShell)
         _miImport = MakeItem(UiText.T("menu.disk.import"), Keys.None, AddressOf OnImport)
-        mDisk.DropDownItems.AddRange(New ToolStripItem() {_miSectorMap, _miDmkInfo, _miGranuleMap, _miCheckRepair, _miCpmFormat, New ToolStripSeparator(), _miImport, _miFormat, _miTrim, New ToolStripSeparator(), _miBoot, _miShell})
+        mDisk.DropDownItems.AddRange(New ToolStripItem() {_miSectorMap, _miDmkInfo, _miTrackHex, _miGranuleMap, _miCheckRepair, _miCpmFormat, New ToolStripSeparator(), _miImport, _miFormat, _miTrim, New ToolStripSeparator(), _miBoot, _miShell})
 
         Dim mTools As New ToolStripMenuItem(UiText.T("menu.tools"))
         mTools.DropDownItems.Add(MakeItem(UiText.T("menu.tools.convert"), Keys.None, Sub() OnConvertFiles(Nothing)))
@@ -311,6 +313,7 @@ Public Class MainForm
             Return False
         End If
         _lblEngine.Text = UiText.T("status.engineversion", caps.Version.ToString())
+        _lblEngine.ToolTipText = UiText.TCrLf("tip.enginepath", tool.ToolPath)
         If caps.Version < Trs80Tool.MinimumVersion Then
             MessageBox.Show(Me, UiText.TCrLf("msg.enginetooold", caps.Version.ToString(), Trs80Tool.MinimumVersion.ToString(), "https://www.my-trs-80.com/tool/", tool.ToolPath), Program.AppName, MessageBoxButtons.OK, MessageBoxIcon.Error)
             Return False
@@ -350,6 +353,7 @@ Public Class MainForm
         Dim parts As New List(Of String)
         If _disk.DosName.Length > 0 Then parts.Add(_disk.DosName) Else parts.Add(_disk.Description)
         parts.Add(UiText.T("status.filesshown", _lv.Items.Count.ToString(CultureInfo.InvariantCulture), _disk.VisibleFiles(True, True).Count.ToString(CultureInfo.InvariantCulture)))
+        If _disk.AllFiles.Count = 0 AndAlso _disk.Warnings.Count > 0 Then parts.Add(UiText.T("status.nodirectory"))
         If _disk.FreeText.Length > 0 Then parts.Add(_disk.FreeText)
         If _disk.WriteProtected.HasValue AndAlso _disk.WriteProtected.Value Then parts.Add(UiText.T("status.writeprotected"))
         If _disk.Damaged Then parts.Add(UiText.T("status.damaged"))
@@ -404,6 +408,8 @@ Public Class MainForm
         _miSaveAs.Enabled = floppy AndAlso EngineHasTop("convert")
         _miSectorMap.Enabled = floppy AndAlso EngineHasTop("sectors") : _tbSectors.Enabled = _miSectorMap.Enabled
         _miDmkInfo.Enabled = floppy
+        ' The listing is read out of the DMK itself (DmkHexDump.vb), so it needs no engine command.
+        _miTrackHex.Enabled = floppy
         ' "--cpm-format" is trs80-tool 5.2.0's.
         _miCpmFormat.Enabled = floppy AndAlso Program.Tool.Has520 AndAlso Not ConsoleRunning()
         ' trs80-tool 5.2.0 also maps the open partition of a hard disk.
@@ -577,7 +583,7 @@ Public Class MainForm
 
     ' =================================================================== opening / listing
 
-    Private Async Function OpenImageAsync(imagePath As String) As Task
+    Private Async Function OpenImageAsync(imagePath As String, Optional announceProblems As Boolean = True) As Task
         If Not File.Exists(imagePath) Then
             MessageBox.Show(Me, UiText.TCrLf("msg.filenotfound", imagePath), UiText.T("caption.openerror"), MessageBoxButtons.OK, MessageBoxIcon.Error)
             Program.Settings.RemoveMru(imagePath)
@@ -605,6 +611,14 @@ Public Class MainForm
             Else
                 _lblStatus.ToolTipText = ""
             End If
+            ' An image whose directory trs80-tool could not read looks exactly like an empty
+            ' disk: both show an empty list. The warnings used to reach the user only as the
+            ' tooltip above, which nobody hovers, so say it plainly. A disk that really is
+            ' empty has no warnings and stays quiet.
+            If announceProblems AndAlso _disk.AllFiles.Count = 0 AndAlso _disk.Warnings.Count > 0 Then
+                MessageBox.Show(Me, UiText.TCrLf("msg.nodirectory", Path.GetFileName(_disk.Path), String.Join(vbCrLf, _disk.Warnings)),
+                                UiText.T("caption.nodirectory"), MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
         Catch ex As ToolException
             _disk = Nothing
             _lv.Items.Clear()
@@ -626,7 +640,7 @@ Public Class MainForm
         If _disk Is Nothing Then Return
         Dim selected As List(Of String) = SelectedNames()
         Dim p As String = _disk.Path
-        Await OpenImageAsync(p)
+        Await OpenImageAsync(p, False)
         ReselectNames(selected)
     End Function
 
@@ -955,6 +969,27 @@ Public Class MainForm
         Dim f As New DiskInfoForm(_disk.Path)
         f.Show(Me)
         Await f.LoadAsync()
+    End Sub
+
+    ''' <summary>
+    ''' Disk -> Track hex dump: a hexadecimal listing of chosen tracks, read out of the DMK by
+    ''' DmkHexDump.vb. trs80-tool's own hexdump takes a whole host file and knows nothing about
+    ''' tracks, so this listing is the GUI's own. The report window's filter box holds the track
+    ''' spec, so one track follows another without reopening anything, and its Copy and Save as
+    ''' buttons are how the text leaves the program.
+    ''' </summary>
+    Private Sub OnTrackHex()
+        If _busy OrElse _disk Is Nothing Then Return
+        If _disk.IsHardDisk OrElse _disk.IsCassette Then
+            MessageBox.Show(Me, UiText.T("msg.dmk.floppyonly"), UiText.T("caption.dmkanalysis"), MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        Dim imagePath As String = _disk.Path
+        Dim title As String = UiText.T("dlg.trackhex.title", Path.GetFileName(imagePath))
+        Dim f As New TextReportForm(title, DmkHexDump.Dump(imagePath, DmkHexDump.DefaultSpec),
+                                    UiText.T("lbl.trackhex.tracks"),
+                                    Function(spec As String) Task.Run(Function() DmkHexDump.Dump(imagePath, spec)))
+        f.Show(Me)
     End Sub
 
     Private Sub OnGranuleMap()

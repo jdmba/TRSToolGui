@@ -1,6 +1,32 @@
 TRSToolGui — Changelog
 ======================
 
+v1.8.1 — November 25, 2026
+  A disk whose directory cannot be read now says so. Until now an image that opened but whose
+    directory trs80-tool could not make sense of looked exactly like an empty disk: an empty
+    file list and nothing else. trs80-tool's explanation was put on the status bar's tooltip,
+    where nobody found it. The program now shows it, in the engine's own words, as soon as the
+    image opens, and the status line keeps "NO DIRECTORY" afterwards. A disk that really is
+    empty has nothing to report and stays quiet, so the two can be told apart at last.
+  Disk > Track hex dump lists chosen tracks of a DMK image as text. For each track it gives
+    the IDAM table one sector per line — where the pointer lands, the cylinder, side, sector
+    and length it names, the density, both CRCs and the data address mark — and then the data
+    bytes of each sector, undoubled, which is what is really written on the disk. Type a
+    cylinder, a range or a list in the Tracks box (0, 0-1, 0,2,5-7, all) and press Run; add
+    "raw" for the raw track bytes with the 128-byte IDAM table at the front, or "side0" or
+    "side1" for one side. Copy to clipboard and Save as are how the listing leaves the
+    program. This is the program's own reading of the file: trs80-tool's hexdump takes a whole
+    file and knows nothing about tracks.
+  The status bar says which trs80-tool is in use. It already gave the version; resting the
+    pointer on it now gives the full path of the file, which settles which of several copies
+    the program is actually running.
+  macOS: double-clicking a disk image in the Finder opens it. v1.7 and v1.8 both tried to
+    receive the Finder's open-document event directly, and both lost it to AppKit, which
+    installs its own handler after the program has installed one and then reports that the
+    file cannot be opened. The program now answers application:openFiles:, which is what
+    AppKit calls itself, so the event cannot be lost. Opening from File > Open was never
+    affected.
+
 v1.8 — November 24, 2026
   Disk > Import from another image copies files straight out of another floppy, hard disk,
     cassette or WAV image onto the open one. It needs trs80-tool 5.3.0, which added the

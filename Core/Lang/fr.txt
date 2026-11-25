@@ -1,0 +1,967 @@
+# ============================================================================
+#  TRSToolGui — French text (français). A copy of en.txt with the text
+#  translated: the keys, their order and the comments are the English file's,
+#  so the two can be compared line by line. A key this file does not define
+#  falls back to the English in en.txt. Do not rename a key: the code looks
+#  text up by it.
+#
+#  Format: key=text, one per line, the first "=" separates them. A line whose
+#  first non-blank character is "#" is a comment. {0} and {1} mark where the
+#  program substitutes a value, and a translation may put them in whatever
+#  order its grammar needs. \n is a newline, \t a tab, \\ a backslash, and \s
+#  a space that has to survive at the start or end of the text. Keys are
+#  grouped by where the text appears, the same grouping as en.txt.
+# ============================================================================
+
+# The language's own name for itself, for the Preferences list. It is here rather than in the
+# code so that the .vb files stay plain ASCII; a table with no lang.name keeps the name UiText
+# declares for it.
+lang.name=Français
+
+# --- Buttons and words that more than one window uses ---------------------
+btn.ok=OK
+btn.cancel=Annuler
+btn.close=Fermer
+btn.add=Ajouter
+btn.create=Créer...
+
+# --- Words and names that more than one window uses -----------------------
+word.yes=oui
+word.no=non
+word.model1=Modèle I
+word.model3=Modèle III
+word.model4=Modèle 4
+dos.trsdos23.m1=TRSDOS 2.3 (Modèle I)
+dos.trsdos13.m3=TRSDOS 1.3 (Modèle III)
+dos.ldos53.m13=LDOS 5.3 (Modèle I/III)
+dos.trsdos62.m4=TRSDOS 6.2 (Modèle 4)
+dos.lsdos63.m4=LS-DOS 6.3 (Modèle 4)
+dos.cpm.mm22.m4=Montezuma Micro CP/M 2.2 (Modèle 4)
+
+# --- Window titles that more than one window builds --------------------
+# Appended to a window's title when the open image is a hard disk and one of
+# its partitions is in force. Check and repair, the granule map, the sector
+# map and the main window all add it.
+title.partition={0} - partition {1}
+
+# --- Disk > CP/M layout (CpmFormatForm) -----------------------------------
+dlg.cpm.title=Disposition CP/M
+dlg.cpm.intro=Une disquette CP/M n'indique pas sa disposition, c'est donc trs80-tool qui la déduit. S'il se trompe pour cette disquette, nommez la bonne d'après la liste de trs80-tool ci-dessous.
+dlg.cpm.inforce=\s\sActuellement en vigueur : {0}.
+dlg.cpm.name=Nom de la disposition (par exemple mm-ds-data) :
+dlg.cpm.use=Utiliser cette disposition
+dlg.cpm.auto=Laisser trs80-tool décider
+dlg.cpm.bad=Saisissez un nom de disposition de la liste, par exemple mm-data.
+
+# --- File > New hard disk image (CreateHardDiskForm) ----------------------
+dlg.newhd.title=Créer une nouvelle image de disque dur
+dlg.newhd.shape=Géométrie (les valeurs par défaut sont celles que produit le FreHD)
+dlg.newhd.cylinders=Cylindres (1-1023) :
+dlg.newhd.heads=Têtes (1-8) :
+dlg.newhd.contents=Contenu
+dlg.newhd.lsdos=Partitions LS-DOS 6.3 (Modèle 4)
+dlg.newhd.ldos=Partitions LDOS 5.3
+dlg.newhd.blank=Vide : aucune partition (à ajouter plus tard par Affichage → Partition → Ajouter une partition)
+dlg.newhd.parts=Nombre de partitions égales :
+dlg.newhd.partshint=(sinon le moins possible, chacune de 203 cylindres au plus)
+dlg.newhd.model=Secteur d'amorçage LDOS pour :
+dlg.newhd.name=Nom du disque (une seule partition) :
+dlg.newhd.namehint=(vide = HARDA, HARDB, ...)
+
+# --- View > Partition > Add a partition (PartitionAddForm) ----------------
+dlg.partadd.title=Ajouter une partition
+dlg.partadd.intro=trs80-tool formate une partition de données vide dans l'espace libre de l'image et indique les\nparamètres à donner au pilote de disque dur du DOS pour qu'il la trouve.
+dlg.partadd.ldos=LDOS 5.3
+dlg.partadd.model=Secteur d'amorçage pour :
+dlg.partadd.cylinders=Cylindres (35-203) :
+dlg.partadd.cylhint=(sinon le reste du bloc libre, 203 au plus)
+dlg.partadd.name=Nom du disque :
+dlg.partadd.namehint=(vide = HARD suivi de la première lettre libre)
+
+# --- Disk > DMK analysis (DiskInfoForm) -----------------------------------
+# The section names ("Image", "Geometry", "DOS identification", ...) and the
+# findings themselves come from the analysis code and stay English, so they
+# are not in this table. Only the window's own words are.
+dlg.dmk.title=Analyse DMK - {0}
+dlg.dmk.reading=Lecture de {0}...
+dlg.dmk.failed=Impossible d'analyser l'image : {0}
+dlg.dmk.tab.summary=Résumé
+dlg.dmk.tab.tracks=Pistes
+dlg.dmk.tab.report=Rapport
+dlg.dmk.facts=Image et identification
+dlg.dmk.level.protection=Protection
+dlg.dmk.level.sign=Signe
+dlg.dmk.level.damage=Détérioration
+dlg.dmk.level.artifact=Imagerie
+dlg.dmk.level.note=Note
+dlg.dmk.col.item=Élément
+dlg.dmk.col.value=Valeur
+dlg.dmk.col.cyl=Cyl
+dlg.dmk.col.side=Face
+dlg.dmk.col.ids=ID
+dlg.dmk.col.layout=Disposition (densité × nombre × taille, numérotation, marques)
+dlg.dmk.col.bad=Défauts
+dlg.dmk.col.notes=Notes
+dlg.dmk.note.missing=absente du fichier
+dlg.dmk.note.badpointers={0} pointeur(s) incorrect(s)
+dlg.dmk.note.wrongids={0} ID désignant un autre cylindre
+dlg.dmk.note.sizecode=code de taille > 3
+dlg.dmk.note.mixed=densité mixte
+dlg.dmk.note.beyonddos=au-delà des {0} cylindres du DOS
+dlg.dmk.note.directory=répertoire
+dlg.dmk.savetitle=Enregistrer le rapport d'analyse DMK
+dlg.dmk.savename={0} - analyse DMK.txt
+dlg.dmk.savecaption=Enregistrer le rapport
+btn.copyreport=Copier le rapport
+btn.savereport=Enregistrer le rapport...
+filter.text=Fichiers texte (*.txt)|*.txt|Tous les fichiers (*.*)|*.*
+
+# --- Disk properties (DiskPropertiesForm) ---------------------------------
+dlg.diskprops.title=Propriétés du disque virtuel
+dlg.diskprops.volume=Informations de volume
+dlg.diskprops.partition=Informations de la partition {0} ({1} partitions en tout)
+dlg.diskprops.name=Nom de volume :
+dlg.diskprops.date=Date de volume :
+dlg.diskprops.datehint=(nouvelle date au format AAAA-MM-JJ)
+dlg.diskprops.auto=Commande AUTO :
+dlg.diskprops.autoremove=Supprimer
+dlg.diskprops.master=Mot de passe principal :
+dlg.diskprops.masterunknown=(inconnu)
+dlg.diskprops.setmaster=Définir le mot de passe principal :
+dlg.diskprops.masterhint=(vide = aucun ; trs80-tool : label --password)
+dlg.diskprops.capacity=Capacité (approx.) :
+dlg.diskprops.capacityvalue={0}\s\s({1} octets, d'après la géométrie)
+dlg.diskprops.free=Espace libre :
+dlg.diskprops.freeunknown=(inconnu pour ce DOS)
+dlg.diskprops.dos=Système de fichiers :
+dlg.diskprops.dosnone=(aucun reconnu)
+dlg.diskprops.cylinders=Cylindres :
+dlg.diskprops.sides=Faces :
+dlg.diskprops.sidesvalue={0}\s\s({1} utilisée(s) par le DOS)
+dlg.diskprops.density=Densité :
+dlg.diskprops.heads=Têtes :
+dlg.diskprops.location=Emplacement :
+dlg.diskprops.damaged=Détérioré :
+dlg.diskprops.damagedyes=Oui (Vérifier… énumère les problèmes)
+dlg.diskprops.damagedno=Non
+dlg.diskprops.protection=Protection contre la copie :
+dlg.diskprops.artifacts=Artefacts d'imagerie :
+dlg.diskprops.artifactsvalue={0} sorte(s) qui ressemblent à une détérioration ; une nouvelle imagerie pourrait lire ces secteurs
+dlg.diskprops.writable=Accessible en écriture :
+dlg.diskprops.writableyes=Oui
+dlg.diskprops.writableno=Non — {0}
+dlg.diskprops.image=Informations sur le disque
+dlg.diskprops.filename=Nom du fichier :
+dlg.diskprops.format=Format :
+dlg.diskprops.formatvalue={0}\s\s({1})
+dlg.diskprops.pdrive=PDRIVE :
+dlg.diskprops.pdrivesource=({0})
+dlg.diskprops.frombytes=D'après les octets :
+dlg.diskprops.notdmk=(image {0} - l'identification au niveau des octets ne vaut que pour les images DMK)
+dlg.diskprops.wp=Protégé en écriture (indicateur propre à l'image)
+dlg.diskprops.wpna=Protégé en écriture (indicateur propre à l'image)\s\s— non disponible pour les images {0}
+dlg.diskprops.details=Détails de trs80-tool :
+dlg.diskprops.checkfailed=trs80-tool ne peut pas vérifier ce disque : {0}
+# The count decides which of the next two is used, and each clause takes the
+# part before it as {0}, so a translation may put the clauses in any order.
+dlg.diskprops.prot.none=Aucun signe trouvé (ce qui ne prouve pas qu'il n'y en a pas)
+dlg.diskprops.prot.one={0} signe
+dlg.diskprops.prot.many={0} signes
+dlg.diskprops.prot.notconclusive={0}, aucun concluant
+dlg.diskprops.prot.withschemes={0} : {1}
+btn.check=Vérifier...
+btn.dmkanalysis=Analyse DMK...
+
+# --- File properties (FilePropertiesForm) ---------------------------------
+# The DOS protection level names (FULL, KILL, RENAME, WRITE, READ, EXEC,
+# NO_ACCESS and the TRSDOS 6 set) are trs80-tool's own vocabulary for the
+# disk's DOS and stay in the code untranslated; only the glosses are here.
+dlg.fileprops.title=Propriétés du fichier
+dlg.fileprops.filename=Nom du fichier :
+dlg.fileprops.date=Date :
+dlg.fileprops.nodate=Aucune date
+dlg.fileprops.datehint=(AAAA-MM-JJ ; le DOS décide des années qu'il peut stocker)
+dlg.fileprops.size=Taille :
+dlg.fileprops.sizevalue={0} octets
+dlg.fileprops.kind=Nature :
+dlg.fileprops.kindvalue={0}\s\s[{1}]
+dlg.fileprops.damage=Détérioration :
+dlg.fileprops.sha=SHA-256 :
+dlg.fileprops.protection=Protection :
+dlg.fileprops.prot.item={0} - {1}
+dlg.fileprops.prot.full=FULL (aucune restriction)
+dlg.fileprops.prot.unused=(inutilisé sur ce DOS)
+dlg.fileprops.prot.noaccess=NO ACCESS
+dlg.fileprops.attributes=Attributs :
+dlg.fileprops.invisible=Invisible
+dlg.fileprops.system=Système
+dlg.fileprops.ldosbits=Créé : {0}\s\s\s\sMOD : {1}
+dlg.fileprops.pwnow=Mots de passe actuels :
+dlg.fileprops.pwnow.update=mise à jour : {0}
+dlg.fileprops.pwnow.access={0}\s\s\s\saccès : {1}
+dlg.fileprops.setupdate=Définir le mot de passe de mise à jour :
+dlg.fileprops.setaccess=Définir le mot de passe d'accès :
+dlg.fileprops.blankremove=(vide = supprimer)
+dlg.fileprops.accessistimestamp=(pas sur ce DOS : l'entrée y conserve un horodatage)
+dlg.fileprops.cpmro=Lecture seule (R/O)
+dlg.fileprops.cpmsys=Système (SYS : non listé par DIR)
+dlg.fileprops.cpmuserarea=Zone utilisateur :
+dlg.fileprops.cpmuserin={0}\s\sutilisateur {1}
+dlg.fileprops.cpmnone=CP/M 2.2 ne conserve ni dates, ni mots de passe, ni niveaux de protection.
+dlg.fileprops.attrsnone=(aucun)
+dlg.fileprops.cpmneeds520=Modifier des fichiers sur une disquette CP/M exige trs80-tool 5.2.0 ou une version plus récente, et un disque dans lequel il sait écrire.
+dlg.fileprops.nochange=trs80-tool ne modifie pas les fichiers sur ce genre de disque.
+
+# --- Tools > Convert file(s) and Tools > Assemble (HostToolForms) ---------
+# The baud list's items 250, 500 and 1500 are the numbers trs80-tool is given,
+# so they stay in the code. Only item 0, which is never sent, is text.
+dlg.convert.title=Convertir des fichiers (trs80-tool convert)
+dlg.convert.inputs=Fichiers d'entrée — plusieurs entrées sont réunies en une seule sortie CAS/WAV :
+dlg.convert.output=Fichier de sortie (l'extension détermine la conversion : .bas .asc .cmd .3bn .cas .wav .dmk .jv1 .jv3 .hfe .imd) :
+dlg.convert.baud=Débit cassette (--baud, CAS/WAV) :
+dlg.convert.bauddefault=par défaut
+dlg.convert.start=Adresse de départ (--start, hexadécimal ou auto ; ROM/BIN → CMD/3BN) :
+dlg.convert.system=Inclure les fichiers système quand l'entrée est une image disque (--system)
+dlg.convert.cpm=CP/M : conserver les enregistrements entiers de 128 octets (--cpm-records)
+dlg.convert.force=Images de disquette : écrire même si le nouveau format ne peut pas tout contenir (--force)
+dlg.convert.pickinputs=Fichiers à convertir
+dlg.convert.pickoutput=Fichier de sortie
+dlg.convert.noinputs=Ajoutez au moins un fichier d'entrée.
+dlg.convert.nooutput=Indiquez un fichier de sortie avec une extension ; trs80-tool convertit d'après l'extension de la sortie.
+dlg.asm.title=Assembler (trs80-tool asm)
+dlg.asm.source=Fichier source Z80 (.asm) :
+dlg.asm.output=Fichier de sortie (.cmd, .3bn, .cas ou .wav) :
+dlg.asm.target=Cible (--model ; définit __MODEL__ pour la source)
+dlg.asm.m1=Modèle I
+dlg.asm.m3=Modèle III (par défaut)
+dlg.asm.m4=Modèle 4
+dlg.asm.baud=Débit cassette (--baud) :
+dlg.asm.bauddefault=par défaut (500)
+dlg.asm.listing=Écrire un fichier de listage à côté de la sortie (--listing OUT.lst)
+dlg.asm.picksource=Source Z80
+dlg.asm.pickoutput=Sortie assemblée
+dlg.asm.nosource=Choisissez un fichier source existant.
+dlg.asm.nooutput=Indiquez un fichier de sortie avec une extension (.cmd, .3bn, .cas ou .wav).
+dlg.asm.nomessages=Assemblé sans messages.
+msg.engineoutput=Sortie de trs80-tool :
+btn.addellipsis=Ajouter...
+btn.remove=Supprimer
+btn.browse=Parcourir...
+btn.convert=Convertir
+btn.assemble=Assembler
+filter.convertin=Fichiers TRS-80 (*.bas;*.asc;*.cmd;*.3bn;*.cas;*.wav;*.rom;*.bin;*.hex;*.asm;*.dmk;*.jv1;*.jv3;*.dsk;*.hfe;*.imd;*.scp)|*.bas;*.asc;*.cmd;*.3bn;*.cas;*.wav;*.rom;*.bin;*.hex;*.asm;*.dmk;*.jv1;*.jv3;*.dsk;*.hfe;*.imd;*.scp|Tous les fichiers (*.*)|*.*
+filter.convertout=BASIC tokenisé (*.bas)|*.bas|BASIC texte (*.asc)|*.asc|Programme CMD (*.cmd)|*.cmd|Programme système cassette (*.3bn)|*.3bn|Image cassette (*.cas)|*.cas|Audio cassette (*.wav)|*.wav|Image de disquette DMK (*.dmk)|*.dmk|Image de disquette JV3 (*.jv3)|*.jv3|Image de disquette JV1 (*.jv1)|*.jv1|Image de disquette HFE (*.hfe)|*.hfe|Image de disquette IMD (*.imd)|*.imd|Tous les fichiers (*.*)|*.*
+filter.asmsource=Source assembleur (*.asm;*.z80;*.src;*.txt)|*.asm;*.z80;*.src;*.txt|Tous les fichiers (*.*)|*.*
+filter.asmoutput=Programme CMD (*.cmd)|*.cmd|Programme système cassette (*.3bn)|*.3bn|Image cassette (*.cas)|*.cas|Audio cassette (*.wav)|*.wav
+# --- The text report window (TextReportForm: granule map, sectors, hexdump) ---
+btn.copyclipboard=Copier dans le presse-papiers
+btn.saveas=Enregistrer sous...
+btn.run=Exécuter
+# The same words as dlg.dmk.savecaption, which is DiskInfoForm's own save dialog.
+# Both stay: a key is never renamed once the code looks text up by it.
+caption.savereport=Enregistrer le rapport
+filter.textfile=Fichier texte (*.txt)|*.txt|Tous les fichiers (*.*)|*.*
+
+# --- Disk > Check and repair (CheckRepairForm) ----------------------------
+# The command lines the report echoes ("disk check", "disk repair
+# --free-unclaimed", ...) are trs80-tool's own words and stay in the code.
+dlg.checkrepair.title=Vérifier et réparer - {0}
+dlg.checkrepair.free=Libérer aussi les granules que le GAT marque comme utilisés mais qu'aucun fichier ne réclame (--free-unclaimed)
+dlg.checkrepair.sizes=Corriger aussi la taille des programmes dont l'enregistrement de transfert dépasse la taille inscrite au répertoire (--fix-program-sizes)
+dlg.checkrepair.missing=Marquer aussi comme utilisés les granules libres que l'image ne contient pas entièrement, pour que le DOS ne s'en serve pas non plus (--mark-missing-used)
+dlg.checkrepair.wp=L'indicateur de protection en écriture de l'image est actif ; enlevez-le dans les propriétés du disque avant de réparer.
+dlg.checkrepair.confirm=La réparation écrit dans l'image (trs80-tool ne l'enregistre que si toutes les étapes réussissent).\n\nContinuer ?
+caption.repair=Réparer
+btn.recheck=Revérifier
+btn.previewrepair=Aperçu de la réparation (à blanc)
+btn.repair=Réparer
+
+# --- Disk > Trim (TrimForm) -----------------------------------------------
+# --cylinders, --side, 0 and --force are the words trs80-tool is given and
+# stay in the code; only the sentences that describe them are here.
+dlg.trim.title=Rogner - {0}
+dlg.trim.intro=Enlever la partie de l'image que le disque n'utilise pas. trs80-tool refuse de supprimer des pistes qui contiennent des données, sauf si on le force.
+dlg.trim.default=Ne supprimer que les cylindres dont trs80-tool peut prouver qu'ils sont au-delà de la fin du disque (par défaut)
+dlg.trim.cylinders=Conserver les cylindres 0 à N-1, avec N =
+dlg.trim.side=Supprimer la face 1 et ne garder que la face 0 (--side 0)
+# Two clauses, because the Windows window puts them on one line and the Eto one
+# puts the second on a line of its own. Each layer joins them its own way, so
+# the space and the line end are layout and stay in the code.
+dlg.trim.force=Forcer : supprimer des pistes dont on ne peut pas prouver que les données sont inutilisées, ou rogner une image protégée en écriture
+dlg.trim.forcenote=(--force ; jamais les pistes présentant des signes de protection contre la copie)
+btn.trim=Rogner
+
+# Disque > Importer depuis une autre image (« disk import » de trs80-tool 5.3.0). C'est le moteur qui copie,
+# donc chaque fichier conserve sa date et ses attributs système et caché, et le BASIC est converti entre le
+# Modèle III et le Modèle 4 quand les deux disques diffèrent. Aperçu lance la même commande avec --dry-run.
+dlg.import.title=Importer depuis une autre image - {0}
+dlg.import.intro=Copier des fichiers depuis une autre image de disquette, de disque dur, de cassette ou WAV vers celle-ci.
+dlg.import.keeps=Chaque fichier conserve sa date et ses attributs système et caché, et le BASIC est converti entre le Modèle III et le Modèle 4 lorsque les deux disques diffèrent.
+dlg.import.source=Copier depuis :
+dlg.import.nosource=(choisir une image)
+dlg.import.whichall=Tous les fichiers sauf les fichiers système
+dlg.import.whichnames=Seulement ces noms ou motifs :
+dlg.import.nameshint=Séparés par des espaces. * et ? sont des jokers, et un joker ne correspond jamais à un fichier système : il faut le nommer pour le copier.
+dlg.import.overwrite=Remplacer un fichier de même nom déjà présent sur ce disque
+dlg.import.keepgoing=Ignorer un fichier impossible à copier et copier les autres
+dlg.import.binary=Copier chaque fichier octet par octet, BASIC inclus
+dlg.import.system=Marquer les copies comme fichiers système
+dlg.import.invisible=Masquer les copies dans les listes de répertoire
+dlg.import.usedate=Inscrire cette date sur les copies au lieu de la leur (AAAA-MM-JJ) :
+btn.previewimport=Aperçu (à blanc)
+btn.import=Importer
+msg.import.nosource=Choisir d'abord l'image à copier.
+msg.import.samefile=C'est l'image sur laquelle cette fenêtre est ouverte. En choisir une autre.
+msg.import.baddate=Écrire la date sous la forme AAAA-MM-JJ, ou vider la case pour conserver la date de chaque fichier.
+msg.import.nonames=Saisir au moins un nom ou motif, ou choisir tous les fichiers à la place.
+msg.import.done={0} fichier(s) copié(s).
+msg.import.nothing=Aucun fichier n'a été copié.
+
+# --- Disk > Boot in the emulator (BootForm) -------------------------------
+# run, --model, 1/3/4, --writable, --printer and --mount are the words
+# trs80-tool is given and stay in the code. So does the "Model 4" that
+# GuessModel matches against the DOS name the analysis reports.
+dlg.boot.title=Démarrer dans l'émulateur - {0}
+# The two programs say this differently: Windows opens a console window and
+# tells the user to refresh, the Eto program opens a terminal and refreshes by
+# itself. Both sentences are here, each used by the one program that shows it.
+dlg.boot.intro.windows=Lance « trs80-tool run » dans une nouvelle fenêtre de console avec cette image dans le lecteur 0. Fermez cette fenêtre (ou Ctrl-C) pour arrêter l'émulateur ; utilisez ensuite Affichage → Actualiser ici si le DOS a modifié l'image.
+dlg.boot.intro.unix=Lance « trs80-tool run » dans une fenêtre de terminal avec cette image dans le lecteur 0. Fermez cette fenêtre (ou Ctrl-C) pour arrêter l'émulateur ; la liste des fichiers est relue ici quand il se termine.
+dlg.boot.model=Modèle de TRS-80 (--model)
+dlg.boot.writable=Autoriser le DOS émulé à écrire dans l'image (--writable ; sinon chaque disquette est protégée en écriture)
+dlg.boot.mount=Monter aussi dans les lecteurs suivants (--mount) :
+dlg.boot.printer=Fichier de sortie imprimante (--printer, facultatif) :
+dlg.boot.pickmount=Image à monter
+dlg.boot.pickprinter=Fichier de sortie imprimante
+btn.boot=Démarrer
+filter.mountimages=Images de disque et de cassette (*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.cas;*.wav)|*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.cas;*.wav|Tous les fichiers (*.*)|*.*
+# --- File > New floppy image, and Disk > Format (CreateFloppyForm) --------
+# Left in the code on purpose: the image format names (JV1, JV3, DMK), the
+# model designations (I, III, 4), the numbers 1, 2, 35, 40 and 80, the default
+# volume name TRS80DSK, and every word trs80-tool is given (--cylinders,
+# --sides, --density, --model, --system, --minimal, --name, --date, and the
+# DOS arguments trsdos-2.3, ldos-5.3, cpm and the rest).
+dlg.newfloppy.title=Créer une nouvelle image de disquette
+dlg.newfloppy.formattitle=Formater l'image disque
+dlg.newfloppy.formatnote=Efface tous les fichiers de l'image ouverte et la formate en disque de données vide (l'image reste un DMK).
+dlg.newfloppy.imagetype=Type d'image disque
+dlg.newfloppy.dos=Système de fichiers (DOS)
+# The Windows window has a label of its own for this; the Eto one puts the
+# words just after the LDOS button, where "LDOS" would read twice.
+dlg.newfloppy.ldosmodel=LDOS pour modèle :
+dlg.newfloppy.formodel=pour modèle :
+dlg.newfloppy.system=Disque système (amorçable) à partir du DOS fourni avec trs80-tool
+dlg.newfloppy.minimal=seulement les fichiers propres au DOS (--minimal)
+dlg.newfloppy.density=Densité
+dlg.newfloppy.single=Simple
+dlg.newfloppy.double=Double
+dlg.newfloppy.sides=Faces
+dlg.newfloppy.tracks=Nombre de pistes (cylindres)
+dlg.newfloppy.other=Autre :
+dlg.newfloppy.volume=Informations de volume
+dlg.newfloppy.name=Nom (8 caractères) :
+dlg.newfloppy.date=Date (AAAA-MM-JJ) :
+caption.newfloppyerror=Erreur lors de la création de l'image de disquette
+dlg.newfloppy.needname=Le nom et la date de volume sont obligatoires !
+dlg.newfloppy.badname=Le nom de volume doit comporter de 1 à 8 lettres et chiffres et commencer par une lettre.
+dlg.newfloppy.baddate=La date doit être une date valide, de préférence au format AAAA-MM-JJ.
+dlg.newfloppy.badtracks=Le nombre de pistes n'est pas valide !
+btn.format=Formater
+filter.dmk=Image de disquette DMK (*.dmk)|*.dmk
+filter.jv1=Image de disquette JV1 (*.jv1;*.dsk)|*.jv1;*.dsk
+filter.jv3=Image de disquette JV3 (*.jv3;*.dsk)|*.jv3;*.dsk
+# --- Disk > Granule map (GranuleMapForm) ----------------------------------
+# The cell kinds the analysis sends (free, file, otherFile, directory, boot,
+# lockedOut, shared, claimedButFree, unclaimed, notOnImage, pastEnd) are
+# trs80-tool's own words and are matched in the code; only the glosses below
+# are shown. The map's own characters (the middle dot, B, D, -, x, !, ?, u, n,
+# p) and the file numbers stay as they are in every language.
+dlg.granule.title=Carte des granules - {0}
+dlg.trackhex.title=Vidage hexadécimal des pistes - {0}
+lbl.trackhex.tracks=Pistes :
+dlg.granule.texttitle=Carte des granules (carte du disque) - {0}
+dlg.granule.filter=Seulement ces fichiers (motifs de noms TRS-80, p. ex. *.BAS SYS?.SYS) :
+dlg.granule.reading=Lecture de la carte des granules...
+dlg.granule.failed=trs80-tool ne peut pas dessiner les granules de ce disque : {0}
+dlg.granule.col.file=Fichier
+dlg.granule.col.granules=Granules
+dlg.granule.col.cylinder=Cylindre
+dlg.granule.col.lump=Lump
+btn.show=Afficher
+btn.refresh=Actualiser
+btn.textmap=Carte texte de trs80-tool...
+# The summary line. The numbers arrive already formatted, so {0} to {4} are
+# text and nothing here decides how a number looks.
+dlg.granule.summary={0} granules utilisés sur {1}, {2} libres ({3}). Un granule fait {4} octets.
+dlg.granule.notonimage={0} granule(s) libre(s) ne figurent pas entièrement dans l'image.
+dlg.granule.pastend={0} sont au-delà de la fin prouvée du disque.
+dlg.granule.lockedout={0} verrouillés.
+dlg.granule.legend=Numéro = un fichier (listé à droite)   · libre   B amorçage   D répertoire   - un autre fichier   x verrouillé   ! partagé entre fichiers   ? réclamé mais libre   u utilisé, non réclamé   n hors de l'image   p au-delà de la fin
+# What one granule is, under the map.
+dlg.granule.cell=Lump {0}, granule {1} : {2}
+dlg.granule.kind.free=libre
+dlg.granule.kind.file=un fichier
+dlg.granule.kind.otherfile=un autre fichier (pas un de ceux demandés)
+dlg.granule.kind.directory=le répertoire
+dlg.granule.kind.boot=le granule du secteur d'amorçage
+dlg.granule.kind.lockedout=verrouillé (la table de verrouillage interdit son usage)
+dlg.granule.kind.shared=DÉTÉRIORATION : deux fichiers ou plus le réclament
+dlg.granule.kind.claimedbutfree=DÉTÉRIORATION : un fichier le réclame, mais la table d'allocation le dit libre
+dlg.granule.kind.unclaimed=marqué utilisé dans la table d'allocation, mais aucun fichier ne le réclame
+dlg.granule.kind.notonimage=libre, mais l'image ne le contient pas entièrement, donc les nouveaux fichiers l'ignorent
+dlg.granule.kind.pastend=libre, mais au-delà de la taille prouvée du disque, donc les nouveaux fichiers ne l'obtiennent jamais
+dlg.granule.claimedby=Réclamé par : {0}
+# Where a granule's sectors are. The range is two whole alternatives: the last
+# sector alone when it is on the same cylinder and side, all three otherwise.
+dlg.granule.sectors=Secteurs : cylindre {0}, face {1}, secteur {2}
+dlg.granule.sectors.to=\sà {0}
+dlg.granule.sectors.tofull=\sjusqu'au cylindre {0}, face {1}, secteur {2}
+dlg.granule.sectors.count=\s({0} secteurs)
+# --- Disk > Sector map (SectorMapForm) ------------------------------------
+# trs80-tool's own words stay in the code: the verdict values it sends
+# (protected, dosProtected, possible, info), the command names "sectors" and
+# "sectors --bad" that head the text report, the sector header lines and the
+# hex dump. The report's indents (four and eight spaces) are layout and stay
+# in the code too. The legend's letters S D C X ? - are trs80-tool's own and
+# a translation leaves them as they are.
+dlg.sectormap.title=Carte des secteurs - {0}
+caption.sectormap=Carte des secteurs
+dlg.sectormap.reading=Lecture des secteurs...
+dlg.sectormap.readingtool=Lecture des secteurs avec trs80-tool...
+dlg.sectormap.readfailed=trs80-tool n'a pas pu lire les secteurs.
+dlg.sectormap.readfailedmsg=trs80-tool n'a pas pu lire les secteurs de cette image :\n\n{0}
+dlg.sectormap.nosectors=Aucun secteur signalé pour cette image.
+dlg.sectormap.legend=Légende (telle que trs80-tool l'imprime) :  S simple densité   D double densité   C erreur CRC   X marque de données effacées   ? introuvable   - absent de cette piste.  Cliquez sur un secteur pour voir sa ligne d'en-tête et son vidage hexadécimal.
+dlg.sectormap.selheader=Secteur sélectionné :
+dlg.sectormap.badheader=Secteurs défectueux (absents ou erreur CRC) et les fichiers qui les utilisent — ce que « sectors --bad » énumère :
+dlg.sectormap.unknownos=système d'exploitation inconnu
+# The same words as dlg.dmk.col.cyl and dlg.dmk.col.side, which are the DMK
+# analysis window's columns. Both stay: a key is never renamed.
+dlg.sectormap.col.cyl=Cyl
+dlg.sectormap.col.side=Face
+dlg.sectormap.col.sector=Secteur
+dlg.sectormap.col.problem=Problème
+dlg.sectormap.col.files=Fichier(s) à ce secteur
+btn.textreport=Rapport texte...
+btn.badtext=Secteurs défectueux (texte)...
+# The doubled && is how both toolkits write one literal ampersand in a button.
+# Step 6, the accelerator keys, is where & is dealt with across the program.
+btn.protection=Protection && artefacts...
+# The summary over the map. The numbers arrive already formatted.
+dlg.sectormap.summary={0}  —  {1} cylindres, {2} face(s), {3} positions de secteur, {4}
+dlg.sectormap.nobad=aucun secteur défectueux
+dlg.sectormap.somebad={0} secteur(s) défectueux
+dlg.sectormap.stray={0}, {1} en dehors de la numérotation habituelle
+# A cell's tool tip.
+dlg.sectormap.tipfiles=Fichier(s) : {0}
+dlg.sectormap.tipnotontrack=Absent de cette piste
+# The bad-sector list's Problem column, built up clause by clause.
+dlg.sectormap.missing=absent (introuvable sur la piste)
+dlg.sectormap.crcerror=erreur CRC
+dlg.sectormap.idcrc=ID {0} != {1}
+dlg.sectormap.datacrc=données {0} != {1}
+dlg.sectormap.crcdetail={0} ({1})
+dlg.sectormap.artifactsuffix={0} - artefact d'imagerie : {1}
+dlg.sectormap.nofileat=(aucun fichier à ce secteur)
+dlg.sectormap.nobadsectors=Aucun secteur défectueux.
+# The selected sector, under the map. One whole sentence per count, because
+# the three languages do not inflect where English does.
+dlg.sectormap.notontrack=Cylindre {0}, face {1}, secteur {2} : absent de cette piste
+dlg.sectormap.artifact=Artefact d'imagerie : {0}.
+dlg.sectormap.fileat=Fichier à ce secteur : {0}
+dlg.sectormap.filesat=Fichiers à ce secteur : {0}
+dlg.sectormap.nofile=Il n'y a aucun fichier à ce secteur.
+# View > Sector map > Protection and artifacts, and the saved report.
+dlg.sectormap.prot.title=Signes de protection contre la copie et artefacts d'imagerie - {0}
+dlg.sectormap.prot.header=Signes de protection contre la copie (trs80-tool sectors --protection)
+dlg.sectormap.prot.notreported=(non signalés par ce trs80-tool)
+dlg.sectormap.prot.none=Aucun signe de protection contre la copie (ce qui ne prouve pas qu'il n'y en a pas).
+dlg.sectormap.verdict.protected=PROTÉGÉ
+dlg.sectormap.verdict.dosprotected=PROTÉGÉ PAR LE DOS
+dlg.sectormap.verdict.possible=possible
+dlg.sectormap.verdict.info=pas une protection
+dlg.sectormap.prot.sign=[{0}] {1}
+dlg.sectormap.prot.scheme=Schéma : {0}
+dlg.sectormap.prot.schemes=Observé avec (numéros de schéma trs-80.com) : {0}
+dlg.sectormap.art.header=Artefacts d'imagerie (secteurs défectueux ou absents probablement causés par l'imagerie ; une nouvelle imagerie pourrait les lire)
+dlg.sectormap.art.none=Aucun.
+caption.savesectorreport=Enregistrer le rapport des secteurs
+dlg.sectormap.nobadtext=trs80-tool ne signale aucun secteur défectueux sur cette disquette (« sectors --bad » n'affiche rien pour un disque sain).
+dlg.sectormap.nobadparen=(aucun secteur défectueux)
+# --- Words and phrases more than one window needs -------------------------
+word.model1.levelii=Modèle I (BASIC niveau II)
+word.bytes={0} octets
+word.nodateparen=(aucune date)
+btn.yes=Oui
+btn.no=Non
+
+# --- File > Extract (ExtractForm) -----------------------------------------
+dlg.extract.title=Extraire
+dlg.extract.dir=Répertoire de destination :
+dlg.extract.pickfolder=Choisissez le dossier de destination
+dlg.extract.nodir=Choisissez un répertoire.
+dlg.extract.files=Fichiers à extraire
+dlg.extract.selected=Fichiers sélectionnés
+dlg.extract.all=Tous les fichiers affichés
+dlg.extract.lower=Noms de fichiers hôtes en minuscules
+dlg.extract.damaged=Signaler les fichiers détériorés : ajouter [DAMAGED] au nom hôte (--mark-damaged)
+dlg.extract.cpm=CP/M : conserver les enregistrements entiers de 128 octets au lieu d'arrêter le texte au Ctrl-Z (--cpm-records)
+dlg.extract.ucsd=UCSD Pascal : conserver les fichiers texte tels qu'ils sont sur le disque (--ucsd-pascal-raw)
+
+# --- Edit > Preferences (PreferencesForm) ---------------------------------
+# The "..." on the Windows browse button is punctuation and stays in the code.
+dlg.prefs.title=Préférences
+dlg.prefs.engine=trs80-tool (le moteur)
+# The two programs look for the engine differently, so each says its own thing.
+dlg.prefs.toollocation=Emplacement de {0} (vide = demander au démarrage s'il n'est pas trouvé) :
+dlg.prefs.toollocation.unix=Emplacement de {0} (vide = chercher à côté de ce programme et dans le PATH, puis demander) :
+dlg.prefs.toolnotfound=Actuellement : introuvable
+dlg.prefs.toolusing=Actuellement utilisé : {0}
+dlg.prefs.toolversion={0}\s\s(v{1})
+# Windows can also drag files out of the list; the Eto program cannot yet.
+dlg.prefs.fromtrs=Conversion de texte depuis le TRS-80 (extraction, copie, glisser vers l'extérieur)
+dlg.prefs.fromtrs.unix=Conversion de texte depuis le TRS-80 (extraction, copie)
+dlg.prefs.totrs=Conversion de texte vers le TRS-80 (ajout, collage, glisser-déposer)
+dlg.prefs.noconv=Aucune conversion
+dlg.prefs.crtocrlf=Convertir CR en CR/LF
+dlg.prefs.crtolf=Convertir CR en LF
+# The same box, worded for the one system and for the other two.
+dlg.prefs.crlftocr=Convertir CR/LF en CR
+dlg.prefs.lineendstocr=Convertir les fins de ligne en CR
+dlg.prefs.textonly=(s'applique aux fichiers qui ressemblent à du texte)
+dlg.prefs.tokenize=Laisser trs80-tool tokeniser le BASIC texte (.bas) et convertir les programmes cassette (.cas/.3bn) lors de l'ajout
+dlg.prefs.hostdate=Enregistrer la date du fichier Windows sur les fichiers ajoutés (là où le DOS conserve les dates)
+dlg.prefs.hostdate.unix=Enregistrer la date du fichier hôte sur les fichiers ajoutés (là où le DOS conserve les dates)
+dlg.prefs.unzipgz=Décompresser les fichiers nommés *.gz lors de leur ajout et stocker le fichier qu'ils contiennent (désactivé = stocker le fichier .gz tel quel)
+dlg.prefs.esc=Quitter avec ÉCHAP
+dlg.prefs.confirmdelete=Demander confirmation avant de supprimer des fichiers
+dlg.prefs.server=Garder trs80-tool en arrière-plan (plus rapide : un seul démarrage de programme au lieu d'un par action)
+# The list offers only the languages whose table is really in this build, so it can
+# never offer one that would quietly stay English. A change takes effect at the next start.
+dlg.prefs.language=Langue :
+dlg.prefs.langnote=(prend effet au prochain démarrage du programme)
+dlg.prefs.logfile=Fichier journal de trs80-tool (--log-file à chaque appel ; vide = aucun) :
+dlg.prefs.picklog=Fichier journal de trs80-tool
+dlg.prefs.disasm=Options de désassemblage (mots après « disasm » ; vide = valeur par défaut) :
+dlg.prefs.settingsfile=Fichier de configuration : {0}
+dlg.prefs.picktool=Localiser trs80-tool
+dlg.prefs.notexist={0}\n\nn'existe pas. Le conserver quand même ?
+# Only the Mac and Linux program has these; the command in the example is not
+# translated, only the words around it.
+dlg.prefs.terminal.mac=Terminal pour l'interpréteur trs80-tool et l'émulateur (vide = Terminal ; le script à exécuter est ajouté à la suite) :
+dlg.prefs.terminalhint.mac=p. ex.  open -a iTerm
+dlg.prefs.terminal.linux=Terminal pour l'interpréteur trs80-tool et l'émulateur (vide = en chercher un ; la ligne de commande est ajoutée à la suite) :
+dlg.prefs.terminalhint.linux=p. ex.  xterm -e
+btn.default=Par défaut
+filter.log=Fichiers journaux (*.log;*.txt)|*.log;*.txt|Tous les fichiers (*.*)|*.*
+filter.programs=Programmes (*.exe;*.cmd;*.bat)|*.exe;*.cmd;*.bat|Tous les fichiers (*.*)|*.*
+
+# --- Rename a file (RenameForm) -------------------------------------------
+# The window's title and prompt come from whichever menu item opened it.
+dlg.rename.invalid=« {0} » n'est pas un nom de fichier TRS-80 valide.\n\nUtilisez de 1 à 8 lettres ou chiffres commençant par une lettre, puis éventuellement / ou . et jusqu'à 3 lettres ou chiffres.
+
+# --- Confirm File Replace (ReplaceForm) -----------------------------------
+dlg.replace.title=Confirmer le remplacement du fichier
+dlg.replace.contains=Cette image disque contient déjà un fichier nommé « {0} ».
+dlg.replace.would=Voulez-vous remplacer le fichier existant
+dlg.replace.withthis=par celui-ci ?
+dlg.replace.all=Faire de même pour tous les fichiers restants
+
+# --- Confirm File Overwrite, when extracting ------------------------------
+dlg.overwrite.title=Confirmer l'écrasement du fichier
+dlg.overwrite.exists={0} existe déjà dans {1}.
+dlg.overwrite.question=L'écraser ?
+dlg.overwrite.cancelnote=(Annuler interrompt l'extraction.)
+
+# --- Tools > Run the emulator without a disk ------------------------------
+dlg.runmodel.title=Lancer l'émulateur
+dlg.runmodel.machine=Machine à émuler (aucun disque monté) :
+
+# --- Help > Engine capabilities (EngineInfoForm) --------------------------
+# The report's labels are padded in the code to a shared width, so the words
+# here carry no spacing. The "---- ... ----" rules, the version numbers, the
+# command names, the option words and the two addresses stay in the code.
+dlg.engine.title=Capacités du moteur trs80-tool
+btn.recheckengine=Revérifier le moteur
+dlg.engine.enginepath=Chemin du moteur :
+dlg.engine.minversion=Version minimale :
+dlg.engine.lasttested=Testé avec :
+dlg.engine.reportedversion=Version annoncée :
+dlg.engine.parsedversion=Version analysée :
+dlg.engine.howcalled=Mode d'appel :
+dlg.engine.notfound=(introuvable)
+dlg.engine.unparseable=(illisible)
+dlg.engine.notreported=(non annoncée)
+dlg.engine.notprobed=Le moteur n'a pas été interrogé (introuvable ou pas encore exécuté).
+dlg.engine.toplevelused=Commandes de 1er niveau utilisées :
+dlg.engine.diskused=commandes disk utilisées :
+dlg.engine.toolhas=ce trs80-tool possède : {0}
+dlg.engine.formatdoses=DOS qu'il peut formater :
+dlg.engine.writabledoses=DOS qu'il peut modifier :
+dlg.engine.formats=Formats d'image : lit {0} ; convertit vers {1} ; modifie {2} ; crée {3}
+dlg.engine.noproblems=Aucun problème trouvé.
+dlg.engine.problems=Problèmes / remarques :
+dlg.engine.changelog=Journal des versions :
+dlg.engine.diskref=référence de disk :
+dlg.engine.recentcalls=appels récents au moteur (le plus récent en dernier)
+dlg.engine.cmdoptions=options de chaque commande (d'après « trs80-tool help --json »)
+dlg.engine.diskglobal=disk (global) :
+# --- The file viewer (ViewerForm) -----------------------------------------
+# trs80-tool's content types (hiResScreen, edtasm, cmdProgram) and every
+# disasm option word stay in the code, and so does the "  •  " that separates
+# the parts of the information line. KindFileTag in the code keeps the English
+# kind names for the file name the Save dialog suggests, so no accent from a
+# translation lands in a file name.
+dlg.viewer.title=Visionneuse de fichier - {0}
+dlg.viewer.titlekind={0} ({1})
+caption.fileviewer=Visionneuse de fichier
+dlg.viewer.font=Police
+dlg.viewer.mono=À largeur fixe
+dlg.viewer.prop=Proportionnelle
+btn.done=Terminé
+btn.options=Options...
+dlg.viewer.working=Traitement...
+dlg.viewer.readfailed=Impossible de lire {0} :\n{1}
+dlg.viewer.picfailed=trs80-tool n'a pas pu transformer ce fichier en image : {0}
+dlg.viewer.disasmfailed=(trs80-tool n'a pas pu désassembler ce fichier : {0})
+dlg.viewer.kind.graphics=Graphique
+dlg.viewer.kind.edtasm=EDTASM
+dlg.viewer.kind.basic=BASIC
+dlg.viewer.kind.disassembly=Désassemblage
+dlg.viewer.kind.text=Texte
+dlg.viewer.kind.hex=Hexadécimal
+dlg.viewer.basic.m4=Modèle 4 tokenisé
+dlg.viewer.basic.m13=Modèle I/III tokenisé
+dlg.viewer.basic.ascii=ASCII
+caption.saveview=Enregistrer la vue sous
+caption.saveviewerr=Enregistrer la vue
+filter.png=Image PNG (*.png)|*.png
+
+# --- The viewer's Options...: trs80-tool disasm ---------------------------
+# The hex-format list is read by its position, so its four items are text; the
+# words c, dollar and h that go to --hex-format stay in the code.
+dlg.disasm.title=Options de désassemblage (trs80-tool disasm)
+dlg.disasm.listing=Listage : adresses et octets à côté de la source (--listing)
+dlg.disasm.nobinary=Listage sans les octets (--no-binary)
+dlg.disasm.upper=Sortie en majuscules (--upper)
+dlg.disasm.nolabels=Aucune étiquette pour les cibles de saut (--no-labels)
+dlg.disasm.noknown=Aucune étiquette pour les adresses ROM connues (--no-known)
+dlg.disasm.full=Tout traiter comme des instructions, aucune zone de données (--full)
+dlg.disasm.datacomment=Commenter chaque instruction avec ses octets en ASCII (--data-comment)
+dlg.disasm.savedefault=En faire la valeur par défaut (Préférences → Options de désassemblage)
+dlg.disasm.hexformat=Format des nombres hexadécimaux (--hex-format) :
+dlg.disasm.hex.default=par défaut
+dlg.disasm.hex.c=c  (0x12)
+dlg.disasm.hex.dollar=dollar  ($12)
+dlg.disasm.hex.h=h  (12h)
+dlg.disasm.org=Adresse de chargement (--org, hexadécimal, vide = d'après le fichier) :
+dlg.disasm.entry=Points d'entrée supplémentaires (--entry, hexadécimal séparé par des virgules) :
+
+# --- The viewer's BASIC listing dialect ----------------------------------
+dlg.basicdialect.title=Dialecte de listage BASIC
+dlg.basicdialect.default=Le DOS du disque décide (par défaut)
+dlg.basicdialect.m13=Jetons BASIC Modèle I/III (--basic 3)
+dlg.basicdialect.m4=Jetons BASIC Modèle 4 (--basic 4)
+# --- Starting up: trs80-tool was not found (Program) ----------------------
+# The two Terminal command lines of the Mac hint, the download address and the
+# trs80-tool file name stay in the code.
+msg.toolmissing.head=TRSToolGui a besoin de trs80-tool, qui n'a pas été trouvé.
+msg.toolmissing.download.windows=Si vous ne l'avez pas, téléchargez « trs80-tool for Windows 10+ » depuis https://www.my-trs-80.com/tool/.
+msg.toolmissing.choose=Cliquez sur OK, puis choisissez {0}. Son emplacement est enregistré dans :
+msg.toolsavefailed=L'emplacement de trs80-tool n'a pas pu être enregistré dans\n{0}\n\n{1}
+msg.toolsavefailed.readonly=Le dossier de ce programme est peut-être en lecture seule. L'emplacement ne servira que pour cette session.
+msg.toolsavefailed.session=L'emplacement ne servira que pour cette session.
+msg.helpmissing=({0} est absent de cette version.)
+filter.allfiles=Tous les fichiers|*
+# Only the Mac and Linux program says these; each system gets its own wording.
+msg.tooldownload=Téléchargez-le depuis {0} ({1})
+msg.tooldownload.windows=« trs80-tool for Windows 10+ »
+msg.tooldownload.mac=le téléchargement macOS
+msg.tooldownload.linux=le téléchargement Linux
+# These two begin with a space: they are added to the end of a sentence.
+msg.toolfound.unix=\sUne copie à côté de TRSToolGui, ou une copie dans le PATH, est trouvée sans rien demander.
+msg.toolfound.mac=\sUne copie dans le dossier où se trouve TRSToolGui.app, ou une copie dans /usr/local/bin ou /opt/homebrew/bin, est trouvée sans rien demander.
+msg.toolfound.translocated=macOS exécute TRSToolGui depuis une copie temporaire de son dossier, parce que l'application n'a pas été déplacée depuis sa décompression. Un trs80-tool placé à côté de l'application n'y est pas visible. Pour qu'il soit trouvé : quittez, faites glisser TRSToolGui.app dans un autre dossier (Applications, par exemple) dans le Finder, placez trs80-tool à côté, puis relancez-le.
+msg.mactoolhint.intro=Sur un Mac, un trs80-tool téléchargé avec un navigateur doit être rendu exécutable et autorisé une fois. Ouvrez Terminal, saisissez ces deux lignes, puis relancez TRSToolGui :
+msg.mactoolhint.note=(Si la seconde ligne répond « No such xattr », le fichier était déjà autorisé.)
+# --- The main window's menu bar (MainForm) --------------------------------
+# Each & marks the letter the menu is reached by. The letters have to change
+# with the words and must not collide inside one menu, which is step 6 of
+# section 14 and a hand pass per menu per language; the words are here so that
+# pass has something to work on. "&&" is one literal ampersand on the screen.
+menu.file=&Fichier
+menu.file.new=&Nouveau...
+menu.file.newhd=Nouvelle image de &disque dur...
+menu.file.open=&Ouvrir...
+menu.file.recent=Fichiers récents
+menu.file.close=&Fermer
+# The Mac program says "image" as well, because its File menu is beside the
+# system's own window items.
+menu.file.closeimage=&Fermer l'image
+menu.file.diskprops=&Propriétés du disque...
+menu.file.saveas=&Enregistrer l'image sous... (convertir le format)
+menu.file.exit=&Quitter
+menu.edit=Édi&tion
+menu.edit.copy=&Copier
+menu.edit.paste=Co&ller
+menu.edit.add=&Ajouter des fichiers...
+menu.edit.extract=&Extraire...
+menu.edit.selectall=&Tout sélectionner
+menu.edit.invert=&Inverser la sélection
+menu.edit.prefs=&Préférences...
+menu.view=&Affichage
+menu.view.invisible=Fichiers &invisibles
+menu.view.system=Fichiers &système
+menu.view.partition=&Partition
+menu.view.refresh=&Actualiser
+menu.disk=&Disque
+menu.disk.sectormap=Carte des &secteurs...
+menu.disk.dmk=Analyse D&MK...
+menu.disk.trackhex=Vidage &hexadécimal des pistes...
+menu.disk.cpm=Disposition &CP/M...
+menu.disk.granule=Carte des &granules...
+menu.disk.checkrepair=&Vérifier && réparer...
+menu.disk.format=&Formater...
+menu.disk.trim=&Rogner...
+menu.disk.boot=&Démarrer dans l'émulateur...
+menu.disk.shell=&Ouvrir ici l'interpréteur trs80-tool
+menu.disk.import=&Importer depuis une autre image...
+menu.tools=&Outils
+menu.tools.convert=&Convertir des fichiers...
+menu.tools.assemble=&Assembler...
+menu.tools.hexdump=&Vidage hexadécimal d'un fichier...
+menu.tools.disasm=&Désassembler un fichier...
+menu.tools.runempty=&Lancer l'émulateur sans disque...
+menu.help=A&ide
+menu.help.manual=&Manuel...
+menu.help.changelog=&Journal des modifications...
+menu.help.license=&Licence...
+menu.help.engine=&Capacités du moteur...
+menu.help.toolweb=Manuel de trs80-tool (&web)
+menu.help.report=&Signaler un problème (web)
+menu.help.about=À &propos de {0}...
+# The Mac's own application menu: no & there, and Quit and About live in it.
+menu.mac.about=À propos de {0}
+menu.mac.prefs=Préférences...
+menu.mac.quit=Quitter {0}
+# The three Help windows.
+win.manual=Manuel de {0}
+win.changelog=Journal des modifications de {0}
+win.license=Licence de {0}
+
+# --- The main window's toolbar, columns, context menu and status ----------
+tb.new=Nouveau
+tb.open=Ouvrir
+tb.diskprops=Propriétés du disque
+tb.copy=Copier
+tb.paste=Coller
+tb.add=Ajouter
+tb.extract=Extraire
+tb.view=Afficher
+tb.sectors=Secteurs
+tb.about=À propos
+col.name=Nom
+col.type=Type
+col.size=Taille
+col.date=Date
+col.attributes=Attributs
+col.kind=Nature
+cx.preview=&Aperçu
+cx.delete=&Supprimer
+cx.rename=&Renommer...
+cx.props=&Propriétés...
+cx.convert=&Convertir en...
+status.ready=Prêt
+# --- The main window: the engine check, the status line and the title -----
+# The version numbers, the "disk --json" and "help --json" command words and
+# the "   |   " that joins the status parts stay in the code.
+status.enginenotfound=trs80-tool : introuvable
+status.engineunusable=trs80-tool : inutilisable
+status.engineversion=trs80-tool {0}
+status.checkingengine=Vérification de trs80-tool...
+tip.enginepath=trs80-tool utilisé :\n{0}
+msg.enginemissing.windows=trs80-tool n'a pas été trouvé à l'emplacement configuré.
+msg.enginemissing.mac=trs80-tool n'a pas été trouvé.
+msg.enginemissing.download.windows=Téléchargez-le depuis https://www.my-trs-80.com/tool/ (« trs80-tool for Windows 10+ »), puis indiquez à ce programme où il se trouve.
+# The Mac and Linux program ends its own download sentence with this.
+msg.enginemissing.tail=, puis indiquez à ce programme où il se trouve.
+msg.enginemissing.ask=Ouvrir les Préférences maintenant pour définir son emplacement ?
+msg.engineunreadable=trs80-tool n'a pas pu être exécuté ou sa version n'a pas pu être lue :\n\n{0}\n\nChemin : {1}
+msg.enginetooold=trs80-tool {0} est trop ancien. Ce programme exige la version {1} ou une version plus récente, qui répond à toute question sur un disque sous forme de données (« disk --json », « help --json »).\n\nTéléchargez la version actuelle depuis {2} et placez-la là où était l'ancienne :\n{3}
+msg.enginenewer=trs80-tool {0} est plus récent que la version avec laquelle ce programme a été testé ({1}).
+msg.enginenewer.ok=Il possède toutes les commandes utilisées par ce programme ; il devrait donc fonctionner normalement.
+msg.enginenewer.missing=Il ne possède plus certaines commandes utilisées par ce programme :\n{0}\n\nCes fonctions sont désactivées jusqu'à la mise à jour de ce programme.
+msg.enginenewer.details=Détails : Aide → Capacités du moteur.
+status.filesshown={0} fichier(s) affiché(s) sur {1}
+status.writeprotected=PROTÉGÉ EN ÉCRITURE
+status.damaged=DÉTÉRIORÉ
+status.protectionsigns=signes de protection contre la copie
+status.readonly=lecture seule : {0}
+status.cpmlayout=lu avec la disposition CP/M {0}
+status.consoleopen={0} est ouvert sur cette image - les modifications faites ici attendent sa fermeture
+status.nodirectory=AUCUN RÉPERTOIRE
+# The title bar: program, file, then the DOS, the volume name and the
+# partition inside one bracket.
+win.main.open={0} - {1} - ({2})
+win.main.volume={0} - {1}
+# --- The main window: the Recent and Partition menus, opening, the list ---
+menu.file.recent.none=(aucun)
+menu.file.recent.item=&{0} {1}
+menu.view.partadd=&Ajouter une partition...
+menu.view.partdelete=&Supprimer cette partition...
+caption.openvirtualdisk=Ouvrir un disque virtuel
+caption.openerror=Erreur à l'ouverture du disque virtuel
+msg.filenotfound=Fichier introuvable :\n{0}
+msg.gzippedneeds520={0} est une image compressée gzip. Son ouverture exige trs80-tool 5.2.0 ou une version plus récente ; la version présente est la {1}.\n\nDécompressez le fichier, ou procurez-vous le trs80-tool actuel depuis {2}.
+caption.nodirectory=Aucun répertoire trouvé
+msg.nodirectory={0} s'est ouvert, mais trs80-tool n'a pas pu y lire de répertoire ; aucun fichier n'est donc affiché.\n\n{1}
+status.reading=Lecture de {0}...
+status.readingpartition=Lecture de la partition {0}...
+# {0} is the gzipped-image pattern list, which appears twice. The patterns and
+# the | that separate them are the dialog's own structure: a translation
+# changes the descriptions and leaves the rest alone.
+filter.openimages=Images disque (*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv;*.gz)|*.dsk;*.dmk;*.jv1;*.jv3;*.hfe;*.imd;*.scp;*.hdv;*.hdv1;*.hdv2;{0}|Cassettes (*.cas;*.wav)|*.cas;*.wav;*.cas.gz;*.wav.gz|DMK (*.dmk)|*.dmk;*.dmk.gz|JV1 (*.jv1)|*.jv1;*.jv1.gz|JV3 (*.jv3)|*.jv3;*.jv3.gz|Disques durs HDV (*.hdv)|*.hdv;*.hdv1;*.hdv2;*.hdv.gz|Images compressées gzip (*.gz)|{0};*.cas.gz;*.wav.gz|Tous les fichiers (*.*)|*.*
+filter.allfilessuffix=|Tous les fichiers (*.*)|*.*
+# What the file list shows beside a file. "FULL" and the other protection level
+# names come from trs80-tool and stay in the code.
+file.user=\sutilisateur {0}
+file.damaged=\s\s[DÉTÉRIORÉ : {0}]
+file.decodeerror=\s\s({0})
+tip.damaged=Détérioré : {0}
+
+# --- The main window: making a new image, and partitions ------------------
+caption.savenewhd=Enregistrer la nouvelle image de disque dur sous
+filter.hdv=Image de disque dur HDV (*.hdv)|*.hdv
+status.creating=Création de {0}...
+caption.diskcreateerror=Erreur de création de l'image disque
+win.newhd=Nouvelle image de disque dur - {0}
+caption.savenewfloppy=Enregistrer la nouvelle image de disquette sous
+msg.jv1force=trs80-tool indique que le nouveau disque ne correspond pas exactement au format JV1 :\n\n{0}\n\nL'écrire quand même en JV1 (--force) ?
+caption.addpartition=Ajouter une partition
+status.addingpartition=Ajout d'une partition...
+win.newpartition=Nouvelle partition - {0}
+# Two whole headings, one with the partition's disk name and one without.
+msg.delpart.head=Supprimer la partition {0} de {1} ?
+msg.delpart.named=Supprimer la partition {0} ({1}) de {2} ?
+msg.delpart.nofiles=Elle ne contient aucun fichier.
+msg.delpart.files=Ses {0} fichier(s) seront effacés.
+msg.delpart.renumber=\sLes partitions suivantes voient leur numéro diminuer de un.
+msg.delpart.undone=Cette opération est irréversible.
+caption.deletepartition=Supprimer la partition
+status.deletingpartition=Suppression de la partition...
+# --- The main window: File > Save image as --------------------------------
+caption.saveimageastitle=Enregistrer l'image sous (trs80-tool convert)
+caption.saveimageas=Enregistrer l'image sous
+filter.saveimageas=Image de disquette DMK (*.dmk)|*.dmk|Image de disquette JV3 (*.jv3)|*.jv3|Image de disquette JV1 (*.jv1)|*.jv1|Image de disquette HFE (*.hfe)|*.hfe|Image de disquette IMD (*.imd)|*.imd
+# The two programs say this differently: a Windows Save dialog adds the
+# extension, the Eto one asks for it in the name.
+msg.saveas.needext=Choisissez .dmk, .jv3, .jv1, .hfe ou .imd — trs80-tool a besoin de l'extension pour savoir quel format écrire (.dsk ne le dit pas).
+msg.saveas.needext.eto=Terminez le nom par .dmk, .jv3, .jv1, .hfe ou .imd. trs80-tool a besoin de l'extension pour savoir quel format écrire (.dsk ne le dit pas).
+msg.saveas.sameimage=C'est l'image ouverte elle-même ; choisissez un autre nom.
+status.convertingto=Conversion en {0}...
+msg.saveas.force=trs80-tool indique que l'image ne correspond pas exactement à ce format :\n\n{0}\n\nL'écrire quand même (--force) ?
+msg.saveas.written=Écrit : {0}\n\nOuvrir la nouvelle image maintenant ?
+
+# --- The main window: the Disk menu's own messages ------------------------
+msg.sectormap.floppyonly=La carte des secteurs de trs80-tool ne fonctionne que sur les images de disquette.
+caption.dmkanalysis=Analyse DMK
+msg.dmk.floppyonly=L'analyse DMK fonctionne sur les images de disquette.
+caption.format=Formater
+msg.format.dmkonly=Le formatage de trs80-tool produit une image DMK, il ne formate donc que les images nommées *.dmk. Utilisez Fichier → Enregistrer l'image sous pour en faire d'abord une copie DMK, puis formatez celle-ci.
+# One whole sentence per count, and the DOS name or the CP/M name as {2}.
+msg.format.confirm=Le formatage efface {0} de {1} et transforme l'image en disque de données {2} vide.\n\nCette opération est irréversible. Continuer ?
+msg.format.onefile=l'unique fichier
+msg.format.manyfiles=les {0} fichiers
+dos.cpm.montezuma=Montezuma Micro CP/M
+status.formatting=Formatage...
+status.trimming=Rognage...
+# What the status line calls the console window that is open on the image.
+console.emulator=L'émulateur
+console.shell=L'interpréteur trs80-tool
+status.askingcpmlayouts=Demande de ses dispositions CP/M à trs80-tool...
+status.readingas=Lecture de {0} en tant que {1}...
+msg.cpm.cantread=trs80-tool ne peut pas lire ce disque en tant que « {0} » :\n\n{1}\n\nLe disque est toujours lu comme avant.
+# --- The main window: the Tools windows and Convert to... -----------------
+status.extractingfile=Extraction de {0}...
+msg.convert.cantextract=Impossible d'extraire {0} : {1}
+caption.convert=Convertir
+msg.offeradd=Ajouter {0} à {1} ?
+caption.hexdumpfile=Vidage hexadécimal d'un fichier (trs80-tool hexdump)
+caption.disasmfile=Désassembler un fichier (trs80-tool disasm)
+filter.trs80programs=Programmes TRS-80 (*.cmd;*.sys;*.3bn;*.rom;*.bin;*.cas)|*.cmd;*.sys;*.3bn;*.rom;*.bin;*.cas|Tous les fichiers (*.*)|*.*
+filter.anyfile=Tous les fichiers (*.*)|*.*
+status.hexdumping=Exécution de hexdump...
+status.disassembling=Désassemblage...
+win.hexdump=hexdump - {0}
+win.disasm=disasm - {0}
+
+# --- Help > About --------------------------------------------------------
+# The program name, the version numbers, the two addresses and the names in
+# the credits stay in the code or are passed in.
+about.releasedate=Date de publication : {0}
+about.build=Compilation : {0}
+about.build.eto=Compilation : {0} (Eto.Forms, {1})
+about.by=Par {0}
+about.license=Logiciel libre sous licence MIT (Aide > Licence).
+about.download=Téléchargement : {0}
+about.what=Une interface Windows pour le trs80-tool de Lawrence Kesteloot, qui reproduit la façon de travailler de TRSTools (1.14) de Matthew Reed.
+about.what.eto=Une interface pour le trs80-tool de Lawrence Kesteloot, qui reproduit la façon de travailler de TRSTools (1.14) de Matthew Reed.
+about.engine=Moteur : {0}
+about.enginenotfound=trs80-tool introuvable
+about.enginepath=Chemin du moteur : {0}
+about.toolcredit=trs80-tool : {0}  (licence MIT, © Lawrence Kesteloot)
+about.trstoolscredit=TRSTools était © 2009-2021 Matthew Reed ; TRSToolGui s'en inspire (les détails sont dans Aide > Licence).
+
+# --- The main window: properties, rename, delete -------------------------
+status.updatingfile=Mise à jour de {0}...
+caption.filepropserror=Erreur des propriétés du fichier
+dlg.renamefile.title=Renommer le fichier
+dlg.renamefile.prompt=Nom du fichier :
+dlg.renamefile.newprompt=Nouveau nom de fichier :
+status.renaming=Changement de nom...
+msg.renamefailed=Erreur lors du changement de nom du fichier : {0}
+caption.renameerror=Erreur de changement de nom
+msg.delete.one=Voulez-vous vraiment supprimer ce fichier ?\n\n{0}
+msg.delete.many=Voulez-vous vraiment supprimer ces {0} fichiers ?
+caption.confirmdelete=Confirmer la suppression du fichier
+status.deleting=Suppression...
+msg.deletefailed=Erreur lors de la suppression du fichier : {0}
+caption.deleteerror=Erreur de suppression
+
+# --- The main window: adding files (Add, Paste, drop) --------------------
+# The regular expression that recognises trs80-tool's own date complaint
+# ("year|date") is matched against the tool's English and stays in the code.
+caption.selectfilestoadd=Choisissez les fichiers à ajouter
+msg.write.cannot=Impossible d'écrire dans cette image disque.
+caption.filewriteerror=Erreur d'écriture du fichier
+msg.add.toolarge={0} est ignoré : plus de 10 Mo.
+msg.add.gzfailed={0} est ignoré : {1}{2}).
+msg.add.gzunzipfailed=il n'a pas pu être décompressé (
+msg.add.gzcopyfailed=il n'a pas pu être copié (
+msg.add.invalidname={0}\nn'est pas un nom de fichier TRS-80 valide.
+msg.add.badnameskip=« {0} » n'est pas un nom de fichier TRS-80 valide. {1} est ignoré.
+msg.add.duplicate=Deux des fichiers s'appelleraient tous deux {0} sur le disque. {1} est ignoré.
+status.adding=Ajout de {0} fichier(s)...
+# TRSTool's own wording for the two cases trs80-tool's exit status names.
+msg.store.error=Erreur lors du stockage des fichiers :\s
+msg.store.diskfull.one=Espace libre insuffisant pour stocker ce fichier.
+msg.store.diskfull.many=Espace libre insuffisant pour stocker ces fichiers.
+msg.store.writeprotected=L'image est protégée en écriture (l'indicateur se trouve dans les propriétés du disque).
+msg.store.nothingwritten=Rien n'a été écrit sur le disque.
+msg.add.partial={0} fichier(s) sur {1} ont été ajoutés. Ceux-ci ont été ignorés :
+caption.storeerror=Erreur de stockage du fichier
+msg.add.nodates=Les fichiers ont été ajoutés sans date : {0}
+caption.toolnotes=Remarques de trs80-tool
+
+# --- The main window: extracting and copying -----------------------------
+caption.extracterror=Erreur d'extraction du fichier
+status.extracting=Extraction de {0} fichier(s)...
+msg.extractfailed=Erreur lors de l'extraction du fichier : {0}
+msg.extractfailedmulti=Erreur lors de l'extraction des fichiers : {0}
+status.extracted={0} fichier(s) extrait(s) vers {1}
+status.copied={0} fichier(s) copié(s) dans le presse-papiers
+# --- The main window: the last few --------------------------------------
+status.updatingdisk=Mise à jour du disque...
+caption.diskpropserror=Erreur des propriétés du disque
+# The Eto program says this in the status line; the Windows one does not say it.
+status.nopaste=Il n'y a aucun fichier à coller dans le presse-papiers.

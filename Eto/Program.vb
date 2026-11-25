@@ -33,8 +33,11 @@ Public Module Program
         If HostPlatform.IsMacOS Then
             app.Name = AppName
 #If TRSMAC Then
-            ' The Finder's open-document event is delivered as soon as the run loop starts, so the
-            ' listener goes in before Run. MacOpenDocuments.vb is in the Mac build and no other.
+            ' The Finder's launch document reaches the application delegate, which AppKit calls itself,
+            ' so the delegate goes in before Run; listening for the 'odoc' event as well covers an
+            ' application that is already running. Both are in MacOpenDocuments.vb, which is in the Mac
+            ' build and no other, and the note at the top of that file says why one is not enough.
+            MacOpenDocuments.Install(app)
             MacOpenDocuments.Listen()
 #End If
             ' On a Mac the program ends inside Quit: Run never comes back, so the Finally below is not reached

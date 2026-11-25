@@ -11,34 +11,48 @@
 '  types declared in the bundle's Info.plist are what get the Finder as far as
 '  starting the program; this is what carries the path the rest of the way.
 '
-'  WHEN the listening starts is the whole trick, and v1.7 got it wrong. AppKit puts in
-'  its own 'odoc' handler inside -[NSApplication finishLaunching], which runs when
-'  Application.Run is called. A handler registered before Run is therefore thrown away
-'  a moment later by AppKit's own, and AppKit's handler, finding no NSDocument class
-'  and no openFile: on the delegate, is what puts up
+'  WHAT v1.7 AND v1.8 BOTH GOT WRONG, and how zebbchi's log settled it. Both releases
+'  tried to be the 'odoc' handler themselves. v1.7 registered before Application.Run;
+'  v1.8 registered again from NSApplicationWillFinishLaunchingNotification, on the
+'  belief that -[NSApplication finishLaunching] posts that notification *after* it
+'  installs AppKit's own handlers, so ours would go over the top of them. The v1.8 log
+'  from a Mac says otherwise:
 '
-'      The document "x.dmk" could not be opened.
-'      TRSToolGui cannot open files in the "TRS-80 floppy disk image" format.
+'      waiting for NSApplicationWillFinishLaunchingNotification
+'      listening for open-document events (before the application starts), class 6170706C id 6F646F63
+'      listening for open-document events (as the application finishes launching), class 6170706C id 6F646F63
 '
-'  — a message that comes out of the bundle's own CFBundleTypeName. The dialog is
-'  proof that AppKit, not this class, took the event.
+'  — and then nothing. Both registrations went in (6170706C/6F646F63 is 'appl'/'odoc',
+'  which also settles that MonoMac's AEEventClass.Application and AEEventID.OpenDocuments
+'  are the right constants), no event ever arrived, and the user still got AppKit's
+'  "cannot open files in the ... format" dialog. So the order is the other way round:
+'  finishLaunching posts WillFinishLaunching FIRST, installs its own handlers after it,
+'  and dispatches the launch document before it posts DidFinishLaunching. There is
+'  therefore NO moment at which registering an 'odoc' handler can win the launch
+'  document — not before Run, not at Will, and not at Did, which comes too late.
 '
-'  finishLaunching posts NSApplicationWillFinishLaunchingNotification immediately
-'  after it installs those handlers, and the launch document is not dispatched until
-'  afterwards. So that notification is the one moment when registering wins: late
-'  enough that AppKit cannot overwrite it, early enough that nothing has been missed.
-'  Registering before Run is kept as well, for the case where the application is
-'  already up and the notification has long since been and gone.
+'  WHAT DOES WIN. AppKit's own 'odoc' handler looks for somewhere to send the file, in
+'  order: an NSDocumentController, then the application delegate's application:openURLs:,
+'  application:openFiles: or application:openFile:. Only when it finds none of those does
+'  it put up the dialog. Giving the delegate one of those methods is the documented route
+'  and the one that cannot be raced, because AppKit calls it itself.
 '
-'  The notification is named by its string rather than by NSApplication's constant so
-'  that this file goes on needing nothing from MonoMac.AppKit, and it is asked for with
-'  an NSObject and a Selector — the same pattern the event handler itself uses, and the
-'  only one this file already proves builds.
+'  Eto.Forms makes that reachable without any runtime trickery: Eto.Mac.AppDelegate is
+'  public, MonoMac's NSApplicationDelegate.OpenFiles and .OpenFile are Overridable, and
+'  Eto.Mac.Forms.ApplicationHandler.AppDelegate is a settable property that Eto reads when
+'  it starts. So MacAppDelegate below simply inherits Eto's own delegate and adds the two
+'  methods, and Install() hands it to the handler before Application.Run. Nothing of Eto's
+'  is replaced or worked around.
 '
-'  Every event is written to TRSToolGui-open.log beside TRSToolGui.cfg, whether or
-'  not the file then opens, because that log is the evidence a problem report needs:
-'  no entry at all means the event never arrived and the Info.plist is the suspect;
-'  an entry with no path means the descriptor is not shaped the way this code reads it.
+'  The 'odoc' registration is KEPT, for two reasons: an application that is already
+'  running when the Finder sends the event, and as the fallback that says in the log
+'  whether this analysis was right. The two can never both fire for one event — AppKit's
+'  handler is what calls the delegate, so either AppKit has the event (delegate) or this
+'  class has it (handler) — so a file is never opened twice.
+'
+'  Every event is written to TRSToolGui-open.log beside TRSToolGui.cfg, whether or not
+'  the file then opens, because that log is the evidence a problem report needs. The
+'  line each route writes names the route, so one run says which one did the work.
 ' ============================================================================
 Option Strict On
 Option Explicit On
@@ -46,8 +60,53 @@ Option Explicit On
 Imports System.Globalization
 Imports System.IO
 Imports System.Text
+Imports MonoMac.AppKit
 Imports MonoMac.Foundation
 Imports MonoMac.ObjCRuntime
+
+''' <summary>
+''' Eto's own application delegate with the two methods AppKit looks for when the Finder opens a
+''' document. Installed by MacOpenDocuments.Install before Application.Run.
+''' </summary>
+Friend NotInheritable Class MacAppDelegate
+    Inherits Eto.Mac.AppDelegate
+
+    ''' <summary>AppKit's preferred route: every file of one Finder open, in one call.</summary>
+    Public Overrides Sub OpenFiles(sender As NSApplication, filenames As String())
+        Dim count As Integer = If(filenames Is Nothing, 0, filenames.Length)
+        MacOpenDocuments.Note("the application delegate was given " & count.ToString(CultureInfo.InvariantCulture) &
+                              If(count = 1, " file", " files") & " to open")
+        Try
+            If filenames IsNot Nothing Then
+                For i As Integer = 0 To filenames.Length - 1
+                    MacOpenDocuments.Note("  " & (i + 1).ToString(CultureInfo.InvariantCulture) & ": " & If(filenames(i), "(nothing)"))
+                    If Not String.IsNullOrEmpty(filenames(i)) Then Program.AskToOpen(filenames(i))
+                Next
+            End If
+        Catch ex As Exception
+            MacOpenDocuments.Note("failed while opening the delegate's files: " & ex.Message)
+        End Try
+        ' AppKit waits to be told how the open went before it lets the launch finish.
+        Try
+            If sender IsNot Nothing Then sender.ReplyToOpenOrPrint(NSApplicationDelegateReply.Success)
+        Catch
+        End Try
+    End Sub
+
+    ''' <summary>The older one-file route, for a system that asks for it instead.</summary>
+    Public Overrides Function OpenFile(sender As NSApplication, filename As String) As Boolean
+        MacOpenDocuments.Note("the application delegate was given one file to open: " & If(filename, "(nothing)"))
+        If String.IsNullOrEmpty(filename) Then Return False
+        Try
+            Program.AskToOpen(filename)
+        Catch ex As Exception
+            MacOpenDocuments.Note("failed while opening the delegate's file: " & ex.Message)
+            Return False
+        End Try
+        Return True
+    End Function
+
+End Class
 
 ''' <summary>Receives the Finder's open-document events on a Mac. Not built on any other system.</summary>
 Friend NotInheritable Class MacOpenDocuments
@@ -56,7 +115,7 @@ Friend NotInheritable Class MacOpenDocuments
     ''' <summary>keyDirectObject, '----': where an 'odoc' event keeps its list of files.</summary>
     Private Const KeyDirectObject As UInteger = &H2D2D2D2DUI
 
-    ''' <summary>Posted by -[NSApplication finishLaunching] just after AppKit installs its own handlers.</summary>
+    ''' <summary>Posted by -[NSApplication finishLaunching] before AppKit installs its own handlers.</summary>
     Private Const WillFinishLaunching As String = "NSApplicationWillFinishLaunchingNotification"
 
     ''' <summary>Held for the life of the program: the event manager does not keep the handler alive.</summary>
@@ -66,9 +125,27 @@ Friend NotInheritable Class MacOpenDocuments
     Private Shared _watching As Boolean
 
     ''' <summary>
-    ''' Start listening. Call once, before Application.Run. The handler is put in twice: now, which covers an
-    ''' application that is already running, and again when AppKit says it is about to finish launching, which
-    ''' is the registration that survives — see the note at the top of this file.
+    ''' Give Eto the delegate that carries application:openFiles:. Call before Application.Run — this is
+    ''' the route that actually receives the Finder's launch document; see the note at the top of this file.
+    ''' </summary>
+    Friend Shared Sub Install(app As Eto.Forms.Application)
+        Try
+            Dim handler As Eto.Mac.Forms.ApplicationHandler = TryCast(app.Handler, Eto.Mac.Forms.ApplicationHandler)
+            If handler Is Nothing Then
+                Note("the Eto application handler is not the Mac one, so no delegate was installed")
+                Return
+            End If
+            handler.AppDelegate = New MacAppDelegate()
+            Note("installed the application delegate that answers application:openFiles:")
+        Catch ex As Exception
+            Note("could not install the application delegate: " & ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Also listen for 'odoc' directly. This cannot win the launch document — AppKit's own handler goes in
+    ''' after NSApplicationWillFinishLaunchingNotification — but it serves an application that is already
+    ''' running, and the log line it writes says whether the delegate above did the work instead.
     ''' </summary>
     Friend Shared Sub Listen()
         If _listener Is Nothing Then
@@ -97,7 +174,7 @@ Friend NotInheritable Class MacOpenDocuments
         Register("before the application starts")
     End Sub
 
-    ''' <summary>AppKit has just put its own handlers in. This is the moment to put ours over the top.</summary>
+    ''' <summary>AppKit is about to install its own handlers. Ours goes in again, for a later event.</summary>
     <Export("appWillFinishLaunching:")>
     Public Sub AppWillFinishLaunching(notification As NSNotification)
         Register("as the application finishes launching")
@@ -133,8 +210,8 @@ Friend NotInheritable Class MacOpenDocuments
                 Return
             End If
             Dim count As Integer = CInt(files.NumberOfItems)
-            Note("an open-document event arrived, " & count.ToString(CultureInfo.InvariantCulture) &
-                 If(count = 1, " item", " items"))
+            Note("an open-document event arrived at this class's own handler, " &
+                 count.ToString(CultureInfo.InvariantCulture) & If(count = 1, " item", " items"))
             For i As Integer = 1 To count
                 Dim item As NSAppleEventDescriptor = files.DescriptorAtIndex(i)
                 Dim raw As String = If(item Is Nothing, Nothing, item.StringValue)
@@ -162,7 +239,7 @@ Friend NotInheritable Class MacOpenDocuments
     End Function
 
     ''' <summary>One line in TRSToolGui-open.log. Never throws, and never grows without limit.</summary>
-    Private Shared Sub Note(text As String)
+    Friend Shared Sub Note(text As String)
         Try
             Dim logFile As String = LogPath()
             If logFile Is Nothing Then Return
