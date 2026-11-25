@@ -800,6 +800,17 @@ status.readonly=lecture seule : {0}
 status.cpmlayout=lu avec la disposition CP/M {0}
 status.consoleopen={0} est ouvert sur cette image - les modifications faites ici attendent sa fermeture
 status.nodirectory=AUCUN RÉPERTOIRE
+
+# --- Why a disk cannot be written to (DiskImage.ReadOnlyReason) -----------
+# The status bar puts these after "read-only:" and Disk properties after
+# "Writable: No - ". They come from the model, not from one window, because
+# both show the same sentence. A reason trs80-tool itself gives arrives in
+# English and is passed through as it comes.
+disk.readonly.writeprotected=L'indicateur de protection en écriture de l'image est actif.
+disk.readonly.cassette=Les images de cassette sont en lecture seule dans ce programme.
+disk.readonly.nodescribe=trs80-tool n'a pas pu décrire cette image.
+disk.readonly.cantwrite=trs80-tool ne peut pas écrire sur ce disque.
+disk.readonly.nopartitions=Cette image de disque dur n'a pas encore de partition. Affichage → Partition → Ajouter une partition en crée une.
 # The title bar: program, file, then the DOS, the volume name and the
 # partition inside one bracket.
 win.main.open={0} - {1} - ({2})

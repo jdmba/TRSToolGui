@@ -415,7 +415,7 @@ Public Class DiskImage
         Else
             img.IsCassette = True
             img.ImageFormat = If(HostFiles.ImageExtension(imagePath) = ".wav", "WAV", "CAS")
-            img.ReadOnlyReason = "Cassette images are read-only in this program."
+            img.ReadOnlyReason = UiText.T("disk.readonly.cassette")
         End If
 
         Dim dirJson As Trs80Tool.FilesInfileJson = Await dirTask
@@ -542,7 +542,7 @@ Public Class DiskImage
         Next
         If st.Info Is Nothing Then
             WriteProtected = Nothing
-            ReadOnlyReason = If(String.IsNullOrWhiteSpace(st.Error), "trs80-tool could not describe this image.", st.Error)
+            ReadOnlyReason = If(String.IsNullOrWhiteSpace(st.Error), UiText.T("disk.readonly.nodescribe"), st.Error)
             Return
         End If
         Dim info As Trs80Tool.InfoResultJson = st.Info
@@ -554,8 +554,13 @@ Public Class DiskImage
         If info.HardDiskGeometry IsNot Nothing Then HardDiskGeometry = info.HardDiskGeometry
         If info.Writable Then
             ReadOnlyReason = Nothing
+        ElseIf WriteProtected.GetValueOrDefault() Then
+            ' The image's own write-protect flag, which this program reads itself and offers as a
+            ' box to clear in Disk properties, so the reason is said in the user's language rather
+            ' than passed through from trs80-tool in English.
+            ReadOnlyReason = UiText.T("disk.readonly.writeprotected")
         Else
-            ReadOnlyReason = If(String.IsNullOrWhiteSpace(info.ReadOnlyReason), "trs80-tool can't write to this disk.", info.ReadOnlyReason)
+            ReadOnlyReason = If(String.IsNullOrWhiteSpace(info.ReadOnlyReason), UiText.T("disk.readonly.cantwrite"), info.ReadOnlyReason)
         End If
         ' A CP/M disk's free space comes from "free" (in blocks); "info" gives it only for TRSDOS-family disks.
         Dim free As Trs80Tool.FreeResultJson = If(info.Free, st.Free)
@@ -596,7 +601,7 @@ Public Class DiskImage
             Partitions.Sort(Function(a, b) a.Number.CompareTo(b.Number))
         End If
         If IsHardDisk AndAlso Partitions.Count = 0 Then
-            ReadOnlyReason = "This hard disk image has no partitions yet. View → Partition → Add a partition… makes one."
+            ReadOnlyReason = UiText.T("disk.readonly.nopartitions")
         End If
 
         If st.Check IsNot Nothing Then

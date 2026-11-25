@@ -11,6 +11,12 @@ v1.8.2 — November 25, 2026
     be reached at all — the program looked as though it had done nothing. Each of these windows
     is now placed over the one that opened it and pulled back inside the screen that one is on.
     Reported by Pascal Holdry, who thought it was his own setup; it was not.
+  A disk that cannot be written to now says why in the language the program is set to. Four of
+    those sentences were written into the code in English and never reached the translation
+    tables, and the commonest case of all, an image whose own write-protect flag is set, was
+    passed through in trs80-tool's English. The program reads that flag for itself, and offers
+    a box to clear it in Disk properties, so it now gives the reason in its own words. A reason
+    that only trs80-tool knows is still passed through as it comes, in English.
   Reports can be made bigger. Hold Ctrl and turn the mouse wheel in any report window to change
     the text size, or use Ctrl with + and - and Ctrl with 0 to put it back. It works in the
     track hex dump, the DMK analysis report, the sector and granule reports, check and repair,
