@@ -1,6 +1,33 @@
 TRSToolGui — Changelog
 ======================
 
+v1.8.3 — November 26, 2026
+  More than one disk image can be open at once, each in its own window. Until now the program
+    had one window and one image, so opening several images did not open several: every one of
+    them was read into the same window, one after another, and only the last survived. Choosing
+    a few images in a file manager and opening them together looked especially odd on a Mac,
+    where the Finder hands the program all of them at once: one window, but the program behaving
+    as though more than one image were open — because all of them had passed through that one
+    window on their way past, each adding itself to Open Recent and writing to the title bar as
+    it went. Reported by zebbchi.
+  Each new window opens down and to the right of the one in front of it, and is kept inside the
+    visible part of the screen it appears on, clear of the taskbar, dock or panel. If a step
+    would carry a window off the right or the bottom, the cascade starts again at the top left.
+    A window never lands exactly on top of another one, and never at a position that cannot be
+    reached with the mouse — which could happen on a desktop with a monitor to the left of the
+    main one.
+  Every window names the image it holds in its own title bar, which it did before, and there is
+    now a Window menu listing the images that are open with a mark beside the one in front. Pick
+    one to bring that window forward. On a Mac the list is in the Window menu the system expects,
+    beside Minimize and Bring All To Front.
+  File > Open in a new window (Ctrl+Shift+O) opens an image in a window of its own. File > Open
+    is unchanged: it still replaces the image in the window you are using. Opening an image that
+    is already open brings its window forward instead of reading it a second time, so two windows
+    never hold the same image and cannot write over each other.
+  File > Exit now ends the program when more than one window is open; closing a single window
+    leaves the others alone. The window size and position the program remembers are those of the
+    first window of a run, since the rest are placed by the program rather than by you.
+
 v1.8.2 — November 25, 2026
   A window opened from the main one can no longer appear off the screen. Every window in the
     Windows version asked to be centred on the window that opened it, but Windows Forms honours

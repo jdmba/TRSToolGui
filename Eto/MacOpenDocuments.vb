@@ -53,6 +53,35 @@
 '  Every event is written to TRSToolGui-open.log beside TRSToolGui.cfg, whether or not
 '  the file then opens, because that log is the evidence a problem report needs. The
 '  line each route writes names the route, so one run says which one did the work.
+'
+'  SEVERAL FILES AT ONCE, which is what v1.8.3 is about. zebbchi reported on
+'  26 November 2026 that on a Mac there was no telling how many images were open:
+'  he would select a few in the Finder, open them, see ONE window, and find the
+'  program behaving as though more than one image were open. Both halves of that
+'  were real, and neither was a Mac fault.
+'
+'  The Finder sends every file of one open in a SINGLE 'odoc' event, so OpenFiles
+'  below is called once with the whole array and calls Program.AskToOpen for each
+'  name. What happened to them after that was the fault, in two different ways:
+'
+'    * at LAUNCH, no window exists yet, so every path went into Program's waiting
+'      slot - which was one String, each write overwriting the one before it. Three
+'      images in, one image out, and the other two gone without a word. It is a
+'      List now, and MainForm.OnShown sends every one of them through the
+'      window-list dispatcher.
+'
+'    * while the program was ALREADY RUNNING, every path was handed to the one and
+'      only main window, which opened them one after another into itself. The last
+'      one won the file list, but each had already added itself to Open Recent and
+'      each had written to the title bar and the status line on its way past, which
+'      is exactly why the program looked as though several images were open while
+'      only one window was there. They were all in the same window.
+'
+'  So the answer to his question is yes, and it is yes from v1.8.3: one window per
+'  image, each cascaded from the one in front, each with its image named in its own
+'  title bar, and a Window menu listing them with the frontmost ticked. Nothing in
+'  THIS file had to change for that - it was already handing every name over one at
+'  a time, which was right all along - and that is why only its header moved.
 ' ============================================================================
 Option Strict On
 Option Explicit On

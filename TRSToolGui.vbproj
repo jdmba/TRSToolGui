@@ -14,7 +14,7 @@
     <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
     <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
     <ApplicationVisualStyles>true</ApplicationVisualStyles>
-    <Version>1.8.2</Version>
+    <Version>1.8.3</Version>
     <!-- The icon Explorer, a shortcut and the Start menu show. Program.WindowIcon reads the
          embedded copy below for the windows themselves. -->
     <ApplicationIcon>TRSToolGui.ico</ApplicationIcon>

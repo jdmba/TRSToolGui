@@ -59,9 +59,21 @@ Public Class MainForm
     Private _sizeKnown As Boolean = False
     Private ReadOnly _startFile As String
 
+    ''' <summary>The Window menu, rebuilt whenever a window opens, closes, comes forward or changes image.</summary>
+    Private _miWindow As ButtonMenuItem
+
+    ''' <summary>
+    ''' This window has been promised an image and is no longer free to be handed another one, although
+    ''' nothing is open in it yet. The Finder sends every file of one open in a single event, and each
+    ''' has to be given a window of its own before any of the reading begins; see WindowList.OpenPath.
+    ''' </summary>
+    Private _claimed As Boolean = False
+
     Public Sub New(startFile As String)
         _startFile = startFile
         BuildUi()
+        ' Before the window is placed or shown, so the cascade and the Window menu know about it.
+        WindowList.Register(Me)
     End Sub
 
     ' =================================================================== UI construction
@@ -85,6 +97,7 @@ Public Class MainForm
         _miNewHardDisk = MakeItem(UiText.T("menu.file.newhd"), Keys.None, AddressOf OnFileNewHardDisk)
         mFile.Items.Add(_miNewHardDisk)
         mFile.Items.Add(MakeItem(UiText.T("menu.file.open"), ctrl Or Keys.O, AddressOf OnFileOpen))
+        mFile.Items.Add(MakeItem(UiText.T("menu.file.opennew"), ctrl Or Keys.Shift Or Keys.O, AddressOf OnFileOpenNewWindow))
         _miRecent = New ButtonMenuItem With {.Text = UiText.T("menu.file.recent")}
         mFile.Items.Add(_miRecent)
         ' A Mac's File menu gets the system's own Close (the window), so this one says what it closes.
@@ -171,7 +184,14 @@ Public Class MainForm
         Else
             bar = New MenuBar With {.IncludeSystemItems = MenuBarSystemItems.None}
         End If
-        bar.Items.AddRange(New MenuItem() {mFile, mEdit, mView, mDisk, mTools, mHelp})
+        ' ---- Window: the images that are open, with a tick beside the one in front.
+        ' On a Mac this is also the menu Eto puts Minimize, Zoom and Bring All To Front into: it looks
+        ' its own Window menu up by name, and Program.Main answers Eto's LocalizeString event so that
+        ' the name it looks for is the one in the language table. Order 900 is where Eto expects it,
+        ' between the program's own menus and Help, which BuildMacMenuBar pushes out to 1000.
+        _miWindow = New ButtonMenuItem With {.Text = UiText.T("menu.window"), .Order = 900}
+
+        bar.Items.AddRange(New MenuItem() {mFile, mEdit, mView, mDisk, mTools, _miWindow, mHelp})
         Menu = bar
 
         ' ---- toolbar (text buttons: no bitmaps to maintain)
@@ -247,8 +267,13 @@ Public Class MainForm
         root.Rows.Add(New TableRow(statusRow))
         Content = root
 
+        ' This window is in front whenever it has the keyboard, which is how the tick in the Window
+        ' menu and the anchor of the cascade are kept on the window the user is actually looking at.
+        AddHandler GotFocus, Sub() WindowList.NoteActivated(Me)
+
         UpdateViewChecks()
         RebuildRecentMenu()
+        RebuildWindowMenu()
         UpdateEnabled()
     End Sub
 
@@ -328,48 +353,142 @@ Public Class MainForm
             _sizeDelta = New Size(_requestedSize.Width - ClientSize.Width, _requestedSize.Height - ClientSize.Height)
             _sizeKnown = True
         End If
-        ' Before the first await, so that an open-document event arriving during it is not lost.
-        Program.Opener = AddressOf OpenFromSystem
+        ' Before the first await, so that an open-document event arriving during it is not lost. It is
+        ' the window-LIST that answers, not this one window: a Mac can hand the program several files at
+        ' once and each wants a window of its own, which is what WindowList.OpenPath decides.
+        If Program.Opener Is Nothing Then Program.Opener = AddressOf WindowList.OpenPath
         Try
             Await CheckEngineAsync(True)
             If _startFile IsNot Nothing Then Await OpenImageAsync(_startFile)
-            Dim waiting As String = Program.TakeWaitingToOpen()
-            If waiting IsNot Nothing Then Await OpenImageAsync(waiting)
         Catch ex As Exception
             Ui.Fail(Me, ex.Message, Program.AppName)
+        Finally
+            ' Whether or not the image opened, this window is free to be given another one.
+            _claimed = False
+            WindowList.RebuildMenus()
+        End Try
+        ' Anything that arrived before a window was ready. Every one of them gets its own window, so
+        ' they go through the dispatcher rather than into this one; before v1.8.3 only ONE path was
+        ' kept here at all, and a Finder open of three images lost two of them before this line.
+        Try
+            For Each waiting As String In Program.TakeWaitingToOpen()
+                WindowList.OpenPath(waiting)
+            Next
+        Catch ex As Exception
+            Ui.Fail(Me, ex.Message, Program.AppName)
+        End Try
+    End Sub
+
+    ' =================================================================== one window per image
+
+    ''' <summary>The full path of the image open in this window, or Nothing when none is.</summary>
+    Friend ReadOnly Property ImagePath As String
+        Get
+            Return If(_disk Is Nothing, Nothing, _disk.Path)
+        End Get
+    End Property
+
+    ''' <summary>What this window is called in the Window menu: the image's file name, or that there is none.</summary>
+    Friend ReadOnly Property ImageMenuName As String
+        Get
+            If _disk Is Nothing Then Return UiText.T("menu.window.empty")
+            Return Path.GetFileName(_disk.Path)
+        End Get
+    End Property
+
+    ''' <summary>True when this window could be given an image: nothing open in it, and none on its way.</summary>
+    Friend ReadOnly Property IsFree As Boolean
+        Get
+            Return _disk Is Nothing AndAlso Not _claimed AndAlso Not _busy
+        End Get
+    End Property
+
+    ''' <summary>Promise this window an image, so that nothing else takes it while the image is being read.</summary>
+    Friend Sub Claim()
+        _claimed = True
+    End Sub
+
+    ''' <summary>
+    ''' Open an image in this window, from somewhere that cannot wait for it: the window-list dispatcher,
+    ''' which is where the Finder's files arrive. The window comes forward first, because whoever asked
+    ''' for the file did not necessarily give the program the screen as well.
+    ''' </summary>
+    Friend Async Sub BeginOpen(imagePath As String)
+        Try
+            WindowList.Activate(Me)
+            Await OpenImageAsync(imagePath)
+        Catch ex As Exception
+            Ui.Fail(Me, ex.Message, Program.AppName)
+        Finally
+            _claimed = False
+            WindowList.RebuildMenus()
         End Try
     End Sub
 
     ''' <summary>
-    ''' Open a file the system handed the program while it was already running: on a Mac, an image
-    ''' opened from the Finder. The window comes forward first, because the Finder gave the program
-    ''' the file and not necessarily the screen.
+    ''' One line per open window: the number it is reached by, then the image's file name, with a tick
+    ''' beside the window in front. Rebuilt rather than kept up to date item by item, because the list is
+    ''' never longer than the windows a person has open and rebuilding it cannot drift out of step.
     ''' </summary>
-    Private Async Sub OpenFromSystem(path As String)
-        Try
-            BringToFront()
-            Await OpenImageAsync(path)
-        Catch ex As Exception
-            Ui.Fail(Me, ex.Message, Program.AppName)
-        End Try
+    Friend Sub RebuildWindowMenu()
+        If _miWindow Is Nothing Then Return
+        ' Only our own entries are cleared. On a Mac this menu also holds Eto's Minimize, Zoom and
+        ' Bring All To Front, which are not ours to remove; they are told apart by being Commands
+        ' rather than the plain items added below.
+        For i As Integer = _miWindow.Items.Count - 1 To 0 Step -1
+            If TypeOf _miWindow.Items(i) Is CheckMenuItem Then _miWindow.Items.RemoveAt(i)
+        Next
+        Dim front As MainForm = WindowList.Frontmost()
+        Dim n As Integer = 0
+        For Each w As MainForm In WindowList.All()
+            n += 1
+            Dim target As MainForm = w
+            Dim mi As New CheckMenuItem With {
+                .Text = UiText.T("menu.window.item",
+                                 n.ToString(CultureInfo.InvariantCulture),
+                                 MenuLiteral(target.ImageMenuName)),
+                .Checked = ReferenceEquals(target, front),
+                .Order = 300
+            }
+            AddHandler mi.Click, Sub()
+                                     WindowList.Activate(target)
+                                     ' A CheckMenuItem has just toggled its own tick; the rebuild puts
+                                     ' it back where it belongs, which is beside the window in front.
+                                     WindowList.RebuildMenus()
+                                 End Sub
+            _miWindow.Items.Add(mi)
+        Next
     End Sub
 
+    ''' <summary>
+    ''' The size, the place and the column widths are saved by ONE window: the first of the run. Every
+    ''' other window's position was chosen by the cascade rather than by the user, and saving one of those
+    ''' would walk the remembered position further down the screen at every run. WindowList.vb in the root
+    ''' folder has the whole of the reasoning.
+    ''' </summary>
     Protected Overrides Sub OnClosing(e As CancelEventArgs)
-        Dim s As Settings = Program.Settings
-        s.WindowMaximized = (WindowState = WindowState.Maximized)
-        If WindowState = WindowState.Normal Then
-            Dim inner As Size = ClientSize
-            If _sizeKnown AndAlso inner.Width > 100 AndAlso inner.Height > 100 Then
-                s.WindowWidth = inner.Width + _sizeDelta.Width : s.WindowHeight = inner.Height + _sizeDelta.Height
+        If WindowList.IsKeeper(Me) Then
+            Dim s As Settings = Program.Settings
+            s.WindowMaximized = (WindowState = WindowState.Maximized)
+            If WindowState = WindowState.Normal Then
+                Dim inner As Size = ClientSize
+                If _sizeKnown AndAlso inner.Width > 100 AndAlso inner.Height > 100 Then
+                    s.WindowWidth = inner.Width + _sizeDelta.Width : s.WindowHeight = inner.Height + _sizeDelta.Height
+                End If
+                s.WindowX = Location.X : s.WindowY = Location.Y
             End If
-            s.WindowX = Location.X : s.WindowY = Location.Y
+            s.ColumnWidths = New List(Of Integer)
+            For Each c As GridColumn In _grid.Columns
+                s.ColumnWidths.Add(c.Width)
+            Next
+            s.Save()
         End If
-        s.ColumnWidths = New List(Of Integer)
-        For Each c As GridColumn In _grid.Columns
-            s.ColumnWidths.Add(c.Width)
-        Next
-        s.Save()
         MyBase.OnClosing(e)
+    End Sub
+
+    Protected Overrides Sub OnClosed(e As EventArgs)
+        WindowList.Unregister(Me)
+        MyBase.OnClosed(e)
     End Sub
 
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
@@ -466,6 +585,8 @@ Public Class MainForm
         If _disk.IsHardDisk AndAlso _disk.ActivePartition IsNot Nothing Then inner = UiText.T("title.partition", inner, _disk.ActivePartition.Number.ToString(CultureInfo.InvariantCulture))
         Dim t As String = UiText.T("win.main.open", Program.AppName, Path.GetFileName(_disk.Path), inner)
         Title = t
+        ' The Window menu names this window by its image, so it changes when the title does.
+        WindowList.RebuildMenus()
     End Sub
 
     Private Sub UpdateViewChecks()
@@ -914,6 +1035,26 @@ Public Class MainForm
         Dim filter As String = UiText.T("filter.openimages", gzImages)
         Dim chosen As String = Ui.PickFile(Me, UiText.T("caption.openvirtualdisk"), filter)
         If chosen IsNot Nothing Then Await OpenImageAsync(chosen)
+    End Sub
+
+    ''' <summary>
+    ''' Open an image in a window of its own, leaving this one as it is. File > Open still replaces the
+    ''' image in this window, which is what TRSTools did and what every user of the program until now
+    ''' has had; this is the way to a second window without going through a file manager.
+    ''' </summary>
+    Private Sub OnFileOpenNewWindow()
+        If _busy Then Return
+        Const gzImages As String = "*.dsk.gz;*.dmk.gz;*.jv1.gz;*.jv3.gz;*.hfe.gz;*.imd.gz;*.scp.gz;*.hdv.gz"
+        Dim filter As String = UiText.T("filter.openimages", gzImages)
+        Dim chosen As String = Ui.PickFile(Me, UiText.T("caption.openvirtualdisk"), filter)
+        If chosen Is Nothing Then Return
+        Dim already As MainForm = WindowList.FindByPath(chosen)
+        If already IsNot Nothing Then
+            WindowList.Activate(already)
+            Return
+        End If
+        Dim f As MainForm = WindowList.NewWindow()
+        If f IsNot Nothing Then f.BeginOpen(chosen)
     End Sub
 
     Private Sub OnFileClose()

@@ -51,6 +51,18 @@ Public Module Program
         ' The language goes in before anything reaches the screen, because text already built is not
         ' revisited. An empty setting, which is what a new installation has, leaves English in force.
         If Not String.IsNullOrEmpty(Settings.Language) Then UiText.Use(Settings.Language)
+
+        ' A Mac gets a Window menu from Eto, holding Minimize, Zoom and Bring All To Front, and
+        ' TRSToolGui puts the list of open images into a Window menu of its own. There must be ONE such
+        ' menu, not two, and Eto finds its own by name (MenuItemCollection.GetSubmenu, comparing the text
+        ' with the & taken out) - which fails the moment the program is in French and ours says Fenetre.
+        ' LocalizeString is Eto's own event for exactly this: answering it for "&Window" with whatever
+        ' the language table holds makes the two names agree, so Eto's three items go into our menu.
+        ' It has to be in place before any menu bar is built, which is why it is here and not in a form.
+        AddHandler app.LocalizeString,
+            Sub(sender As Object, e As LocalizeEventArgs)
+                If String.Equals(e.Text, "&Window", StringComparison.Ordinal) Then e.LocalizedText = UiText.T("menu.window")
+            End Sub
         Dim toolPath As String = Trs80Tool.Locate(Settings.ToolPath)
         ' On a Mac nothing can be asked before the application is running; there the main window asks, once
         ' it is on the screen (MainForm.CheckEngineAsync).
@@ -60,14 +72,25 @@ Public Module Program
         Tool.UseServer = Settings.KeepEngineRunning
         Tool.TerminalCommand = If(Settings.TerminalCommand, "")
 
-        Dim startFile As String = Nothing
+        ' EVERY file named on the command line, not only the last of them: a file manager asked to open
+        ' several images can start the program with all of them at once, and until v1.8.3 this loop kept
+        ' overwriting its answer so that all but one were silently dropped. (A Mac never passes an opened
+        ' document on the command line at all; there they arrive as an Apple event, see MacOpenDocuments.)
+        Dim startFiles As New List(Of String)
         For Each a In args
             If a.StartsWith("-", StringComparison.Ordinal) Then Continue For
-            startFile = a
+            startFiles.Add(a)
         Next
 
         Try
-            app.Run(New MainForm(startFile))
+            Dim first As New MainForm(If(startFiles.Count > 0, startFiles(0), Nothing))
+            ' The rest are asked for rather than opened here: a window cannot be cascaded from one that
+            ' is not on the screen yet, so they wait for the first window to be shown. AskToOpen holds
+            ' them until MainForm.OnShown has told it where to send them.
+            For i As Integer = 1 To startFiles.Count - 1
+                AskToOpen(startFiles(i))
+            Next
+            app.Run(first)
         Finally
             ShutDown()
         End Try
@@ -81,28 +104,40 @@ Public Module Program
     ''' </summary>
     Public Opener As Action(Of String)
 
-    Private _waitingToOpen As String
+    ''' <summary>
+    ''' The files that arrived before any window was ready. A LIST since v1.8.3, and that is the whole of
+    ''' one half of zebbchi's report: it used to be a single String, so when the Finder sent three images
+    ''' in one 'odoc' event each AskToOpen overwrote the one before it and two of the three were lost
+    ''' before any window had been built. Opening three images and getting one was the symptom.
+    ''' </summary>
+    Private ReadOnly _waitingToOpen As New List(Of String)
 
     ''' <summary>Open this file, now if a window is ready for it and otherwise as soon as one is.</summary>
-    Public Sub AskToOpen(path As String)
-        If String.IsNullOrEmpty(path) Then Return
+    Public Sub AskToOpen(imagePath As String)
+        If String.IsNullOrEmpty(imagePath) Then Return
         Dim ready As Action(Of String) = Opener
         If ready Is Nothing Then
-            _waitingToOpen = path
+            SyncLock _waitingToOpen
+                _waitingToOpen.Add(imagePath)
+            End SyncLock
             Return
         End If
         Try
-            Application.Instance.AsyncInvoke(Sub() ready(path))
+            Application.Instance.AsyncInvoke(Sub() ready(imagePath))
         Catch
-            _waitingToOpen = path
+            SyncLock _waitingToOpen
+                _waitingToOpen.Add(imagePath)
+            End SyncLock
         End Try
     End Sub
 
-    ''' <summary>The file that arrived before any window was ready, if there was one. Taken only once.</summary>
-    Public Function TakeWaitingToOpen() As String
-        Dim path As String = _waitingToOpen
-        _waitingToOpen = Nothing
-        Return path
+    ''' <summary>The files that arrived before any window was ready. Taken only once; never Nothing.</summary>
+    Public Function TakeWaitingToOpen() As List(Of String)
+        SyncLock _waitingToOpen
+            Dim waiting As New List(Of String)(_waitingToOpen)
+            _waitingToOpen.Clear()
+            Return waiting
+        End SyncLock
     End Function
 
     ''' <summary>The work at the end of a run, done once: stop the background trs80-tool, save the settings, remove the temp folder.</summary>
@@ -114,10 +149,16 @@ Public Module Program
         CleanTemp()
     End Sub
 
-    ''' <summary>End the program. On a Mac closing the main window only hides it, so Quit is asked for by name.</summary>
+    ''' <summary>
+    ''' End the program. On a Mac that is Quit by name, because closing a window there leaves the
+    ''' application running, which is what a Mac user expects. Elsewhere every main window is closed, not
+    ''' just the one the command came from: Exit means the program, and more than one window can be open.
+    ''' </summary>
     Public Sub ExitProgram(mainWindow As Form)
         If HostPlatform.IsMacOS Then
             Application.Instance.Quit()
+        ElseIf WindowList.Count > 1 Then
+            WindowList.CloseAll()
         Else
             mainWindow.Close()
         End If

@@ -64,14 +64,36 @@ Public Module Program
         Tool.UseServer = Settings.KeepEngineRunning
         Tool.TerminalCommand = If(Settings.TerminalCommand, "")
 
-        Dim startFile As String = Nothing
+        ' EVERY file named on the command line, not only the last of them. A file manager asked to open
+        ' several images at once can start the program with all of them on one command line, and until
+        ' v1.8.3 this loop kept overwriting its answer, so all but one were silently dropped.
+        Dim startFiles As New List(Of String)
         For Each a In args
             If a.StartsWith("-", StringComparison.Ordinal) OrElse a.StartsWith("/", StringComparison.Ordinal) Then Continue For
-            startFile = a
+            startFiles.Add(a)
         Next
 
         Try
-            Application.Run(New MainForm(startFile))
+            ' More than one image can be open at once, each in its own main window, so the message loop
+            ' has to end when the LAST window closes rather than when the first one does. That is why Run
+            ' is given a context and not a form: WindowList is what knows when the last window has gone.
+            Dim ctx As New ApplicationContext()
+            WindowList.AllClosed = Sub() ctx.ExitThread()
+
+            Dim first As New MainForm(If(startFiles.Count > 0, startFiles(0), Nothing))
+            first.Show()
+            If startFiles.Count > 1 Then
+                Dim rest As List(Of String) = startFiles.GetRange(1, startFiles.Count - 1)
+                ' Once the loop is running, because a window cannot be cascaded from one that is not on
+                ' the screen yet and has no position to be cascaded from.
+                first.BeginInvoke(Sub()
+                                      For Each p As String In rest
+                                          WindowList.OpenPath(p)
+                                      Next
+                                  End Sub)
+            End If
+
+            Application.Run(ctx)
         Finally
             Tool.Shutdown()
             Settings.Save()
